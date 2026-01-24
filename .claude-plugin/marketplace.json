@@ -1,0 +1,27 @@
+{
+  "name": "yrzhe-skills",
+  "owner": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "metadata": {
+    "description": "A collection of powerful Claude Code skills by yrzhe. Includes intelligent web scraping, automation, and productivity tools.",
+    "version": "1.0.0",
+    "homepage": "https://github.com/yrzhe/claude-skills"
+  },
+  "plugins": [
+    {
+      "name": "intelligent-web-scraper",
+      "source": "./plugins/intelligent-web-scraper",
+      "description": "Self-learning intelligent web scraper agent - automatically analyzes page structure, handles pagination, anti-blocking, and discovers article series. No user configuration needed - AI decides everything.",
+      "version": "2.0.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["scraping", "web", "automation", "browser", "crawl4ai", "playwright"]
+    }
+  ]
+}

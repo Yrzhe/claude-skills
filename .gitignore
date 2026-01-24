@@ -1,0 +1,54 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Progress files (generated during scraping)
+plugins/*/skills/*/progress/*.json
+
+# Local experience data (user-specific)
+# plugins/*/skills/*/experiences/site_patterns.json
+# plugins/*/skills/*/experiences/lessons_learned.md
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

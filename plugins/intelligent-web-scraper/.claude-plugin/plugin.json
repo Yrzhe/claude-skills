@@ -1,0 +1,20 @@
+{
+  "name": "intelligent-web-scraper",
+  "version": "2.0.0",
+  "description": "Self-learning intelligent web scraper agent - automatically analyzes page structure, handles pagination, anti-blocking, and discovers article series. No user configuration needed - AI decides everything.",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": ["scraping", "web", "automation", "browser", "crawl4ai", "playwright"],
+  "engines": {
+    "claude-code": ">=1.0.0"
+  },
+  "dependencies": {
+    "python": ">=3.9",
+    "playwright": "*",
+    "crawl4ai": "*"
+  }
+}

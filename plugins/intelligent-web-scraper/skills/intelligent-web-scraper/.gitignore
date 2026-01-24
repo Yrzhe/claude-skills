@@ -1,0 +1,30 @@
+# User-specific data (do not commit)
+progress/
+*.pyc
+__pycache__/
+.DS_Store
+
+# Local configuration overrides
+config.local.json
+
+# Scraped data (if accidentally placed here)
+*.csv
+*.xlsx
+scraped_data/
+output/
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Keep these files but not their content patterns
+# (site_patterns.json should be committed with template only)

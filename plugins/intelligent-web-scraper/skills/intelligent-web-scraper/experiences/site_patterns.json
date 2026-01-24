@@ -1,0 +1,60 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "Learned patterns for web scraping. Updated automatically after successful scrapes.",
+    "last_updated": null,
+    "total_patterns": 0,
+    "total_successes": 0
+  },
+  "_template": {
+    "_comment": "This is a template showing the expected structure. Copy and modify for new domains.",
+    "url_patterns": {
+      "/example/path/*": {
+        "description": "Human-readable description of what this pattern scrapes",
+        "selectors": {
+          "container": ".main-container",
+          "item": ".item-class",
+          "fields": {
+            "title": ".title-selector",
+            "content": ".content-selector",
+            "author": ".author-selector",
+            "date": ".date-selector"
+          }
+        },
+        "pagination": {
+          "type": "page_number|next_button|infinite_scroll|load_more|api|none",
+          "selector": ".pagination-selector",
+          "url_param": "page",
+          "max_pages_observed": null
+        },
+        "scroll_loading": {
+          "required": false,
+          "max_scrolls": 20,
+          "scroll_delay_ms": 1500,
+          "notes": "Describe scroll loading behavior if needed"
+        },
+        "detail_links": {
+          "required": false,
+          "selector": "a.read-more",
+          "skip_domains": ["twitter.com", "x.com"],
+          "fields_in_detail": ["fullContent", "comments"],
+          "notes": "Describe what needs to be fetched from detail pages"
+        },
+        "anti_block": {
+          "min_delay": 2,
+          "max_delay": 5,
+          "blocked_at_request": null,
+          "needs_login": false,
+          "needs_cookies": false
+        },
+        "success_count": 0,
+        "fail_count": 0,
+        "last_success": null,
+        "last_fail": null,
+        "created_at": null,
+        "notes": "",
+        "status": "active|stale|broken"
+      }
+    }
+  }
+}

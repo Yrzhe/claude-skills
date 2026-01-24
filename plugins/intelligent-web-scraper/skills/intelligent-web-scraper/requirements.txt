@@ -1,0 +1,19 @@
+# Intelligent Web Scraper - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core crawling library
+crawl4ai>=0.3.0
+
+# Browser automation
+playwright>=1.40.0
+
+# Data validation
+pydantic>=2.0
+
+# WebSocket for CDP (Chrome DevTools Protocol)
+websockets>=12.0
+
+# Optional but recommended
+aiohttp>=3.9.0          # Async HTTP requests
+beautifulsoup4>=4.12.0  # HTML parsing fallback
+lxml>=5.0.0             # Fast XML/HTML parser
