@@ -4,6 +4,8 @@ A collection of powerful Claude Code skills and plugins by [@yrzhe](https://x.co
 
 ## Installation
 
+### Option 1: Via Plugin Marketplace
+
 Add this marketplace to your Claude Code:
 
 ```bash
@@ -15,6 +17,25 @@ Then install any plugin you want:
 ```bash
 /plugin install intelligent-web-scraper@yrzhe-skills
 ```
+
+### Option 2: Manual Installation
+
+If the plugin command doesn't work, you can manually copy the skill files:
+
+1. Clone or download this repository
+2. Copy the skill folder to your Claude skills directory:
+
+**macOS / Linux:**
+```bash
+cp -r plugins/intelligent-web-scraper/skills/intelligent-web-scraper ~/.claude/skills/
+```
+
+**Windows (PowerShell):**
+```powershell
+Copy-Item -Recurse plugins\intelligent-web-scraper\skills\intelligent-web-scraper $env:USERPROFILE\.claude\skills\
+```
+
+3. Restart Claude Code to load the new skill
 
 ## Available Plugins
 
