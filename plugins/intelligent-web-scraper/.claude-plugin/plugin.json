@@ -8,13 +8,5 @@
   },
   "license": "MIT",
   "repository": "https://github.com/yrzhe/claude-skills",
-  "keywords": ["scraping", "web", "automation", "browser", "crawl4ai", "playwright"],
-  "engines": {
-    "claude-code": ">=1.0.0"
-  },
-  "dependencies": {
-    "python": ">=3.9",
-    "playwright": "*",
-    "crawl4ai": "*"
-  }
+  "keywords": ["scraping", "web", "automation", "browser", "crawl4ai", "playwright"]
 }
