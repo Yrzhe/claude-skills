@@ -1,0 +1,12 @@
+{
+  "name": "feishu-bot-dev",
+  "version": "2.0.0",
+  "description": "飞书机器人开发完整指南。支持三种模式：零代码（机器人助手）、全代码（开放平台API）、AI集成（MCP Server）。包含消息卡片搭建工具、最新SDK、最佳实践。",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": ["feishu", "lark", "bot", "飞书", "机器人", "消息", "群组", "文档", "API", "MCP", "AI", "卡片消息"]
+}

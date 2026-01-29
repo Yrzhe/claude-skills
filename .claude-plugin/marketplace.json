@@ -48,6 +48,19 @@
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
       "tags": ["akshare", "A股", "股票", "行情", "K线", "分时", "复权", "股东户数", "东方财富", "新浪"]
+    },
+    {
+      "name": "youtube-data-api",
+      "source": "./plugins/youtube-data-api",
+      "description": "YouTube Data API v3 complete wrapper - search videos, get video/channel/playlist details, get comments, download subtitles, etc. Supports filtering and sorting by time/views/rating and more.",
+      "version": "1.0.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["youtube", "api", "video", "channel", "playlist", "comments", "subtitles", "search"]
     }
   ]
 }
