@@ -22,6 +22,32 @@
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
       "tags": ["scraping", "web", "automation", "browser", "crawl4ai", "playwright"]
+    },
+    {
+      "name": "feishu-bot-dev",
+      "source": "./plugins/feishu-bot-dev",
+      "description": "飞书机器人配置与开发完整指南。支持零代码（机器人助手）和全代码（开放平台API）两种模式，包含发消息、创建文档、管理群组等功能。",
+      "version": "1.0.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["feishu", "lark", "bot", "飞书", "机器人", "消息", "群组", "API"]
+    },
+    {
+      "name": "akshare-a-shares",
+      "source": "./plugins/akshare-a-shares",
+      "description": "针对中国A股的行情与数据查询（基于本地 akshare 源代码与API映射）。当用户请求获取A股实时行情、历史K线（日/周/月）、分钟级分时（1/5/15/30/60）、复权数据（前复权/后复权）、股东户数（含详情）、以及巨潮资讯公告披露结果时使用本Skill。",
+      "version": "1.0.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["akshare", "A股", "股票", "行情", "K线", "分时", "复权", "股东户数", "东方财富", "新浪"]
     }
   ]
 }
