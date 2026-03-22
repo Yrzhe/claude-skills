@@ -1,0 +1,12 @@
+{
+  "name": "lenny-advisor",
+  "version": "1.0.0",
+  "description": "Product and business diagnostic advisor powered by distilled wisdom from 289 Lenny's Podcast guests and 348 newsletter articles. Diagnose → Probe → Deliver methodology with 18 topic areas and 40 expert profiles.",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": ["product", "business", "strategy", "growth", "pricing", "pmf", "positioning", "leadership", "lenny"]
+}

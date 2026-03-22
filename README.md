@@ -61,6 +61,29 @@ Self-learning intelligent web scraper agent that automatically analyzes page str
 
 Then provide a URL to scrape and let the AI handle everything.
 
+### lenny-advisor
+
+Product and business diagnostic advisor powered by distilled wisdom from **289 Lenny's Podcast guests** and **348 newsletter articles**. Not a knowledge dump — an active advisor that diagnoses your real problem before delivering expert frameworks.
+
+**Features:**
+- Diagnose → Probe → Deliver methodology (asks before answering)
+- 18 topic areas: growth, pricing, PMF, positioning, hiring, leadership, metrics, fundraising, marketplace, AI strategy, and more
+- 40 deep expert profiles (Shreyas Doshi, Elena Verna, April Dunford, Rahul Vohra, etc.)
+- 3-layer progressive loading (minimal token usage)
+- Companion workflow with [dbskill](https://github.com/dontbesilent2025/dbskill) and [gstack](https://github.com/garrytan/gstack)
+
+**Install:**
+```bash
+/plugin install lenny-advisor@yrzhe-skills
+```
+
+**Manual install:**
+```bash
+cp -r plugins/lenny-advisor ~/.claude/skills/
+```
+
+The skill activates automatically when you discuss product decisions, business strategy, growth, pricing, or any product/business topic.
+
 ## Contributing
 
 Feel free to open issues or submit pull requests to improve these skills.
