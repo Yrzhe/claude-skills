@@ -3,21 +3,21 @@
 **Executive coach and former HR leader** | **Lockett Coaching; formerly Pinterest, Stripe, Remind** | Expertise: leadership, coaching, organizational design, conflict resolution
 
 ## Bio
-Rachel Lockett coaches CEOs, founders, and senior leaders on the human side of building companies: how to coach instead of over-direct, handle hard conversations, prevent burnout, and navigate co-founder dynamics. She previously led HR and talent work at Stripe and Pinterest, giving her a rare blend of executive coaching depth and operator experience inside high-growth companies.
+Rachel Lockett coaches CEOs, founders, and senior leaders on the human side of building companies: when to coach vs. advise, how to handle difficult conversations, how to prevent burnout, and how to navigate co-founder dynamics. She previously led HR and talent work at Stripe and Pinterest, so her perspective is grounded in both executive coaching and real operating experience inside high-growth companies.
 
-Her perspective matters most when a team is scaling faster than its leadership habits. She focuses on designing roles, teams, and operating rhythms that fit both the business and the people doing the work.
+What makes her viewpoint especially valuable is her focus on designing roles, teams, and operating rhythms around strengths, not just org charts and goals. She is especially useful when a company is scaling and the real bottleneck is not strategy, but alignment, trust, and decision-making.
 
 ## Signature Frameworks
 
 ### Coach vs. advise decision rule
-- **When to use**: When a team member brings you a problem and you need to decide whether to solve it for them or help them solve it themselves.
+- **When to use**: When someone brings you a problem and you need to decide whether to solve it for them or help them solve it themselves.
 - **Steps**:
   1. Assess whether the person has the context and skill to solve the problem.
   2. If the issue is urgent or you already know the answer you want executed, advise directly.
   3. If the person has the right context, shift into curiosity instead of giving the answer.
   4. Ask questions that help them think through the problem and own the solution.
   5. Use coaching to build capability, not dependency.
-- **Example**: A founder was blocking product and business decisions. By shifting from answering everything to coaching, and by creating squads with clear KPIs, the team became more empowered and moved faster.
+- **Example**: A founder was blocking every product and business decision. By shifting from answering everything to coaching, and by creating squads with clear KPIs, the team became more empowered and moved faster.
 
 ### Active listening at three levels
 - **When to use**: When you want to build trust, coach effectively, influence others, or understand what someone is really saying beneath the words.
@@ -27,7 +27,7 @@ Her perspective matters most when a team is scaling faster than its leadership h
   3. Listen globally—notice tone, body language, context, and the emotions underneath the words.
   4. Reflect back both the gist and the emotional reality you’re sensing.
   5. Check your interpretation by asking if your read is right.
-- **Example**: When someone describes a personal topic, Rachel notices both the words and the body language, then reflects back the joy, discomfort, or tension she senses.
+- **Example**: When someone describes a personal change, Rachel may reflect not only the facts but also the joy, discomfort, or tension she sees in their body language.
 
 ### GROW coaching model
 - **When to use**: When someone needs help thinking through a challenge but likely has enough context to solve it themselves.
@@ -36,7 +36,7 @@ Her perspective matters most when a team is scaling faster than its leadership h
   2. R: Clarify current reality, blockers, and what has already been tried.
   3. O: Expand options and possible paths forward.
   4. W: Decide the way forward and next action.
-- **Example**: In coaching someone about workload, she asks what a better future looks like, what is causing the overload, what options exist, and what one action will be taken in the next two weeks.
+- **Example**: In coaching someone about workload, she asks what a better future looks like, what is causing overload now, what options exist, and what one action they will take in the next two weeks.
 
 ### Nonviolent Communication (NVC)
 - **When to use**: When you need to have a difficult conversation without escalating blame or defensiveness.
@@ -45,7 +45,7 @@ Her perspective matters most when a team is scaling faster than its leadership h
   2. Feelings: Name your actual emotion without blame.
   3. Needs: Identify the unmet human need underneath the feeling.
   4. Request: Make a small, concrete, doable request.
-- **Example**: “I noticed I wasn’t included in the last three sprint planning meetings” (observation), “I felt anxious and confused” (feelings), “I need clarity and collaboration” (needs), “Could you include me as optional or send the roadmap afterward?” (request).
+- **Example**: “I noticed I wasn’t included in the last three sprint planning meetings” → “I felt anxious and confused” → “I need clarity and collaboration” → “Could you include me as optional or send the roadmap afterward?”
 
 ### Co-founder relationship operating rhythm
 - **When to use**: When building or repairing a co-founder relationship in a scaling startup.
@@ -82,24 +82,24 @@ Her perspective matters most when a team is scaling faster than its leadership h
 ## Core Advice
 - **When a direct report brings you a problem and you’re tempted to solve it immediately**: pause and ask whether they have the context and skill to solve it themselves — because solving it for them trains dependency instead of judgment.
 - **When the issue is urgent or you already know the answer you want executed**: advise directly — because coaching is not the right tool when speed or clarity matters most.
-- **When someone is talking to you and you want to build trust quickly**: reflect back both content and emotion — because people feel seen when you capture the deeper meaning, not just the words.
-- **When you’re coaching someone through a challenge**: use GROW — because it turns vague discussion into a concrete next step.
-- **When you’re about to enter a conflict conversation**: aim for mutual understanding, not winning — because understanding improves the relationship and the decision.
-- **When you feel strong resistance to someone’s idea**: say, “Help me understand how you came to that conclusion” — because curiosity keeps the conversation open.
+- **When someone is talking to you and you want to build trust quickly**: reflect back both the content and the emotion you’re hearing — because people feel seen when you capture the deeper meaning, not just the words.
+- **When you’re coaching someone through a challenge**: use GROW — because it turns a vague conversation into a concrete next step.
+- **When you’re about to enter a conflict conversation**: aim for mutual understanding, not winning — because understanding improves both the relationship and the decision.
+- **When you feel strong resistance to someone’s idea**: say, “Help me understand how you came to that conclusion,” before pushing back — because curiosity keeps the conversation open.
 - **When you feel burned out or chronically depleted at work**: run a two-week energy audit — because patterns reveal your gifts and your energy leaks.
-- **When your role has drifted away from what you’re naturally good at**: redesign your work around your strengths — because people have more energy and impact when they operate from their gifts.
+- **When your role has drifted away from what you’re naturally good at**: redesign your work around your strengths — because people have more energy and impact when they operate from gifts.
 - **When you’re overloaded by optional commitments**: say no more often — because every yes is a tradeoff.
-- **When you’re a founder or executive and your team keeps escalating everything to you**: create smaller pods or squads with clear KPIs — because decentralizing decisions increases ownership and speed.
-- **When a co-founder relationship starts feeling tense or distant**: schedule recurring check-ins and discuss alignment explicitly — because co-founder relationships need intentional maintenance.
-- **When you need to address a difficult interpersonal issue**: use NVC — because it reduces defensiveness and helps the other person understand your experience.
+- **When you’re a founder and your team keeps escalating everything to you**: create smaller pods or squads with clear KPIs — because decentralization increases ownership and speed.
+- **When a co-founder relationship starts feeling tense or distant**: schedule recurring check-ins and discuss alignment explicitly — because co-founder issues rarely fix themselves.
+- **When you need to address a difficult interpersonal issue**: use NVC — because it reduces defensiveness and makes your experience easier to hear.
 
 ## Contrarian Takes
 - **Conventional**: Great leaders should have all the answers and solve problems for their teams. → **Their view**: Great leaders often should coach instead of answer — because giving answers trains dependency rather than capability.
 - **Conventional**: Conflict is about convincing the other person they’re wrong. → **Their view**: The goal of conflict is mutual understanding — because understanding creates better outcomes than winning.
 - **Conventional**: Burnout is mainly solved by pushing through or changing jobs entirely. → **Their view**: Often the better fix is redesigning work around your gifts and removing energy leaks — because role mismatch is a major source of depletion.
 - **Conventional**: Managers should make work more interesting for employees. → **Their view**: Your manager’s job is to help you perform in the role you were hired for; it’s your job to navigate your career — because career design is personal responsibility.
-- **Conventional**: If a co-founder relationship is strained, the only options are to keep grinding or split up. → **Their view**: There’s often a middle path through structured reflection and operating rhythms — because many conflicts are about misalignment, not irreparable failure.
-- **Conventional**: Tech work is mostly logical, so emotions should be left out. → **Their view**: Professional life is deeply emotional — because ignoring feelings makes people act from them unconsciously.
+- **Conventional**: If a co-founder relationship is strained, the only options are to keep grinding or split up. → **Their view**: There is often a middle path through structured reflection and operating rhythms — because many conflicts are really misalignment, not irreparable failure.
+- **Conventional**: Tech work is mostly logical, so emotions should be left out. → **Their view**: Professional life is deeply emotional — because ignoring feelings makes them drive behavior unconsciously.
 
 ## Notable Quotes
 > “The goal of any conflict is to create mutual understanding.”

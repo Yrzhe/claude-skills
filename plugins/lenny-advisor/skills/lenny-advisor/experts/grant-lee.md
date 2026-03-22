@@ -3,21 +3,21 @@
 **CEO and co-founder** | **Gamma** | Expertise: go-to-market, product-market-fit, growth, design, AI strategy, pricing, hiring culture
 
 ## Bio
-Grant Lee is the CEO and co-founder of Gamma, an AI-powered presentation and website creation company that scaled to over $100M ARR in just over two years with a lean, profitable team. His perspective matters because he combines product design rigor, rapid experimentation, founder-led marketing, and unconventional distribution tactics to build in a category many people underestimated.
+Grant Lee is the CEO and co-founder of Gamma, an AI-powered presentation and website creation company that scaled to over $100M ARR in just over two years with a lean, profitable team. His perspective matters because he combines product design rigor, rapid experimentation, founder-led marketing, and unconventional distribution tactics to build in a category many people dismissed.
 
-He is especially useful to listen to when you need a practical view on how product quality, onboarding, pricing, and distribution reinforce each other. Grant’s thinking is grounded in testing, not theory: he repeatedly turns assumptions into experiments and uses real user behavior to decide what to do next.
+He is especially useful when you need advice on whether you truly have product-market fit, how to improve activation, how to market as a founder, and how to grow efficiently without overhiring.
 
 ## Signature Frameworks
 
 ### Word-of-Mouth Machine PMF Test
-- **When to use**: When you’re trying to determine whether you truly have product-market fit versus vanity traction.
+- **When to use**: When you're trying to determine whether you truly have product-market fit versus vanity traction.
 - **Steps**:
   1. Launch and observe whether growth sustains beyond the initial spike.
   2. Check whether users are naturally telling others about the product.
   3. Look for organic signups, direct traffic, branded search, and sharing behavior.
   4. If growth plateaus without paid support, assume PMF is not there yet.
   5. Refocus on making the product experience so good that users recommend it unprompted.
-- **Example**: Gamma won Product Hunt product of the day, week, and month, but signups still flattened. Lee concluded they did not yet have PMF because there wasn’t strong word of mouth. After rebuilding onboarding and adding AI magic, signups jumped from a few hundred per day to thousands and then tens of thousands organically.
+- **Example**: Gamma won Product Hunt product of the day, week, and month, but signups still flattened. Lee concluded they did not yet have PMF because there wasn't strong word of mouth; after rebuilding onboarding and adding AI magic, signups jumped organically.
 
 ### First 30 Seconds / First Mile Onboarding Framework
 - **When to use**: When new users are trying the product for the first time and you need to maximize time-to-value and retention.
@@ -27,7 +27,7 @@ He is especially useful to listen to when you need a practical view on how produ
   3. Remove friction from both creation and sharing.
   4. Earn the next 30 seconds of attention by showing value fast.
   5. Avoid overwhelming users with too many features or messages at once.
-- **Example**: Gamma rebuilt onboarding so AI was part of the first-use experience, making it possible for every new user to experience the product’s magic in the first 30 seconds.
+- **Example**: Gamma rebuilt onboarding so AI was part of the first-use experience, making it possible for every new user to experience the product's magic almost immediately.
 
 ### One Egg Messaging Rule
 - **When to use**: When explaining a product, onboarding users, or building marketing copy.
@@ -112,27 +112,29 @@ He is especially useful to listen to when you need a practical view on how produ
 
 ## Core Advice
 - **When early traction looks impressive but growth starts flattening**: do not assume you have product-market fit; go back and fix the core experience until word of mouth becomes a real growth engine — because vanity wins can mask weak retention and weak organic spread.
-- **When new users are not activating or retaining**: focus the team on making the first 30 seconds feel magical and reducing friction to create and share — because users need immediate value before they’ll give you more attention.
-- **When you’re tempted to explain many features at once**: communicate one core value proposition first — because people can absorb one compelling idea, but too many claims create confusion.
-- **When you need distribution without a big marketing team**: practice founder-led marketing by documenting insights, posting useful lessons, and learning what narratives resonate — because founders can often tell the story most authentically.
-- **When starting influencer marketing**: begin with many micro-influencers in relevant niches rather than a few large creators — because smaller creators have more trust and let you test more personas and hooks.
+- **When new users are not activating or retaining**: focus the team on making the first 30 seconds feel magical and reducing friction to create and share — because users need value immediately before they’ll keep paying attention.
+- **When you feel pressure to explain many features at once**: communicate one core value proposition first — because people can absorb one compelling idea, but too many claims create confusion.
+- **When you need distribution without a big marketing team**: practice founder-led marketing by documenting insights and posting useful lessons — because founders are often best positioned to tell the story authentically.
+- **When starting influencer marketing**: use many micro-influencers in relevant niches rather than a few large creators — because smaller creators often have more trust and let you test more hooks.
 - **When creator campaigns underperform**: onboard creators personally and let them tell the story in their own voice — because scripted promotions feel like ads and usually convert worse.
-- **When you’re unsure which audience will spread the product**: test many creators, niches, and hooks, then double down on communities where recommendations naturally spread — because breakout segments are hard to predict in advance.
-- **When paid acquisition looks tempting**: wait until word of mouth is already strong before investing heavily — because paid growth can hide a broken core engine and create a leaky bucket.
-- **When evaluating a new feature or product idea**: build a lightweight prototype and test it with target users the same day if possible — because fast qualitative feedback prevents months of wasted development.
-- **When pricing an AI product with real inference costs**: validate willingness to pay early and monitor unit economics immediately — because monetization is part of product-market fit, not an afterthought.
-- **When growth pressure makes hiring feel urgent**: hire painfully slowly and optimize for exceptional people rather than headcount — because a small team of high-agency people preserves quality and culture.
-- **When you find an exceptional candidate or employee**: give them more scope, resources, and hard problems — because top performers want impact, and leverage compounds when you bet big on them.
+- **When you’re unsure which audience will spread the product**: test many creators, niches, and hooks, then double down on the communities where recommendations naturally spread — because breakout segments are hard to predict in advance.
+- **When tempted to scale paid acquisition early**: wait until word of mouth is already strong — because paid growth can hide a broken core engine and create a leaky bucket.
+- **When evaluating a new feature or product idea**: build a lightweight prototype and test it the same day if possible — because fast qualitative feedback prevents months of wasted development.
+- **When pricing an AI product with real inference costs**: validate willingness to pay early and monitor unit economics immediately — because monetization is not optional when costs are real.
+- **When growth creates pressure to hire fast**: hire painfully slowly and optimize for exceptional people — because headcount targets often degrade quality and culture.
+- **When someone exceptional joins**: give them more scope, resources, and hard problems — because top performers want leverage and responsibility.
 
 ## Contrarian Takes
-- **Conventional**: If you win Product Hunt and get a spike in signups, you probably have product-market fit. → **Their view**: Those are often vanity metrics; real PMF is when the product grows through word of mouth without you pushing it — because Gamma had a huge launch but still saw growth flatten.
-- **Conventional**: You can use paid ads to brute-force growth while you figure out the product later. → **Their view**: Scaling paid before word of mouth is dangerous and usually masks a broken growth engine — because it creates a leaky bucket and rising CAC.
-- **Conventional**: Influencer marketing works best through big creators with massive audiences. → **Their view**: Micro-influencers in trusted niches are usually far more effective — because credibility and specificity beat raw reach.
-- **Conventional**: Brand marketing is separate from performance marketing. → **Their view**: Brand marketing is performance marketing — because brand expands creative options and improves effectiveness across channels.
-- **Conventional**: Early-stage startups should mostly hire specialists and add managers as they scale. → **Their view**: Generalists and player-coaches are often more valuable than narrow specialists and pure managers — because lean teams need breadth and closeness to execution.
-- **Conventional**: GPT wrapper companies are thin, fragile businesses. → **Their view**: Durable AI applications can be built on top of models if they go deep on a workflow and solve the full job to be done — because value comes from orchestration and product depth, not just the model.
+- **Conventional**: If you win Product Hunt and get a spike in signups, you probably have product-market fit. → **Their view**: Those are often vanity metrics; real PMF is when the product grows through word of mouth without you pushing it — because Gamma spiked and then flattened before true organic pull emerged.
+- **Conventional**: You can use paid ads to brute-force growth while you figure out the product later. → **Their view**: Scaling paid before word of mouth is dangerous and usually masks a broken growth engine — because it creates a leaky bucket with rising CAC.
+- **Conventional**: Influencer marketing works best through big creators with massive audiences. → **Their view**: Micro-influencers in trusted niches are usually far more effective — because credibility and audience fit matter more than raw reach.
+- **Conventional**: Brand marketing is separate from performance marketing. → **Their view**: Brand marketing is performance marketing — because strong brand expands creative options and improves channel effectiveness.
+- **Conventional**: Early startups should mostly hire specialists and add managers as they scale. → **Their view**: Generalists and player-coaches are often more valuable than narrow specialists and pure managers — because lean teams need breadth and close execution.
+- **Conventional**: GPT wrapper companies are thin, fragile businesses. → **Their view**: Durable AI applications can be built on models if they go deep on a workflow and solve the full job to be done — because Gamma orchestrates many models across the product experience.
 
 ## Notable Quotes
-- “We are going to do everything we possibly can to make the first 30 seconds of the product feel magical.”
-- “You almost have to think about them being selfish, vain, and lazy.”
-- “If I can learn growth, anybody can learn growth.”
+> “We are going to do everything we possibly can to make the first 30 seconds of the product feel magical.”
+
+> “You almost have to think about them being selfish, vain, and lazy.”
+
+> “If I can learn growth, anybody can learn growth.”

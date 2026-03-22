@@ -3,9 +3,9 @@
 **Growth advisor; former Head of Growth at GitLab and Acorns; instructor at Reforge** | **Reforge, GitLab** | Expertise: product-led growth, growth strategy, activation, B2B SaaS
 
 ## Bio
-Hila Qu is a growth leader known for building and advising on product-led growth systems in B2B SaaS. She has led growth at companies like GitLab and Acorns and now teaches and advises on how to turn growth theory into practical operating models, metrics, and team design.
+Hila Qu is a growth leader known for building and advising on product-led growth systems in B2B SaaS. She has led growth at GitLab and Acorns and now teaches and advises on how to turn PLG from a buzzword into an operating model.
 
-Her perspective matters because she treats PLG as an end-to-end system, not a tactic. She is especially useful when a company wants to combine self-serve product growth with sales, or when it needs to find the highest-leverage bottleneck in a complex funnel.
+Her perspective matters because she focuses on the full system: entry points, activation, checkout, lifecycle, data, and team design. She is especially useful when a company wants to combine self-serve growth with sales without creating confusion or wasted effort.
 
 ## Signature Frameworks
 
@@ -80,29 +80,27 @@ Her perspective matters because she treats PLG as an end-to-end system, not a ta
 - **Example**: Hila recommended a core growth squad first, then eventually a structure with a head of growth product, head of growth marketing, and head of product-led sales.
 
 ## Core Advice
-- **When you face pressure to “do PLG” because it’s trendy**: do a strategic fit check first — because PLG only works when the product has low enough entry friction, short enough time to value, and a broad enough end-user market.
-- **When your website is mostly “book a demo”**: create a real self-serve entry point — because PLG cannot start without a low-barrier way for users to try the product.
-- **When you’re unsure where to start**: run a full-funnel audit from landing page to checkout — because it reveals the highest-leverage bottleneck instead of spreading effort thin.
-- **When you have multiple possible growth bets**: start with activation in most B2B products — because early value realization usually drives downstream retention and conversion.
-- **When onboarding feels confusing or empty**: use templates, sample data, and sample actions — because users learn faster by doing than by reading.
-- **When activation is vague**: identify an aha moment with data, then validate it experimentally — because a good activation metric gives the team a concrete goalpost.
-- **When checkout conversion is weak**: remove every unnecessary field and friction point — because users at checkout are already high intent, so small fixes can have outsized impact.
-- **When combining PLG with enterprise sales**: build a PQL/PQA system using usage plus fit — because sales should focus on accounts with both intent and revenue potential.
-- **When your data foundation is weak**: audit instrumentation and create a data dictionary before buying more tools — because bad data makes growth work directionless.
-- **When hiring your first PLG team**: start with a growth PM plus a strong analyst, supported by engineering and design — because PLG requires both insight and execution capacity.
-- **When considering external vs. internal growth leadership**: look internally first for analytical operators — because product and company context often matter as much as prior growth experience.
-- **When retention is hard in a low-frequency product**: emphasize higher-frequency use cases — because habit is easier to build around recurring workflows.
+- **When you face pressure to “do PLG” because it’s trendy**: Do a strategic fit check first — because PLG only works when the product has low enough entry friction, short enough time to value, and a broad enough end-user market.
+- **When you face a sales-led website whose main CTA is “book a demo”**: Do the work to create a real self-serve entry point — because PLG cannot start without a low-barrier vehicle.
+- **When you face uncertainty about where to start in PLG**: Do a full-funnel audit from landing page to checkout — because it reveals the highest-leverage bottleneck.
+- **When you face multiple possible PLG investments**: Do activation first in most B2B products — because early value realization usually unlocks retention and downstream conversion.
+- **When you face poor onboarding and user confusion after signup**: Do onboarding that helps users act immediately — because templates, sample data, and guided flows reduce time to value.
+- **When you face ambiguity about what activation means for your product**: Do a structured aha-moment analysis — because a good activation metric prevents teams from optimizing vanity actions.
+- **When you face low self-serve conversion despite strong product interest**: Do a checkout optimization pass — because small friction points near purchase can cause major revenue loss.
+- **When you face a desire to blend PLG with enterprise sales**: Do a PQL/PQA system that combines usage and fit — because sales should focus on accounts with both intent and revenue potential.
+- **When you face weak data foundations in a B2B company**: Do a product instrumentation audit and create a data dictionary — because analytics without clean data leads to misleading decisions.
+- **When you face the need to hire your first PLG team**: Do an initial growth squad centered on a growth PM and strong analyst — because PLG requires both insight and execution capacity.
+- **When you face uncertainty about whether to hire externally for growth leadership**: Do an internal search first for analytical operators — because they often know the product and org best.
+- **When you face retention challenges in a low-frequency product**: Do work to add or emphasize higher-frequency use cases — because habit is easier when the product fits recurring workflows.
 
 ## Contrarian Takes
-- **Conventional**: PLG and sales-led growth are opposing models, so companies should choose one. → **Their view**: Most B2B companies will eventually need both PLG and sales — because PLG expands reach while sales captures larger accounts faster.
-- **Conventional**: Launching a free trial or free tier means you’ve added PLG. → **Their view**: A free product is only the starting point — because PLG is a full motion involving activation, checkout, lifecycle messaging, data, and org design.
-- **Conventional**: PLG is mainly about giving users free access. → **Their view**: PLG is fundamentally DLG: data-led growth — because behavioral data is what reveals conversion, retention, and expansion drivers.
-- **Conventional**: Retention should be the first place to focus. → **Their view**: Activation is usually the better starting point in B2B PLG — because getting users to value quickly often improves retention naturally.
-- **Conventional**: The first key growth hire should always be a growth PM. → **Their view**: A data analyst can be equally critical — because experimentation without insight is directionless.
+- **Conventional**: PLG and sales-led growth are opposing models, so companies should choose one. → **Their view**: Most B2B companies will eventually need both PLG and sales — because PLG expands reach while sales captures larger accounts.
+- **Conventional**: Launching a free trial or free tier means you’ve added PLG. → **Their view**: A free product is only the starting point — because PLG also requires activation, checkout, lifecycle, data, and org design.
+- **Conventional**: PLG is mainly about giving users free access to the product. → **Their view**: PLG is fundamentally DLG: data-led growth — because the real value exchange is behavioral data that reveals what drives conversion and retention.
+- **Conventional**: Retention should be the first place to focus because keeping users is most important. → **Their view**: For most B2B PLG efforts, activation is the better starting point — because users retain better once they reach value quickly.
+- **Conventional**: The first key hire for growth is always a growth PM. → **Their view**: In some cases, the first or equally critical hire should be a data analyst — because experimentation without insight is directionless.
 
 ## Notable Quotes
-> “PLG I always say is actually fundamentally DLG, data led growth.”
-
-> “If you don't have a foundation of data and understanding of how to analyze those data, you are giving a way of free product for nothing.”
-
-> “I think doing growth is always about finding leverage.”
+- “PLG I always say is actually fundamentally DLG, data led growth.”
+- “If you don't have a foundation of data and understanding of how to analyze those data, you are giving a way of free product for nothing.”
+- “I think doing growth is always about finding leverage.”

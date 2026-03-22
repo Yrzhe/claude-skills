@@ -3,9 +3,9 @@
 **Head of Product for Podcasting** | **Spotify** | Expertise: podcast product, creator tools, product leadership, consumer growth
 
 ## Bio
-Maya Prohovnik leads product for Spotify’s podcasting business and was employee #1 at Anchor, the startup Spotify acquired and turned into the core of its podcast hosting platform. Her perspective matters because she has built creator products from the ground up, lived through acquisition and scale, and consistently combines deep user empathy with pragmatic growth thinking.
+Maya Prohovnik leads product for Spotify’s podcasting business and was employee #1 at Anchor, the startup Spotify acquired and turned into the core of its podcast hosting platform. Her perspective matters because she has built creator products from the ground up, with a rare mix of deep user empathy, startup speed, and willingness to challenge “best practices” when they get in the way of growth.
 
-She is especially strong on the messy parts of product: understanding creators by becoming one, using unscalable hacks to unlock adoption, and knowing when to kill a product that users like if it cannot serve the larger mission.
+She is especially valuable when you need to understand how to build for emotionally invested users, how to preserve startup DNA inside a large company, and how to make strategic product calls when data is incomplete.
 
 ## Signature Frameworks
 
@@ -106,12 +106,12 @@ She is especially strong on the messy parts of product: understanding creators b
 - **When you’re hiring**: Ask candidates what podcast they would make about anything — because the answer reveals passion, curiosity, and whether they can generate ideas from their own interests.
 
 ## Contrarian Takes
-- **Conventional**: If users love a product and retention is strong, keep iterating on it. → **Their view**: Kill and rebuild it if it cannot reach the larger mission — because a product can be strategically too small even when engagement is good.
-- **Conventional**: Product decisions should be driven primarily by data. → **Their view**: Gut feel is also a valid form of data — because experienced intuition and context often reveal what raw metrics cannot.
-- **Conventional**: You should avoid unscalable manual work in product. → **Their view**: Do unscalable things when needed — because early-stage products often need hacks to remove friction before a scalable system exists.
-- **Conventional**: After an acquisition, the startup should quickly integrate into the parent company. → **Their view**: Stay separate long enough to preserve speed, but not so long that you lose identity — because integration is a trade-off between energy and belonging.
-- **Conventional**: Public speaking is mostly a natural talent. → **Their view**: It is a trainable skill — because rehearsal, reframing, and topic conviction matter more than innate charisma.
-- **Conventional**: A good manager should focus on fixing underperformance directly. → **Their view**: Underperformance is often role mismatch — because helping someone find the right fit is more humane and often more effective.
+- **Conventional**: If users love a product and retention is strong, keep iterating on it. → **Their view**: Kill and rebuild it if it is not on track for the larger mission — because a product can be good and still be strategically too small.
+- **Conventional**: Product decisions should be driven primarily by data. → **Their view**: Gut feel is also a valid form of data — because experienced intuition and user context reveal what metrics miss.
+- **Conventional**: You should avoid unscalable manual work in product. → **Their view**: Do unscalable things when they create a magical experience — because early growth often requires hacks before systems exist.
+- **Conventional**: After an acquisition, the startup should quickly integrate into the parent company. → **Their view**: Stay separate long enough to preserve speed, but not so long that the team becomes isolated — because integration is a trade-off.
+- **Conventional**: Public speaking is mostly a natural talent. → **Their view**: It is a skill built through rehearsal and mindset — because preparation matters more than charisma.
+- **Conventional**: A good manager should focus on fixing underperformance directly. → **Their view**: Underperformance is often a role-fit issue — because helping someone find the right fit is more humane and often more effective.
 
 ## Notable Quotes
 - “We were obsessed with reducing friction, this was our constant battle.”

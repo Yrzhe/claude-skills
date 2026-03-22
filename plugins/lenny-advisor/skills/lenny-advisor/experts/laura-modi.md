@@ -3,9 +3,9 @@
 **Founder and CEO** | **Bobbie** | Expertise: consumer brands, D2C growth, brand strategy, team leadership
 
 ## Bio
-Laura Modi is the founder and CEO of Bobbie, a female-founded infant formula company modernizing a highly regulated, legacy category. She brings a rare mix of marketplace thinking from Airbnb and brand-building from consumer startups, with a strong point of view on supply, trust, storytelling, and operating through crisis.
+Laura Modi is the founder and CEO of Bobbie, a female-founded infant formula company modernizing a highly regulated, legacy category. Before Bobbie, she spent five and a half years at Airbnb leading customer service, European office consolidation, and global host community/host operations, which shaped her belief that supply is the product, culture is a growth lever, and storytelling matters as much as execution.
 
-Her perspective matters because she has built in categories where credibility is everything and mistakes are expensive. If you need to grow a consumer business without relying on the old paid-growth playbook, Laura is especially worth listening to.
+Her perspective is especially valuable for founders building trust-heavy consumer businesses, marketplace-like systems, or brands in regulated categories. She combines operational rigor with a strong point of view on brand, community, and how to lead teams through uncertainty.
 
 ## Signature Frameworks
 
@@ -68,26 +68,26 @@ Her perspective matters because she has built in categories where credibility is
 - **Example**: Bobbie intentionally schedules personal and professional check-ins so people across functions know each other beyond work.
 
 ## Core Advice
-- **When growth could outstrip supply**: Pause acquisition and protect existing customers first — because running out of product destroys trust, while reliable service creates long-term loyalty.
-- **When the team is optimizing internal efficiency over customer value**: Re-center the company on the user or supply side — because growth follows when you serve the people who make the product possible.
-- **When building a brand in a crowded category**: Anchor messaging in the customer’s real pain points — because relevance beats generic brand noise.
-- **When paid acquisition starts becoming the default lever**: Invest in content, SEO, and community first — because paid can become addictive and expensive, while credibility compounds.
-- **When the team needs motivation through ambiguity**: Use storytelling to connect work to mission — because people stay energized when they feel impact.
-- **When hiring for a startup or new category**: Hire curious generalists who move fast — because adaptability matters more than narrow specialization.
-- **When candidates are overly protective of boundaries**: Treat “I don’t do that” as a red flag — because Laura values optimistic doers over scope defenders.
-- **When launching something regulated or disruptive**: Expect pushback and plan for patient iteration — because institutions resist change and credibility takes time.
-- **When remote culture feels fragile**: Create structured rituals for personal connection — because trust and energy don’t happen by accident.
-- **When you’re trying to do everything as a founder-parent**: Build infrastructure like calendars, childcare support, and household operating meetings — because systematizing chaos is the only sustainable path.
-- **When you’re tempted to over-explain to skeptics**: Don’t spend energy converting people who will never agree — because focus should stay on the customers who need the product.
-- **When the team is stuck in meeting culture**: Move decisions into async workflows with short decision windows — because speed comes from reducing drag.
+- **When you face a growth spike that could outstrip supply**: pause acquisition and protect existing customers first — because running out of product destroys trust, and serving current customers reliably creates stronger long-term loyalty.
+- **When your team is drifting toward optimizing internal efficiency over customer value**: re-center the company on the user or supply side and build tools for them, not just for internal convenience — because growth follows when the company serves the people who make the product possible.
+- **When you are building a brand in a crowded category**: anchor messaging in the customer’s real pain points and top-of-mind concerns — because relevance beats noise.
+- **When paid acquisition starts to feel like the default growth lever**: limit paid spend and invest in content, SEO, and community first — because paid marketing can become addictive and expensive, while credibility compounds.
+- **When you need to motivate a team through ambiguity or setbacks**: use storytelling to connect the work to a larger mission and impact — because people stay energized when they feel they are changing lives.
+- **When you are hiring for a startup or new category**: hire curious generalists who move fast and are comfortable doing work outside a narrow lane — because adaptability matters more than rigid specialization.
+- **When candidates are overly protective of their job boundaries**: treat “I don’t do that” as a red flag — because Laura wants optimistic doers, not scope defenders.
+- **When you are launching something highly regulated or disruptive**: expect pushback and plan for patient iteration with regulators — because credibility-building is part of the job.
+- **When your company is remote and culture feels harder to maintain**: create structured rituals for personal connection and cross-functional familiarity — because trust and energy need deliberate maintenance.
+- **When you are trying to do everything as a founder-parent**: build infrastructure: calendars, childcare support, and a weekly household operating meeting — because systematizing chaos is the only sustainable path.
+- **When you are tempted to over-explain your product against a deeply held belief**: don’t spend energy trying to convert people who are never going to agree — because brands should focus on the people who need the product.
+- **When your team is stuck in meeting culture**: move decisions into async workflows with short, focused decision windows — because speed comes from reducing drag.
 
 ## Contrarian Takes
-- **Conventional**: A startup should always maximize growth and never turn off acquisition. → **Their view**: Sometimes the right move is to shut off growth entirely to protect existing customers and preserve trust — because supply and quality failures can permanently damage the brand.
+- **Conventional**: A startup should always maximize growth and never turn off acquisition. → **Their view**: Sometimes the right move is to shut off growth entirely to protect existing customers and preserve trust — because Bobbie paused growth for six months during the formula shortage.
 - **Conventional**: D2C is dead. → **Their view**: D2C is not dead; the old playbook is dead — because over-reliance on paid marketing, not the model itself, is the problem.
-- **Conventional**: Brands should attack competitors or alternatives directly. → **Their view**: Brands should explain why they exist and what they do well, not denigrate alternatives — because credibility matters more than combat.
-- **Conventional**: Specialists with deep domain experience are always the best hires. → **Their view**: Naive generalists can outperform experts in startups — because they bring white space, creativity, and less baggage.
-- **Conventional**: The best growth strategy is to spend more on performance marketing. → **Their view**: Performance marketing can become a dangerous drug — because it can mask weak product and brand fundamentals.
-- **Conventional**: You should convince everyone your product is the best choice. → **Their view**: Focus on the customers already aligned with your product — because energy is wasted fighting every worldview.
+- **Conventional**: Brands should directly attack competitors or alternative behaviors to win market share. → **Their view**: Brands should not point fingers or claim another option is worse — because a brand’s job is to explain why it exists and what it does well.
+- **Conventional**: Specialists with deep domain experience are always the best hires. → **Their view**: In many startup contexts, naive generalists can outperform experts — because naivety creates white space and willingness to challenge the status quo.
+- **Conventional**: The best growth strategy is to spend more on performance marketing. → **Their view**: Performance marketing can become a dangerous drug that masks weak product and brand fundamentals — because sustainable growth comes from product, brand, content, and community.
+- **Conventional**: You should convince everyone that your product is the best choice. → **Their view**: It is often better to focus on the customers already aligned with your product and let others opt out — because energy is wasted fighting every worldview.
 
 ## Notable Quotes
 > “Airbnb is nothing without its hosts, nothing. If anything, Airbnb's product was its hosts.”

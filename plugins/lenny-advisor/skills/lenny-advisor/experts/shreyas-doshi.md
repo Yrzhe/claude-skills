@@ -3,9 +3,9 @@
 **Former PM leader** | **Stripe, Twitter, Google, Yahoo** | Expertise: product-management, leadership, strategy, go-to-market
 
 ## Bio
-Shreyas Doshi is a product leader who has worked as both an engineer and PM at Yahoo, Google, Twitter, and Stripe. His perspective matters because he combines deep hands-on product experience with unusually crisp, contrarian thinking about strategy, prioritization, team dynamics, and leadership.
+Shreyas Doshi is a product leader who has worked as both an engineer and PM at Yahoo, Google, Twitter, and Stripe. His perspective matters because it is grounded in high-stakes, real-world product work across companies with very different scales and operating models.
 
-He is especially useful when teams are stuck in “busy but not effective” mode, when product decisions are being made too casually, or when leaders need a sharper way to diagnose whether a problem is really about execution, strategy, culture, or people.
+He is known for crisp, contrarian frameworks on product thinking, prioritization, team dynamics, and leadership. If you want a viewpoint that cuts through PM jargon and focuses on leverage, judgment, and decision quality, he is a strong source.
 
 ## Signature Frameworks
 
@@ -111,32 +111,28 @@ He is especially useful when teams are stuck in “busy but not effective” mod
 - **When you are debating roadmap details like headcount splits or minor priority differences**: Stop optimizing false precision and focus on the few strategic choices that actually matter — because those numbers often change anyway.
 - **When a feature request feels urgent because stakeholders want it**: Pause and evaluate customer motivation, differentiation, and distribution before saying yes — because many features get approved without enough strategic thought and later create more work than value.
 - **When someone calls a decision a “two-way door”**: Challenge that framing and assume it may be a one-way door for your team — because launch, support, and roadmap commitments make reversal much harder than the metaphor suggests.
-- **When you are tempted to ship because the engineer is available**: Do not let staffing convenience drive product decisions — because availability-based decisions often produce features that should not have been built.
+- **When you are tempted to ship because the engineer is available**: Do not let staffing convenience drive product decisions — because availability-based decisions often produce features that should not have been built in the first place.
 - **When a launched feature has weak adoption but needs to look successful in a QBR**: Treat low adoption as a signal to revisit the original decision, not as a storytelling problem — because defending a weak feature compounds the mistake.
-- **When you feel chronically busy despite being organized**: Look at scope growth as the likely root cause, not just your productivity system — because productivity tricks only go so far.
-- **When your job feels frustrating even though you like the mission**: Check whether you are spending too much time in a work level that is not your natural strength — because misalignment between strengths and daily work creates persistent frustration.
-- **When seniority pushes you toward optics-heavy work**: Consider moving to a role or company stage that lets you spend more time at your preferred operating level — because career satisfaction improves when work matches your core strengths.
+- **When you feel chronically busy despite being organized**: Look at scope growth as the likely root cause, not just your productivity system — because productivity tricks help only up to a point.
+- **When your job feels frustrating even though you like the mission**: Check whether you are spending too much time in a work level that is not your natural strength — because misalignment between your superpowers and daily work creates persistent frustration.
+- **When seniority pushes you toward optics-heavy work**: Consider moving to a role or company stage that lets you spend more time at your preferred operating level — because career satisfaction improves when work matches core strengths.
 - **When evaluating ideas, frameworks, or advice**: Strip away authority bias, social proof, and catchy wording before deciding what to believe — because taste improves when you judge substance independently.
 - **When you think you are a good listener because you can paraphrase**: Practice deeper listening by focusing on what the other person truly means, not just what they said — because real listening is a higher-order leadership skill.
-- **When you face an important launch or project**: Run a pre-mortem before execution starts — because it surfaces risks early and often prevents a painful post-mortem later.
+- **When you face an important launch or project**: Run a pre-mortem before execution starts — because it surfaces risks early and can prevent a painful post-mortem later.
 
 ## Contrarian Takes
 - **Conventional**: Productivity tools and time-management tricks are the main solution to being too busy. → **Their view**: Scope growth eventually overwhelms productivity hacks; the real fix is better strategy and better decisions — because even highly organized leaders get overloaded when scope expands.
 - **Conventional**: Annual planning is a necessary, detailed, multi-week ritual. → **Their view**: If you have a real product strategy, planning should be fast and lightweight — because most planning ceremony exists due to lack of alignment.
-- **Conventional**: Many product decisions are “two-way doors” and should be made quickly. → **Their view**: For PM leaders, most of these are effectively one-way doors because they create downstream commitments and debt — because reversal is much harder than the metaphor implies.
-- **Conventional**: Execution matters more than strategy, especially in strong companies. → **Their view**: Strategy is often the missing ingredient, even at successful companies like Twitter — because strong assets still fail without coherent direction.
-- **Conventional**: Taste is mostly about product aesthetics and polished output. → **Their view**: Taste also includes what beliefs, frameworks, and sources you choose to internalize — because internal filters shape judgment.
+- **Conventional**: Many product decisions are “two-way doors” and should be made quickly. → **Their view**: For PM leaders, most of these are effectively one-way doors because they create downstream commitments and debt — because reversal is much harder in practice.
+- **Conventional**: Execution matters more than strategy, especially in strong companies. → **Their view**: Strategy is often the missing ingredient, even at successful companies like Twitter — because strong assets still fail without a compelling strategy.
+- **Conventional**: Taste is mostly about product aesthetics and polished output. → **Their view**: Taste also includes what beliefs, frameworks, and sources you choose to internalize as a leader — because internal filters shape judgment.
 - **Conventional**: Senior leaders should become tougher critics and say “everything is crap” more often. → **Their view**: Being dismissive is not the same as having taste — because real taste is recognizing quality before the crowd does.
-- **Conventional**: Prioritization should focus on the highest ROI work. → **Their view**: In high-leverage roles, you should focus on minimizing opportunity cost instead — because merely good work is abundant.
+- **Conventional**: Prioritization should focus on the highest ROI work. → **Their view**: In high-leverage roles, you should focus on minimizing opportunity cost instead — because good-enough work is abundant.
 - **Conventional**: Execution problems should be solved with more process, more meetings, and tighter coordination. → **Their view**: Most execution problems are actually strategy, culture, or interpersonal problems — because process fixes only create temporary relief.
 
 ## Notable Quotes
-> “Why am I so busy?”
-
-> “Plans are useless, but planning is everything.”
-
-> “Thinking is cheap, so you should do more thinking, not less.”
-
-> “if you do a pre-mortem right, you will not have to do an ugly post-mortem.”
-
-> “The most execution problems are actually strategy problems or culture problems.”
+- “Why am I so busy?”
+- “Plans are useless, but planning is everything.”
+- “Thinking is cheap, so you should do more thinking, not less.”
+- “if you do a pre-mortem right, you will not have to do an ugly post-mortem.”
+- “The most execution problems are actually strategy problems or culture problems.”

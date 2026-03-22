@@ -3,9 +3,9 @@
 **Designer, executive, advisor, and former design leader** | **Independent; formerly Apple, Pinterest, Yahoo, and ThoughtSpot** | Expertise: design, leadership, product strategy, design systems
 
 ## Bio
-Bob Baxley is a veteran product design leader with more than three decades of experience shaping products at Apple, Yahoo, Pinterest, and ThoughtSpot. He is especially known for helping build iconic experiences like the Apple Online Store, the Apple App Store, and Yahoo Answers.
+Bob Baxley is a veteran product design leader with more than three decades of experience shaping products at Apple, Yahoo, Pinterest, and ThoughtSpot. He helped design iconic experiences like the Apple Online Store, the Apple App Store, and Yahoo Answers, and he brings a rare perspective on design as both a craft and an organizational force.
 
-His perspective matters because he treats design as more than visual craft: for him, it is a strategic, organizational, and even moral discipline. He is especially valuable when teams need help aligning vision, product decisions, and execution into one coherent system.
+What makes his viewpoint valuable is that he does not treat design as decoration. He sees it as strategic thinking, cultural alignment, and a moral responsibility to make software better for the people who live inside it every day.
 
 ## Signature Frameworks
 
@@ -73,28 +73,28 @@ His perspective matters because he treats design as more than visual craft: for 
 - **Example**: Baxley contrasts companies like Apple, Airbnb, Patagonia, and Disney, where everything ladders together into a coherent whole, with companies that feel like scattered bricks in a backyard.
 
 ## Core Advice
-- **When you transition from one strong company culture to another**: Preserve the values from your old company, but consciously drop the behaviors and recalibrate to the new culture — because companies hire you for your values, not your exact habits.
-- **When evaluating a new company opportunity**: Ask founders or CEOs for their story of why they believe in your function, especially design — because design-led cultures are usually rooted in founding DNA.
-- **When repeated product debates never end**: Convert recurring tradeoffs into a small set of explicit tenets — because tenets reduce ambiguity and speed decisions.
-- **When a new initiative has many stakeholders**: Keep the core ideation group small at first, then scale execution after the vision is clear — because small groups invent better.
-- **When design and engineering are misaligned**: Involve engineering early through ambiguity-tolerant “creative technologists” — because engineers are makers, not order takers.
-- **When pressure to prototype immediately is high**: Stay conceptual longer and delay high-fidelity visuals — because early visuals anchor teams on the first obvious solution.
-- **When a design process feels slow or inefficient**: Improve the brief and remove ambiguity upstream — because design is a problem-solving process, not a guessing game.
-- **When you want to know if the experience is actually good**: Watch real people use software in the wild — because metrics are indirect and can’t replace observation.
-- **When the team wants to optimize primarily for metrics**: Treat metrics as feedback, not the creative compass — because the product should start with what is right for the user.
-- **When building for broad audiences**: Start simple and require users to opt into complexity — because mainstream users need low friction, while power users still need depth.
-- **When a stakeholder prescribes a UI fix**: Reframe around the underlying problem — because the first visible fix is often not the best solution.
-- **When a role or company isn’t working out**: Treat it as a normal executive journey, not career-ending failure — because culture mismatch and role drift are common.
+- **When you move from one strong company culture to another**: preserve the values from your old company, but consciously drop the behaviors and recalibrate to the new culture — because companies hire you for your values, not your exact operating style.
+- **When evaluating a new company opportunity**: ask founders or CEOs for their story of why they believe in your function, especially design — because design-led cultures usually come from founding DNA, not later grafting.
+- **When product or design debates keep repeating**: convert those tradeoffs into a small set of explicit tenets — because tenets reduce ambiguity and speed up decisions.
+- **When launching a new initiative with many stakeholders**: keep the core ideation group small at first — because small groups are better at inventing coherent new ideas.
+- **When design and engineering are misaligned**: involve a few ambiguity-tolerant “creative technologists” from engineering early — because engineers are makers, not order takers.
+- **When pressure builds to prototype immediately**: stay conceptual longer and delay high-fidelity visuals — because early visuals anchor teams on the first obvious solution.
+- **When a design process feels slow**: improve the brief and remove ambiguity upstream — because design is a problem-solving process and clarity reduces wasted exploration.
+- **When you want to know if the experience is actually good**: watch real people use software in the wild — because metrics are indirect and observation builds better intuition.
+- **When metrics start driving product decisions too strongly**: treat metrics as feedback, not the creative compass — because good products start with what is right for users.
+- **When building for broad audiences**: start simple and require users to opt into complexity — because it lowers friction without sacrificing depth.
+- **When a stakeholder prescribes a UI fix**: reframe around the underlying problem — because the first visible fix is often not the best solution.
+- **When a role or company fit breaks down**: treat it as a normal executive transition, not a personal failure — because mismatches and role growth are part of the journey.
 
 ## Contrarian Takes
-- **Conventional**: Design is mainly about making products beautiful, intuitive, and polished. → **Their view**: Design is fundamentally a way of thinking: imagining a future state, aligning philosophy and strategy, and making that thinking visible. — because visual polish is only the tip of the iceberg.
-- **Conventional**: A company can become design-led later by hiring strong designers. → **Their view**: Design usually has to be in the founding DNA. — because culture either supports design deeply or it doesn’t.
-- **Conventional**: Design should report to product or stay separate from engineering. → **Their view**: Design can work well as phase zero of engineering and may even report to engineering. — because this can improve feasibility and shared ownership.
-- **Conventional**: The fastest path is to prototype early in high fidelity. → **Their view**: Wait as long as possible to draw a realistic picture. — because realism creates anchoring bias.
-- **Conventional**: Design needs a clean metric like other functions. → **Their view**: Design often cannot be reduced to one reliable number. — because its impact is broader and harder to isolate.
-- **Conventional**: Bigger teams are better for big initiatives. → **Their view**: Small teams invent better. — because coherence and originality are easier in small groups.
-- **Conventional**: Metrics should drive product decisions. → **Their view**: Metrics should be consequences and feedback, not the driver. — because user value should lead.
-- **Conventional**: Research should focus on your own product. → **Their view**: Watching adjacent software can teach more. — because it reveals broader human behavior without product bias.
+- **Conventional**: Design is mainly about making products beautiful, intuitive, and polished. → **Their view**: Design is fundamentally a way of thinking: imagining a future state, aligning philosophy and strategy, and making that thinking visible. — because visual polish is only the surface of coherent product thinking.
+- **Conventional**: A company can become design-led later by hiring strong designers. → **Their view**: Design usually has to be in the founding DNA. — because without deep leadership belief, design lacks the cultural support to shape outcomes.
+- **Conventional**: Design should report to product or stay separate from engineering. → **Their view**: Design can work well as phase zero of engineering and may even report to engineering. — because this can improve feasibility, implementation quality, and shared ownership.
+- **Conventional**: The fastest path is high-fidelity prototyping early. → **Their view**: Wait as long as possible to draw a realistic picture. — because early visuals create anchoring bias and suppress original ideas.
+- **Conventional**: Design needs a clean metric like other functions. → **Their view**: Design often cannot be reduced to a single reliable metric. — because its contribution is broader, more systemic, and harder to isolate.
+- **Conventional**: Bigger teams and more resources improve innovation. → **Their view**: Small teams invent better. — because coherence and originality are easier to maintain in compact groups.
+- **Conventional**: Metrics should drive product decisions. → **Their view**: Metrics should be consequences and feedback, not the driver. — because user-centered judgment has to come first.
+- **Conventional**: Research should focus on your own product. → **Their view**: Watching adjacent software can teach more about human behavior. — because it reduces defensiveness and reveals broader interaction patterns.
 
 ## Notable Quotes
 > “Design is trying to imagine the future you want to live in and then take the steps to make it real.”

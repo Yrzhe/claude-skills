@@ -3,9 +3,9 @@
 **Chief Product Officer** | **Intercom** | Expertise: AI strategy, product design, product leadership, user research
 
 ## Bio
-Paul Adams is the Chief Product Officer at Intercom, where he has helped steer the company through a major AI-first transformation. He brings experience from Facebook, Google, and Dyson, combining product craft with a pragmatic, research-driven view of strategy, pricing, and org design.
+Paul Adams is the Chief Product Officer at Intercom, where he has helped lead the company’s shift into AI-first products, including the creation of Fin. He has also held product and design roles at Facebook, Google, and Dyson, giving him a rare mix of consumer-scale product thinking, design rigor, and operational pragmatism.
 
-What makes his perspective valuable is that he treats AI not as a feature trend, but as a force that can rewrite the core premise of a product. He is especially useful when a team needs to rethink strategy from first principles, balance differentiation with table stakes, or make sense of how customer behavior is changing.
+His perspective matters because he doesn’t treat AI as a feature trend; he treats it as a platform shift that can force a company to rethink product, pricing, team structure, and even what business it is in. He is especially valuable when a team needs a grounded, research-driven view of how to adapt to major technological change.
 
 ## Signature Frameworks
 
@@ -14,7 +14,7 @@ What makes his perspective valuable is that he treats AI not as a feature trend,
 - **Steps**:
   1. Identify the event or change that fundamentally alters the context.
   2. Treat everything before that point as a different era with different assumptions.
-  3. Revisit strategy, roadmap, pricing, or product design from first principles.
+  3. Revisit strategy, roadmap, pricing, and product design from first principles.
   4. Talk to customers again to validate what changed and what still matters.
 - **Example**: ChatGPT’s launch was a “before/after” moment for Intercom, prompting a near-total rewrite of strategy and the creation of Fin.
 
@@ -74,25 +74,25 @@ What makes his perspective valuable is that he treats AI not as a feature trend,
 
 ## Core Advice
 - **When you face a major technology shift like AI**: Go back to basics: define your product’s core premise, then test whether AI can do that job — because strategy should start from the customer problem, not the technology.
-- **When your team is too busy to explore AI deeply**: Block dedicated time to read, experiment, and try tools yourself — because the shift will pass you by if you don’t make time.
+- **When your team is too busy to explore AI deeply**: Block dedicated time to read, experiment, and try tools yourself — because if you don’t make time, the shift will pass you by.
 - **When you’re deciding whether to adopt AI in a product**: Map each core workflow against what AI can already do and what it will likely do soon — because many workflows are already in AI’s path.
 - **When your product category is clearly in AI’s path**: Treat AI as a strategic reset, not a bolt-on feature — because the product itself may need to be rethought.
 - **When you’re building in uncertainty**: Ship early and often so you can learn quickly — because fast shipping creates feedback loops.
-- **When you’re tempted to add more pricing complexity**: Keep pricing simple and resist extra tiers, add-ons, and special cases — because complexity creates confusion and long-term trust problems.
-- **When you’re prioritizing roadmap work**: Separate differentiation from table stakes and consciously balance both — because winning products need both uniqueness and adoptability.
+- **When you’re tempted to add more pricing complexity**: Keep pricing simple and resist extra tiers, add-ons, and special cases — because complexity creates confusion and trust problems.
+- **When you’re prioritizing roadmap work**: Separate differentiation from table stakes and consciously balance both — because winning products need uniqueness and adoptability.
 - **When your team has overcorrected in one direction**: Deliberately swing the pendulum back, but watch for overcorrection — because the goal is a durable middle.
-- **When a product is strong but adoption is weak**: Check whether the story and positioning are clear, not just whether the product is good — because customers must quickly understand why it matters.
+- **When a product is strong but adoption is weak**: Check whether the story and positioning are clear, not just whether the product is good — because great products can still fail if customers don’t “get it.”
 - **When you’re trying to understand customer behavior**: Interview for urgency and energy, not just stated preferences — because real pain reveals better signals than polite opinions.
-- **When you’re building AI products with a small team**: Invest heavily in strong machine learning talent and build on top of foundation models — because differentiation comes from the product layer and specialized expertise.
-- **When you’re worried AI will simply eliminate jobs**: Assume roles will change more than disappear, and prepare for task redistribution — because oversight, judgment, and human interaction will remain important.
+- **When you’re building AI products with a small team**: Invest heavily in strong machine learning talent and build on top of foundation models — because differentiation comes from product-layer execution, not just model access.
+- **When you’re worried AI will simply eliminate jobs**: Assume roles will change more than disappear, and prepare for task redistribution — because oversight, judgment, and human interaction will still matter.
 
 ## Contrarian Takes
-- **Conventional**: AI is just another hype cycle like crypto, Web3, or the metaverse. → **Their view**: AI is a true platform shift, potentially bigger than mobile and possibly bigger than the internet — because it is a “meteor” that will reshape many products and workflows.
+- **Conventional**: AI is just another hype cycle like crypto, Web3, or the metaverse. → **Their view**: AI is a true platform shift, potentially bigger than mobile and possibly bigger than the internet — because it is a “meteor” that will reshape many products and industries.
 - **Conventional**: AI should be added incrementally as a feature layer or specialist team. → **Their view**: For many products, AI requires a foundational strategic reset — because if AI can do the core job, bolting it on is too late.
-- **Conventional**: The best way to innovate is to maximize differentiation. → **Their view**: Differentiation without table stakes is useless — because customers still need the basics to adopt and switch.
+- **Conventional**: The best way to innovate is to maximize differentiation. → **Their view**: Differentiation without table stakes is useless — because customers can’t adopt or switch without basics like permissions and reporting.
 - **Conventional**: Hiring people who have done it before is always better. → **Their view**: Over-hiring experienced specialists can import the wrong culture and reduce adaptability — because prior habits may not fit a fluid startup environment.
-- **Conventional**: Pricing should closely reflect value and can be optimized with multiple tiers and add-ons. → **Their view**: Pricing complexity is often a mistake; simplicity matters more than cleverness — because confusion hurts trust and adoption.
-- **Conventional**: Jobs to Be Done frameworks are mainly academic debates about methodology. → **Their view**: The exact framework variant matters far less than using a simple tool that helps you build a better product — because customers care about outcomes, not taxonomy.
+- **Conventional**: Pricing should closely reflect value and can be optimized with multiple tiers and add-ons. → **Their view**: Pricing complexity is often a mistake; simplicity matters more than cleverness — because customers need to understand what they’re paying for.
+- **Conventional**: Jobs to Be Done frameworks are mainly academic debates about methodology. → **Their view**: The exact variant matters far less than using a simple tool that helps you build a better product — because customers don’t care about framework purity.
 
 ## Notable Quotes
 - “This is a meteor coming towards you.”

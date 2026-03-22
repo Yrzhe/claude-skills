@@ -3,11 +3,13 @@
 **VP of Product** | **Etsy** | Expertise: marketplaces, product strategy, growth, experimentation
 
 ## Bio
-Tim Holley leads product at Etsy and has spent more than a decade helping scale one of the world’s most distinctive two-sided marketplaces. His perspective matters because he has had to balance buyer trust, seller success, and business growth at the same time—often under real operational constraints and with a strong emphasis on experimentation and cross-functional execution.
+Tim Holley leads product at Etsy and has spent more than a decade shaping one of the world’s most distinctive two-sided marketplaces. His perspective matters because he has operated through both growth and constraint: aligning a large organization around a single business metric, improving buyer confidence in unique inventory, and balancing seller success with marketplace trust.
+
+He also brings a pragmatic view of product leadership: use experimentation where it fits, but don’t let it become dogma. Tim is especially valuable when you need to understand how to scale a marketplace without losing its identity.
 
 ## Signature Frameworks
 
-### North-star KPI alignment for organizational change
+### North-star KPI Alignment for Organizational Change
 - **When to use**: When a company needs to shift from consensus-heavy or mission-only thinking to faster, more business-driven execution.
 - **Steps**:
   1. Choose a single north-star metric that reflects the business outcome you care about.
@@ -17,7 +19,7 @@ Tim Holley leads product at Etsy and has spent more than a decade helping scale 
   5. Pair the KPI with a consistent narrative so people understand both the goal and the why.
 - **Example**: At Etsy, GMS (gross merchandise sales) became the front-and-center KPI used to evaluate launches and prioritize work.
 
-### Marketplace balancing loop
+### Marketplace Balancing Loop
 - **When to use**: When managing a two-sided marketplace where supply and demand must stay in balance.
 - **Steps**:
   1. Continuously assess whether the marketplace is constrained by supply, demand, or both.
@@ -27,7 +29,7 @@ Tim Holley leads product at Etsy and has spent more than a decade helping scale 
   5. Keep the core job-to-be-done in view: enabling a transaction between buyer and seller.
 - **Example**: Etsy has over 100 million items overall, but may still see supply gaps in specific categories like wall decor or other subcategories.
 
-### Buyer confidence design for unique inventory
+### Buyer Confidence Design for Unique Inventory
 - **When to use**: When buyers are evaluating one-of-a-kind or hard-to-compare items from independent sellers.
 - **Steps**:
   1. Surface structured data that helps buyers compare options.
@@ -37,7 +39,7 @@ Tim Holley leads product at Etsy and has spent more than a decade helping scale 
   5. Make key details easy to scan, such as availability, size, shipping time, and price.
 - **Example**: Etsy uses buyer review photos and snippets like “only one left” to help shoppers feel confident buying from a seller they may not know.
 
-### Habit-loop retention design
+### Habit-Loop Retention Design
 - **When to use**: When you want to bring users back after an initial action rather than optimizing only for the first conversion.
 - **Steps**:
   1. Identify a meaningful user action that signals intent, such as favoriting an item.
@@ -47,7 +49,7 @@ Tim Holley leads product at Etsy and has spent more than a decade helping scale 
   5. Measure success over longer horizons like 30, 60, or 90 days.
 - **Example**: If a user favorites an Etsy item, Etsy can notify them when it goes on sale or is nearly sold out.
 
-### Weekly focus accountability ritual
+### Weekly Focus Accountability Ritual
 - **When to use**: When a team needs a lightweight way to stay aligned on priorities and learn from execution.
 - **Steps**:
   1. Have each person write down what they are focused on this week.
@@ -69,7 +71,7 @@ Tim Holley leads product at Etsy and has spent more than a decade helping scale 
 - **When a marketplace is growing but some sellers are reaching production limits**: Create a constrained form of scaling support, like production assistance, that preserves provenance and trust — because you can help sellers grow without allowing anonymous or untraceable manufacturing that breaks marketplace standards.
 - **When you need to retain users after a first purchase or intent signal**: Build loops that notify users when something they cared about changes — because favorites, updates feeds, and push notifications turn passive intent into a reason to return.
 - **When you are hiring product managers for a small, fast-changing organization**: Prioritize collaboration, decisiveness, and curiosity over a narrow domain-only mindset — because Etsy needs PMs who can work cross-functionally, make calls with imperfect data, and adapt to changing priorities.
-- **When a team is tempted to launch a new adjacent product or initiative**: Kill or pause it if it no longer supports the current business constraints and goals — because Etsy shut down Etsy Studio when it did not help near-term sales or marketing ROI once the company refocused on the core marketplace.
+- **When a team is tempted to launch a new adjacent product or initiative**: Kill or pause it if it no longer supports the current business constraints and goals — because Etsy shut down Etsy Studio because it did not help near-term sales or marketing ROI once the company refocused on the core marketplace.
 
 ## Contrarian Takes
 - **Conventional**: Marketplaces should always maximize breadth of supply to capture every possible transaction. → **Their view**: A marketplace should limit supply to items that fit its brand, policies, and quality bar, even if that means turning away volume — because too much irrelevant or off-brand supply weakens the marketplace’s identity and can reduce trust and relevance for buyers.
@@ -80,6 +82,8 @@ Tim Holley leads product at Etsy and has spent more than a decade helping scale 
 - **Conventional**: Referral programs are always a straightforward growth lever. → **Their view**: Referral programs can fail if you do not understand the long-term value of the referred user or the right incentive structure — because Etsy’s buyer referral program was not a major success, while seller referral credits worked better because they aligned with listing behavior and reduced friction.
 
 ## Notable Quotes
-- “When the CDC mandated face masks in early April 2020, that's when essentially we went to sleep one day with our typical April traffic, typical April sales, and then it was Black Friday overnight.”
-- “If you can't really articulate why this thing matters to driving GMS and the type of timeframe that we're talking about, be it a quarter or 12 months out, then that was just one huge standout.”
-- “The statement we have is keep commerce human.”
+> “When the CDC mandated face masks in early April 2020, that's when essentially we went to sleep one day with our typical April traffic, typical April sales, and then it was Black Friday overnight.”
+
+> “If you can't really articulate why this thing matters to driving GMS and the type of timeframe that we're talking about, be it a quarter or 12 months out, then that was just one huge standout.”
+
+> “The statement we have is keep commerce human.”

@@ -3,7 +3,9 @@
 **Chief Growth Officer** | **Shopify** | Expertise: growth, SEO, hiring, leadership
 
 ## Bio
-Luc Levesque is a seasoned growth leader who has led growth at Shopify, Meta/Facebook, and Tripadvisor, and has advised companies like Twitter, Pinterest, Patreon, Thumbtack, and Canva. His perspective matters because he combines operator experience with a strong point of view on what actually drives outcomes: impact, talent density, and the right growth channel for the business.
+Luc Levesque is a growth leader who has led growth at major consumer and platform companies including Shopify, Meta/Facebook, and Tripadvisor. He has also advised companies like Twitter, Pinterest, Patreon, Thumbtack, and Canva, giving him a rare cross-company view of what actually moves growth at scale.
+
+His perspective matters because he combines operator experience with a strong point of view on hiring, execution, and advisor leverage. He is especially useful when you need to identify high-leverage growth opportunities, build a strong growth team, or decide whether to lean on internal talent versus external help.
 
 ## Signature Frameworks
 
@@ -15,7 +17,7 @@ Luc Levesque is a seasoned growth leader who has led growth at Shopify, Meta/Fac
   3. Continuously check whether strategy and initiatives are moving the north star.
   4. Use performance reviews, executive reviews, and planning cycles to reinforce impact.
   5. Adjust or stop work that is busy but not producing measurable outcomes.
-- **Example**: At Facebook, Mark Zuckerberg asked after a strategy presentation, “Now when are we going to start seeing results?” Luc took that as a lesson that the company cared about impact, not just the quality of the plan.
+- **Example**: At Facebook, Mark Zuckerberg asked after a strategy presentation, “Now when are we going to start seeing results?” Luc used that as a lesson that the company cared about impact, not just the quality of the plan.
 
 ### Three-part hiring playbook
 - **When to use**: When hiring senior talent or building a world-class team.
@@ -86,27 +88,29 @@ Luc Levesque is a seasoned growth leader who has led growth at Shopify, Meta/Fac
 
 ## Core Advice
 - **When you are leading a team and want better execution**: Measure and reward impact, not activity or effort — because high-performing companies stay focused on outcomes and north-star metrics rather than how busy people look.
-- **When you are hiring senior talent**: Look for repeated signs of excellence across a candidate’s life, not just one impressive story — because past performance is the best predictor of future performance, especially when hiring top 1% talent.
-- **When you are trying to close a hard-to-recruit candidate**: Involve the broader executive team, and if appropriate, include the candidate’s spouse or family in the process — because hiring is a family decision as well as an individual one, and executive involvement increases conviction and trust.
+- **When you are hiring senior talent**: Look for repeated signs of excellence across a candidate’s life, not just one impressive story — because past performance is the best predictor of future performance, especially for top 1% talent.
+- **When you are trying to close a hard-to-recruit candidate**: Involve the broader executive team, and if appropriate, include the candidate’s spouse or family in the process — because hiring is a family decision as well as an individual one.
 - **When a candidate says no or seems unavailable**: Stay relentless and keep the conversation alive over time — because no often means not now, and timing changes.
-- **When you are considering growth work before product-market fit**: Wait until the product has clear retention or a strong loop before scaling growth aggressively — because scaling a weak product can expose more people to a bad experience.
+- **When you are considering growth work before product-market fit**: Wait until the product has clear retention or a strong loop before scaling growth aggressively — because scaling a weak product can expose more users to a bad experience.
 - **When you need early user signal but don’t yet have product-market fit**: Test in a contained, off-the-grid market so you can learn without broadly amplifying a weak product — because a smaller market limits downside and noise.
 - **When you are evaluating a growth advisor**: Probe for depth: ask what they did, why it worked, and how they think about the underlying levers — because great advisors understand both the playbook and the principles behind it.
 - **When you already have a trusted growth expert in your network**: Use them to vet advisors or growth hires before you commit — because a knowledgeable reviewer can quickly spot whether someone truly understands growth.
-- **When you are structuring an advisor relationship**: Use equity, front-load vesting, and include a short cliff — because this aligns incentives and encourages fast value creation.
-- **When you are building a growth team**: Prefer internal ownership over agencies or pure external advisors — because internal people retain knowledge and build culture.
-- **When you are deciding whether to hire an agency for SEO**: Use agencies as a last resort and keep an internal owner at the center — because agencies usually cannot create the same depth of impact or institutional knowledge.
+- **When you are structuring an advisor relationship**: Use equity, front-load vesting, and include a short cliff — because this aligns incentives and lets both sides exit quickly if the fit is poor.
+- **When you are building a growth team**: Prefer internal ownership over agencies or pure external advisors — because internal people retain knowledge, build culture, and sustain capability.
+- **When you are deciding whether to hire an agency for SEO**: Use agencies as a last resort and keep an internal owner at the center — because agencies rarely create the same depth of impact or institutional knowledge.
 - **When you are trying to improve SEO impact timing**: Judge the timeline based on what already exists — because existing pages can move fast, while new content may take months.
 
 ## Contrarian Takes
-- **Conventional**: Growth advisors are optional and often not worth it. → **Their view**: A great growth advisor can have company-changing impact, sometimes from a single sentence or conversation — because growth is a high-leverage discipline where deep experience can unlock massive lifts quickly.
+- **Conventional**: Growth advisors are optional and often not worth it. → **Their view**: A great growth advisor can have company-changing impact, sometimes from a single sentence or conversation — because growth is high leverage and deep experience can unlock massive lifts quickly.
 - **Conventional**: You should start growth work as early as possible. → **Their view**: Do not focus heavily on growth until you have product-market fit — because scaling a weak product can do more harm than good.
-- **Conventional**: Hiring an advisor or agency is a good substitute for internal capability. → **Their view**: Internal ownership should be the default; advisors and agencies should augment, not replace, in-house talent — because internal people retain knowledge and sustain capability.
+- **Conventional**: Hiring an advisor or agency is a good substitute for internal capability. → **Their view**: Internal ownership should be the default; advisors and agencies should augment, not replace, in-house talent — because internal people retain knowledge and build culture.
 - **Conventional**: A strong public profile or Twitter/Substack following is a good proxy for expertise. → **Their view**: Public halo is not enough; you must vet past performance and actual growth experience — because some excellent operators are not public, and some public voices lack depth.
-- **Conventional**: Growth is mostly about a broad set of channels and tactics. → **Their view**: Often one channel or even one keyword can define an entire business — because growth done right can be exponential.
+- **Conventional**: Growth is mostly about a broad set of channels and tactics. → **Their view**: Often one channel or even one keyword can define an entire business — because a single dominant loop can create outsized results.
 - **Conventional**: Every important decision should be rigorously experimented on. → **Their view**: Sometimes the right move is to act quickly without a formal experiment — because speed can outweigh methodological purity.
 
 ## Notable Quotes
-- “We talk about the 10X engineer and we don't really talk about the 10X growth advisor or 10X growth person, but the same dynamic applies.”
-- “I don't care how hard you've worked. I don't care what you're working on, what the activities are. What are the outcomes? What is the impact you're having?”
-- “You want your impact to be so big there's a slide in the next board deck on try to explain what happened.”
+> “We talk about the 10X engineer and we don't really talk about the 10X growth advisor or 10X growth person, but the same dynamic applies.”
+
+> “I don't care how hard you've worked. I don't care what you're working on, what the activities are. What are the outcomes? What is the impact you're having?”
+
+> “You want your impact to be so big there's a slide in the next board deck on try to explain what happened.”

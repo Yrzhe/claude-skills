@@ -182,50 +182,13 @@ If these skills are not installed, this skill incorporates their core principles
 | strategy | 3118 | Katie Dill, Jason M Lemkin, Alexander Embiricos, Claire Butler, Manik Gupta |
 | user-research | 699 | Katie Dill, Bangaly Kaba, Elizabeth Stone, Marily Nika, Adam Fishman |
 
-## Expert Index (Top 40)
+## Accessing Expert Profiles
 
-| Expert | Role | Topics | Frameworks |
-|--------|------|--------|-----------|
-| Shreyas Doshi | Former PM leader | go-to-market, hiring-culture, leadership, metrics, operations, product-management, product-market-fit, strategy | 11 |
-| Elena Verna | Head of Growth | ai-strategy, design, go-to-market, growth, hiring-culture, leadership, metrics, pricing, product-management, product-market-fit, retention, strategy | 8 |
-| Dharmesh Shah | Co-founder and CTO | ai-strategy, design, go-to-market, hiring-culture, leadership, operations, product-management, strategy | 12 |
-| Luc Levesque | Chief Growth Officer | ai-strategy, engineering-management, go-to-market, growth, hiring-culture, leadership, metrics, operations, pricing, product-management, product-market-fit, retention, strategy | 8 |
-| Anneka Gupta | Chief Product Officer | ai-strategy, go-to-market, hiring-culture, leadership, product-management, strategy, user-research | 11 |
-| Matt Abrahams | Communication coach | hiring-culture, leadership, operations, product-management, strategy | 13 |
-| Rahul Vohra | Founder and CEO | ai-strategy, design, engineering-management, go-to-market, growth, hiring-culture, leadership, metrics, operations, positioning, pricing, product-management, product-market-fit, retention, strategy | 7 |
-| Lenny Rachitsky | Host of Lenny's Podcast | design, go-to-market, hiring-culture, leadership, metrics, operations, positioning, product-management, retention, strategy | 10 |
-| Grant Lee | CEO and co-founder | ai-strategy, design, go-to-market, growth, hiring-culture, leadership, pricing, product-market-fit, strategy, user-research | 10 |
-| Christina Wodtke | Stanford lecturer, OKR expert | design, go-to-market, hiring-culture, leadership, metrics, operations, product-management, strategy, user-research | 8 |
-| Jackson Shuttleworth | Group PM, Retention | design, growth, leadership, metrics, product-management, retention, strategy, user-research | 8 |
-| Ebi Atawodi | Director of Product | design, go-to-market, hiring-culture, leadership, product-management, strategy, user-research | 11 |
-| Oji Udezue | Chief Product Officer | go-to-market, growth, leadership, operations, positioning, product-management, product-market-fit, retention, strategy, user-research | 9 |
-| Lane Shackleton | Chief Product Officer | go-to-market, hiring-culture, leadership, metrics, operations, product-management, product-market-fit, strategy | 9 |
-| Ramesh Johari | Stanford professor | ai-strategy, engineering-management, growth, marketplace, metrics, operations, pricing, product-management, retention, strategy | 8 |
-| Evan LaPointe | Founder | design, go-to-market, hiring-culture, leadership, metrics, operations, product-management, strategy | 10 |
-| Jessica Lachs | VP of Analytics | design, go-to-market, growth, leadership, metrics, operations, product-management, strategy, user-research | 7 |
-| Tim Holley | VP of Product | design, engineering-management, go-to-market, growth, hiring-culture, leadership, marketplace, metrics, operations, positioning, product-management, product-market-fit, retention, strategy | 5 |
-| Chip Conley | Founder of MEA, former Airbnb | go-to-market, hiring-culture, leadership, product-management, strategy, user-research | 10 |
-| Jason Cohen | Founder and CEO | go-to-market, growth, metrics, positioning, pricing, product-management, product-market-fit, retention, strategy | 8 |
-| Laura Modi | Founder and CEO | go-to-market, growth, hiring-culture, leadership, metrics, operations, positioning, pricing, product-management, product-market-fit, retention, strategy | 6 |
-| Nikhyl Singhal | Product leader and coach | growth, hiring-culture, leadership, metrics, operations, product-management, product-market-fit, strategy | 8 |
-| Sahil Mansuri | CEO and founder | fundraising, go-to-market, growth, leadership, metrics, operations, pricing, product-management, strategy | 8 |
-| Gokul Rajaram | Product leader at DoorDash | design, go-to-market, growth, hiring-culture, leadership, operations, product-management, strategy | 7 |
-| Jason M Lemkin | Founder of SaaStr | go-to-market, leadership, pricing, product-management, retention, strategy | 8 |
-| Kevin Yien | Head of Product | ai-strategy, design, engineering-management, hiring-culture, leadership, operations, product-management, strategy, user-research | 6 |
-| Noah Weiss | Chief Product Officer | ai-strategy, engineering-management, go-to-market, growth, leadership, metrics, product-management, product-market-fit, strategy, user-research | 7 |
-| Paul Adams | Chief Product Officer | ai-strategy, hiring-culture, leadership, operations, positioning, pricing, product-management, product-market-fit, strategy, user-research | 7 |
-| Raaz Herzberg | CMO and VP Product Strategy | go-to-market, growth, hiring-culture, leadership, operations, positioning, product-management, product-market-fit, strategy | 7 |
-| Rachel Lockett | Executive coach | ai-strategy, design, engineering-management, go-to-market, hiring-culture, leadership, operations, product-management, retention, strategy | 7 |
-| Uri Levine | Co-founder, Waze | fundraising, go-to-market, growth, hiring-culture, leadership, product-management, product-market-fit, retention, strategy, user-research | 7 |
-| Cameron Adams | Co-founder and CPO | ai-strategy, design, go-to-market, growth, leadership, pricing, product-management, retention, strategy, user-research | 7 |
-| Farhan Thawar | VP and Head of Engineering | design, engineering-management, hiring-culture, leadership, operations, strategy | 8 |
-| Jag Duggal | Chief Product Officer | ai-strategy, design, go-to-market, growth, leadership, positioning, product-management, retention, strategy, user-research | 8 |
-| Maya Prohovnik | Head of Product | go-to-market, growth, hiring-culture, leadership, metrics, operations, product-management, strategy | 8 |
-| Vikrama Dhiman | Product leader | design, engineering-management, go-to-market, growth, hiring-culture, leadership, metrics, operations, product-management, strategy, user-research | 6 |
-| Bangaly Kaba | Director of Product | go-to-market, growth, hiring-culture, leadership, metrics, product-management, retention, strategy, user-research | 7 |
-| Bob Baxley | Design leader | design, engineering-management, leadership, operations, product-management, strategy, user-research | 7 |
-| Hila Qu | Growth advisor | design, go-to-market, growth, leadership, metrics, operations, product-management, product-market-fit, retention, strategy | 7 |
-| Jen Abel | Co-founder, enterprise GTM | go-to-market, growth, leadership, product-market-fit, strategy | 9 |
+**287 expert profiles** are available in the `experts/` directory. You do NOT need to browse them — they surface naturally:
+
+1. **Via topic files**: Each framework in a topic file is attributed to a specific expert (e.g. "per April Dunford"). If you need that expert's deeper perspective, load `experts/{expert-name}.md`.
+2. **By user request**: If the user asks "what would [expert] say?", look for `experts/{name-in-kebab-case}.md` directly.
+3. **File naming**: `experts/april-dunford.md`, `experts/shreyas-doshi.md`, etc. Lowercase, hyphen-separated.
 
 ## Source
 

@@ -3,7 +3,7 @@
 **Co-founder, startup builder, advisor, and board member** | **Waze (co-founder); founder/advisor across multiple startups including Pontera** | Expertise: startup-building, product-market-fit, fundraising, user-research
 
 ## Bio
-Uri Levine is a two-time unicorn builder best known as the co-founder of Waze, and he has co-founded 10 companies, served on 20 boards, and advised 50+ founders. His perspective matters because he combines founder-level scar tissue with unusually tactical advice on how startups actually find problems, validate demand, reach product-market fit, and make hard decisions fast.
+Uri Levine is a two-time unicorn builder best known as the co-founder of Waze, and he has co-founded 10 companies, served on 20 boards, and advised 50+ founders. His perspective matters because he has repeatedly taken companies from idea to scale, with unusually tactical lessons on finding real problems, validating demand, iterating to product-market fit, and making hard leadership decisions.
 
 ## Signature Frameworks
 
@@ -79,30 +79,28 @@ Uri Levine is a two-time unicorn builder best known as the co-founder of Waze, a
 - **Example**: With Waze, some users watched the screen while others relied on audio prompts; observing both groups helped Uri understand that there is no single “correct” usage pattern.
 
 ## Core Advice
-- **When choosing a startup idea**: Start from a problem that personally frustrates you and that many other people also have — because personal pain creates founder energy and broad pain creates a real market.
-- **When you think you have a problem worth solving**: Talk to many people who have that problem before building anything — because real user validation prevents wasted effort.
-- **When you are tempted to start with a solution or technology**: Reframe the story around the problem or the value created for the user — because problem-first framing keeps the company aligned.
-- **When your startup is early and uncertain**: Expect failure, iterate quickly, and fail fast — because the more attempts you make, the more likely you are to find what works.
-- **When you are chasing perfection**: Aim for good enough and iterate toward better — because perfect slows learning and shipping.
-- **When you are deciding what the company should focus on**: Focus on one phase at a time and do not mix product-market fit, growth, and monetization work prematurely — because each phase requires different priorities.
-- **When your product has high-frequency usage**: Lean into word-of-mouth growth — because repeated use creates repeated recommendation opportunities.
-- **When your product is low-frequency**: Figure out the business model early instead of relying on organic growth — because word-of-mouth won’t compound enough.
-- **When you are fundraising**: Open with your strongest point and make the first slide do the heavy lifting — because investors form first impressions quickly.
-- **When you are pitching investors**: Tell a story with concrete details that makes the use case feel real — because specificity builds authenticity and emotional engagement.
-- **When you hire someone new**: Set a 30-day calendar reminder and re-evaluate whether you would hire them again today — because early doubts usually don’t disappear.
-- **When you are unsure about a hiring decision**: Ask references one blunt question: would you hire this person? — because yes/no answers reveal real conviction.
+- **When you are choosing a startup idea**: Start from a problem that personally frustrates you and that many other people also have — because personal frustration creates motivation, and broad pain creates a real market.
+- **When you think you have a problem worth solving**: Talk to many people who have that problem before building anything — because validation from real users prevents you from building a solution nobody wants.
+- **When you are tempted to start with a solution or technology**: Reframe the story around the problem or the value created for the user — because problem-first framing is more compelling and keeps the company aligned on the North Star.
+- **When your startup is early and uncertain**: Expect failure, iterate quickly, and fail fast — because the more attempts you make, the higher the chance of finding something that works.
+- **When you are chasing perfection**: Aim for good enough and iterate toward better — because perfect is the enemy of shipping and learning; good enough is what wins markets.
+- **When you are deciding what the company should focus on**: Focus on one phase at a time and do not mix product-market fit, growth, and monetization work prematurely — because different startup phases require different priorities, and trying to do everything at once causes failure.
+- **When your product has high-frequency usage**: Lean into word-of-mouth growth — because frequent use creates repeated opportunities for users to recommend the product naturally.
+- **When your product is low-frequency**: Figure out the business model early instead of relying on organic growth — because if users only use the product occasionally, word-of-mouth will not compound enough to carry growth.
+- **When you are fundraising**: Open with your strongest point and make the first slide do the heavy lifting — because investors form first impressions quickly, so the opening needs to create immediate positive momentum.
+- **When you are pitching investors**: Tell a story with concrete details that makes the use case feel real — because specific details create authenticity and emotional engagement; vague stories feel fake.
+- **When you hire someone new**: Set a 30-day calendar reminder and re-evaluate whether you would hire them again today — because early doubts usually do not disappear, and delaying a bad hire hurts the team.
+- **When you are unsure about a hiring decision**: Ask references one blunt question: would you hire this person? — because it forces a yes/no answer and surfaces real conviction instead of polite ambiguity.
 
 ## Contrarian Takes
 - **Conventional**: Fundraising decks should start with the company intro or a summary. → **Their view**: The first slide is the most important slide and should contain the strongest point, because it is displayed the longest and shapes first impressions.
-- **Conventional**: Hiring and firing are equally important, or hiring should come first. → **Their view**: Firing is harder and more important than hiring; the real skill is making hard decisions quickly — because tolerating the wrong person damages the whole team.
-- **Conventional**: You should optimize for growth as soon as possible. → **Their view**: Growth is not the first priority; product-market fit comes first — because growth without fit just accelerates failure.
-- **Conventional**: A startup should define its business model and monetization early. → **Their view**: If the product has high-frequency use and strong word-of-mouth, you can defer business model clarity until after product-market fit — because value creation comes first.
-- **Conventional**: The best product teams should understand users by imagining themselves as users. → **Their view**: Founders often cannot understand the early majority from their own perspective; they need to watch real users, especially those who fail or churn — because behavior beats intuition.
-- **Conventional**: Crowdsourcing is always the best way to build a product like Waze. → **Their view**: Crowdsourcing only works when perfect information is not required — because some markets structurally need precision that crowds can’t provide.
+- **Conventional**: Hiring and firing are equally important, or hiring should come first. → **Their view**: Firing is harder and more important than hiring; the real skill is making hard decisions quickly — because if a CEO tolerates the wrong person, top performers leave and the startup becomes much harder to save.
+- **Conventional**: You should optimize for growth as soon as possible. → **Their view**: Growth is not the first priority; product-market fit comes first, and growth only matters once the product creates value — because without product-market fit, growth just accelerates failure.
+- **Conventional**: A startup should define its business model and monetization early. → **Their view**: If the product has high-frequency use and strong word-of-mouth, you can defer business model clarity until after product-market fit — because value creation comes first; monetization becomes easier once users clearly care.
+- **Conventional**: The best product teams should understand users by imagining themselves as users. → **Their view**: Founders often cannot understand the early majority from their own perspective; they need to watch real users, especially those who fail or churn — because different user segments behave differently, and the most important insights come from observing actual behavior.
+- **Conventional**: Crowdsourcing is always the best way to build a product like Waze. → **Their view**: Crowdsourcing only works when perfect information is not required; in some markets, like Japan’s house-numbering system, it may never be good enough — because if the product needs complete precision, crowdsourcing can fail structurally.
 
 ## Notable Quotes
-> “Fall in love, fall in love, fall in love, fall in love with the problem.”
-
-> “The biggest enemy of good enough is perfect.”
-
-> “Raising capital is a roller coaster journey in the dark.”
+- “Fall in love, fall in love, fall in love, fall in love with the problem.”
+- “The biggest enemy of good enough is perfect.”
+- “Raising capital is a roller coaster journey in the dark.”

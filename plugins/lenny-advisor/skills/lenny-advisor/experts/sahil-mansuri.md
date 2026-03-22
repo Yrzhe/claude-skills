@@ -1,11 +1,11 @@
 # Sahil Mansuri
 
-**CEO and Founder** | **Bravado** | Expertise: B2B sales, sales leadership, revenue strategy, sales compensation, go-to-market, pricing
+**CEO and founder** | **Bravado** | Expertise: B2B sales, sales leadership, revenue strategy, sales compensation
 
 ## Bio
 Sahil Mansuri is the CEO and founder of Bravado, a large sales community and SaaS platform for B2B sales professionals. He has spent his entire career in sales, including selling through the 2008–2009 downturn, leading enterprise sales at Glassdoor, and building systems for sales benchmarking, recruiting, and community-driven learning.
 
-His perspective matters because he thinks about sales as a full business system, not just a quota function. He is especially useful when markets get volatile, when retention matters more than acquisition, and when teams need to rethink incentives, pricing, and the role of the founder.
+His perspective matters because he thinks about sales as a full-company system, not just a quota-carrying function. He is especially useful when markets get volatile, when retention matters more than acquisition, and when leaders need to redesign incentives, offers, and operating models instead of just pushing harder.
 
 ## Signature Frameworks
 
@@ -93,10 +93,10 @@ His perspective matters because he thinks about sales as a full business system,
 - **When you face a recession with limited visibility**: Do set a conservative annual plan, but pair it with explicit milestones that unlock more spend or growth if hit — because this avoids both reckless optimism and paralysis.
 - **When your forecast is uncertain quarter to quarter**: Do reforecast regularly and pre-agree with your board and leadership on what happens at each checkpoint — because predetermined rules reduce bias and wishful thinking.
 - **When new customer acquisition gets harder**: Do shift attention from cold prospecting toward retention, renewals, upsells, and cross-sells in the existing base — because keeping current customers alive is often the fastest path to survival.
-- **When your sales comp plan only rewards new bookings**: Do add incentives for renewals, expansion, and customer quality, not just closed-won ARR — because churny revenue is less valuable than durable revenue.
+- **When your sales comp plan only rewards new bookings**: Do add incentives for renewals, expansion, and customer quality, not just closed-won ARR — because churny accounts are less valuable than durable ones.
 - **When your best reps are still focused on hunting new business in a frozen market**: Do move some of your strongest sellers into customer success or post-sale roles — because protecting the base can be the highest-leverage use of top talent.
-- **When your product has unique data about a customer segment**: Do turn that data into customer-only benchmarks, reports, and advisory content — because insight makes you more than a tool.
-- **When cold email and cold calling stop working well**: Do prioritize warm intros, especially through existing customers and trusted relationships — because trust matters more when uncertainty is high.
+- **When your product has unique data about a customer segment**: Do turn that data into customer-only benchmarks, reports, and advisory content — because it makes you more than a tool.
+- **When cold email and cold calling stop working well**: Do prioritize warm intros, especially through existing customers and trusted relationships — because trust becomes more important in uncertain times.
 - **When you get a promising referral**: Do ask for a direct text introduction and keep the introducer on the thread until the meeting is secured — because email threads die easily.
 - **When you are selling into a sophisticated buyer**: Do lead with a custom insight or research artifact that teaches them something useful — because the fastest way to earn attention is to change how they think.
 - **When your current business model is constrained by the market**: Do experiment with new pricing or delivery models instead of making tiny price cuts — because structural problems need structural changes.
@@ -104,12 +104,12 @@ His perspective matters because he thinks about sales as a full business system,
 - **When you want to close enterprise deals in a downturn**: Do invest heavily in bespoke, high-value outreach that demonstrates deep understanding of the buyer’s world — because generic outbound is weak in tough markets.
 
 ## Contrarian Takes
-- **Conventional**: Sales comp should primarily reward new ARR and quota attainment. → **Their view**: Comp should also reward retention, renewals, expansion, and customer quality — because durable revenue matters more in capital-constrained markets.
-- **Conventional**: The best salespeople should always be hunting for new business. → **Their view**: In a downturn, your best sellers may be more valuable in customer success or retention roles — because protecting the base can be the highest-leverage move.
-- **Conventional**: Cold outreach is the default way to generate pipeline. → **Their view**: Warm intros and customer-driven referrals become far more effective when trust is scarce — because people rely on familiar relationships in uncertainty.
-- **Conventional**: You can solve a broken growth model by optimizing price or process a little. → **Their view**: Sometimes you need to change the entire business model or rules of the game — because structural shifts require structural responses.
-- **Conventional**: Sales is about persuasion and pushing product. → **Their view**: Great sales is about teaching, helping, and changing the buyer’s perspective — because insight creates trust.
-- **Conventional**: A CEO is mostly an operator or strategist. → **Their view**: A CEO is fundamentally a salesperson — because founders are constantly selling to every stakeholder.
+- **Conventional**: Sales comp should primarily reward new ARR and quota attainment. → **Their view**: Comp should also reward retention, renewals, expansion, and customer quality — because durable accounts matter more in capital-constrained markets.
+- **Conventional**: The best salespeople should always be hunting for new business. → **Their view**: In a downturn, your best sellers may be more valuable in customer success or retention roles — because protecting the base can be the highest leverage.
+- **Conventional**: Cold outreach is the default way to generate pipeline. → **Their view**: Warm intros and customer-driven referrals become far more effective when trust is scarce — because people trust familiar relationships during uncertainty.
+- **Conventional**: You can solve a broken growth model by optimizing price or process a little. → **Their view**: Sometimes you need to change the entire business model or rules of the game — because structural shifts require new offers, pricing, or labor models.
+- **Conventional**: Sales is about persuasion and pushing product. → **Their view**: Great sales is about teaching, helping, and changing the buyer’s perspective — because the best deals come from real value, not feeling salesy.
+- **Conventional**: A CEO is mostly an operator or strategist. → **Their view**: A CEO is fundamentally a salesperson — because founders must sell themselves, employees, investors, customers, press, and candidates continuously.
 
 ## Notable Quotes
 - “Email is where deals go to die. Text message is where deals get done.”

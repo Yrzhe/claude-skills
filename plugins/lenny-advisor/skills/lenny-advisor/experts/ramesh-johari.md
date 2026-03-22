@@ -3,9 +3,9 @@
 **Stanford professor; startup advisor; former research scientist and data science leader at oDesk/Upwork** | **Stanford University** | Expertise: marketplaces, data science, experimentation, causal inference
 
 ## Bio
-Ramesh Johari studies how marketplaces actually work: how matching, incentives, ratings, and data create liquidity and efficiency. His perspective is unusually valuable because it combines deep academic rigor in causal inference and experimentation with firsthand experience building marketplace systems at oDesk/Upwork.
+Ramesh Johari studies how marketplaces actually work: how matching, incentives, trust, and data interact to create liquidity and value. His perspective matters because he combines rigorous academic thinking with hands-on experience building and advising marketplace businesses, especially from his time at oDesk/Upwork.
 
-He is especially useful when you need to understand what data science can and cannot do in a marketplace, how to design experiments that produce real learning, and how to avoid common mistakes in ratings, matching, and marketplace strategy.
+He is especially useful when teams need to understand whether they are truly building a marketplace, how to use data science to improve it, and how to run experiments that produce real learning rather than just short-term metric wins.
 
 ## Signature Frameworks
 
@@ -82,25 +82,25 @@ He is especially useful when you need to understand what data science can and ca
 - **Example**: A new seller with one negative review may be unfairly crushed by a raw average; a prior can soften that effect and keep them viable in the market.
 
 ## Core Advice
-- **When you are starting a company that might become a marketplace**: solve the underlying friction or trust problem first, even if the first product is not a marketplace at all — because marketplaces only make sense once there is enough liquidity on both sides.
-- **When you do not yet have buyers and sellers both active**: do not call yourself a marketplace yet; focus on scaling one side or solving a non-marketplace startup problem first — because the marketplace value proposition is not present without scaled liquidity.
-- **When one side of your marketplace is strong and the other is weak**: use the strong side to attract the weak side through subsidies, incentives, or distribution — because that is how you create the flywheel.
-- **When you are designing a marketplace data team**: make sure the team is helping the business make decisions, not just producing predictions — because prediction is correlation, while value comes from causal action.
-- **When you are choosing what to optimize with data science**: prioritize the highest-friction marketplace problem, such as search, pricing, or matching — because that is where data science has the most leverage.
-- **When you are evaluating an experiment**: ask what the test teaches you, not just whether it won — because many marketplace changes redistribute attention and inventory.
-- **When your experimentation culture rewards only wins**: shorten low-value tests and be willing to run riskier experiments that may fail but teach more — because conservative incentives reduce learning velocity.
-- **When you are designing ratings and reviews**: avoid relying only on raw averages; use priors, expectation-based questions, or other smoothing methods — because averages can unfairly punish new participants.
-- **When you are interpreting missing reviews**: treat silence as data and analyze non-response, not just submitted ratings — because absence can predict downstream performance and satisfaction.
-- **When you are tempted to over-automate data science with AI**: use AI to expand the set of hypotheses and options, but keep humans in the loop to decide what matters — because AI increases the need for judgment.
-- **When you are moving fast on product or marketplace decisions**: slow down enough to build a real mental model of how the market works — because speed without understanding leads to shallow decisions.
+- **When you are starting a company that might become a marketplace**: Solve the underlying friction or trust problem first, even if the first product is not a marketplace at all — because marketplaces only make sense once there is enough liquidity on both sides.
+- **When you do not yet have buyers and sellers both active**: Do not call yourself a marketplace yet; focus on scaling one side or solving a non-marketplace startup problem first — because the marketplace value proposition is not present without scaled liquidity.
+- **When one side of your marketplace is strong and the other is weak**: Use the strong side to attract the weak side through subsidies, incentives, or distribution — because that creates the flywheel that eventually produces true marketplace liquidity.
+- **When you are designing a marketplace data team**: Make sure the team is helping the business make decisions, not just producing predictions — because prediction is correlation, while business value comes from causal decisions.
+- **When you are choosing what to optimize with data science**: Prioritize the highest-friction marketplace problem, such as search, pricing, or matching — because data science creates the most leverage where it reduces the biggest transaction-cost bottleneck.
+- **When you are evaluating an experiment**: Ask what the test teaches you, not just whether it won — because many marketplace changes redistribute attention and inventory, so learning matters more than the immediate metric.
+- **When your experimentation culture rewards only wins**: Shorten low-value tests and be willing to run riskier experiments that may fail but teach more — because overly conservative incentives reduce learning velocity.
+- **When you are designing ratings and reviews**: Avoid relying only on raw averages; use priors, expectation-based questions, or other smoothing methods — because averages can unfairly punish new participants and amplify distortion.
+- **When you are interpreting missing reviews**: Treat silence as data and analyze non-response, not just submitted ratings — because the absence of a review can predict downstream performance and satisfaction.
+- **When you are tempted to over-automate data science with AI**: Use AI to expand the set of hypotheses and options, but keep humans in the loop to decide what matters — because AI increases possibilities, which makes judgment more important.
+- **When you are moving fast on product or marketplace decisions**: Slow down enough to build a real mental model of how the market works — because speed without understanding leads to shallow roadmaps and weak decisions.
 
 ## Contrarian Takes
-- **Conventional**: A marketplace founder is someone who starts a marketplace business from day one. → **Their view**: Almost no business starts as a marketplace; first you solve a specific friction, and only later might it become a marketplace — because the core marketplace value proposition does not exist without scaled liquidity.
-- **Conventional**: If a data model predicts well, it is a good decision tool. → **Their view**: Good prediction is not the same as good decision-making; the real question is causal impact — because a model can fit history without improving outcomes.
-- **Conventional**: Experimentation should be judged by winners and losers. → **Their view**: Experiments should be judged by learning, even when they do not produce a win — because the knowledge gained may matter more than the metric result.
-- **Conventional**: More experimentation automatically means better decisions. → **Their view**: Experimentation can become too conservative and too slow if incentives reward only quarterly wins — because teams then avoid valuable risk.
-- **Conventional**: Raw star averages are a fair and sufficient rating system. → **Their view**: Averages can be deeply unfair, especially to new participants — because early reviews and reciprocity distort the signal.
-- **Conventional**: AI will automate away much of data science and reduce the need for humans. → **Their view**: AI expands the space of ideas so much that human judgment becomes more important — because the bottleneck shifts to deciding what matters.
+- **Conventional**: A marketplace founder is someone who starts a marketplace business from day one. → **Their view**: Almost no business starts as a marketplace; first you solve a specific friction, and only later might it become a marketplace — because without scaled liquidity on both sides, the core marketplace value proposition does not yet exist.
+- **Conventional**: If a data model predicts well, it is a good decision tool. → **Their view**: Good prediction is not the same as good decision-making; the real question is causal impact — because a model can fit history without telling you whether an action improves outcomes.
+- **Conventional**: Experimentation should be judged by winners and losers. → **Their view**: Experiments should be judged by learning, even when they do not produce a win — because marketplace changes often have redistribution effects that are informative even when short-term metrics are flat.
+- **Conventional**: More experimentation automatically means better decisions. → **Their view**: Experimentation can become too conservative and too slow if incentives reward only quarterly wins — because teams then avoid risky but valuable tests.
+- **Conventional**: Raw star averages are a fair and sufficient rating system. → **Their view**: Averages can be deeply unfair, especially to new participants, and can distort marketplace dynamics — because early reviews, reciprocity, and inflation make naive averaging misleading.
+- **Conventional**: AI will automate away much of data science and reduce the need for humans. → **Their view**: AI expands the space of ideas so much that human judgment becomes more important — because the bottleneck shifts to deciding which hypotheses and experiments matter.
 
 ## Notable Quotes
 > “Marketplaces are a little bit like a game of whac-a-mole.”

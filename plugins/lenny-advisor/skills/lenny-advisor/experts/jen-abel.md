@@ -3,9 +3,9 @@
 **GM of Enterprise at State Affairs; co-founder of Jellyfish** | **State Affairs; Jellyfish** | Expertise: enterprise sales, founder-led sales, go-to-market, customer discovery
 
 ## Bio
-Jen Abel helps early-stage founders learn zero-to-one enterprise sales and build repeatable go-to-market motions. Her perspective matters because she combines hands-on enterprise selling experience with a founder/operator lens, making her especially strong on the messy early stage where messaging, qualification, procurement, and product learning all blur together.
+Jen Abel helps early-stage founders learn zero-to-one enterprise sales and build repeatable go-to-market motions. Her perspective matters because she combines hands-on enterprise selling experience with a founder-first approach to market learning, qualification, and procurement navigation.
 
-She is particularly useful when a team needs to figure out not just how to close deals, but whether they are even talking to the right people about the right problem.
+She is especially useful for teams that are pre-product-market-fit or just starting to sell into complex organizations. Jen’s advice is highly tactical and grounded in the realities of how buyers actually behave, not how sales playbooks say they should.
 
 ## Signature Frameworks
 
@@ -15,9 +15,9 @@ She is particularly useful when a team needs to figure out not just how to close
   1. Have founders lead early sales because the founder is the product and the clearest carrier of the vision.
   2. Use sales conversations primarily to learn, not just to close revenue.
   3. Look for “budding moments” in calls where the market reacts unexpectedly or reveals a sharper use case.
-  4. Refine the original vision based on repeated market feedback until founder vision aligns with market reality.
+  4. Refine the original vision based on repeated market feedback until the founder vision aligns with market reality.
   5. Stay in founder-led sales until there is enough velocity and signal, often around $500K to $1M ARR.
-- **Example**: A founder notices that prospects keep reacting strongly to one narrow workflow pain, so the company shifts messaging and product emphasis toward that use case.
+- **Example**: A founder notices that prospects keep reacting strongly to one narrow workflow pain, revealing a more compelling wedge than the original broad product idea.
 
 ### Cold outreach messaging framework
 - **When to use**: When trying to get first meetings with prospects via email, LinkedIn, or cold calls.
@@ -27,7 +27,7 @@ She is particularly useful when a team needs to figure out not just how to close
   3. Focus on the problem, not the solution or product features.
   4. Keep the message extremely concise so it can be read on mobile without scrolling.
   5. Leave the recipient wanting more rather than explaining everything.
-- **Example**: Jen used the line “zero to one sales talent doesn’t exist” in Jellyfish cold emails, then tied it to founders who had recently raised and were trying to build sales.
+- **Example**: “Zero to one sales talent doesn’t exist” is used as a provocative opener, then tied to founders who recently raised and need to build sales from scratch.
 
 ### 30-person manual prospecting experiment
 - **When to use**: When founders are still figuring out ICP, messaging, and whether a market is reachable before buying sales tools or automating outbound.
@@ -37,7 +37,7 @@ She is particularly useful when a team needs to figure out not just how to close
   3. Reach them across multiple channels such as email, LinkedIn, phone, or other direct channels.
   4. Observe response patterns and common traits across the people who engage.
   5. Use those learnings to refine role targeting, messaging, and qualification criteria before scaling with tools.
-- **Example**: Instead of starting with Clay or automation, a founder tests whether they can get responses from 30 carefully chosen prospects.
+- **Example**: Before using Clay or automation, test whether you can even get responses from 30 carefully chosen prospects.
 
 ### First-call discovery without demo
 - **When to use**: On the first sales call, especially in enterprise founder-led sales where the goal is learning and qualification.
@@ -59,7 +59,7 @@ She is particularly useful when a team needs to figure out not just how to close
   3. If yes, ask how they have tried to solve it so far.
   4. Look for signs of budget, headcount, tools, or process already allocated to the issue.
   5. Watch for the prospect pulling in colleagues, which signals internal momentum.
-- **Example**: A buyer says they want to bring in their boss or other stakeholders because the issue is not good enough as-is.
+- **Example**: A strong signal is when the buyer wants to bring in their boss or other stakeholders because the issue is not good enough as-is.
 
 ### Co-authoring the scope
 - **When to use**: After initial interest, when shaping a proposal or implementation path with an early customer.
@@ -90,7 +90,7 @@ She is particularly useful when a team needs to figure out not just how to close
   4. Do as much of the paperwork and form-filling as possible for them.
   5. Ask about bottlenecks such as IT due diligence timelines.
   6. If needed, split service and technology contracts to keep momentum while technical review proceeds.
-- **Example**: A deal dies because procurement suggests using another approved vendor after the startup fails to sound meaningfully different.
+- **Example**: A deal dies because procurement suggests using another approved vendor when the startup failed to sound meaningfully different.
 
 ### Signature readiness check
 - **When to use**: At the final stage before contract execution in enterprise sales.
@@ -100,30 +100,30 @@ She is particularly useful when a team needs to figure out not just how to close
   3. Prepare concise bullets or framing that procurement can pass along.
   4. Ensure finance and procurement approvals are complete before starting work.
   5. Do not assume the business unit alone can pay you.
-- **Example**: A CFO asks, “What am I signing?” and the deal stalls because the team did not prepare signer-specific context.
+- **Example**: A CFO asks, “What am I signing?” and the deal is delayed because the team did not prepare signer-specific context.
 
 ## Core Advice
-- **When outbound response rates are low**: Do a manual 30-prospect experiment before buying tools or automating outreach — because it validates discoverability, ICP, and messaging before volume hides the real problem.
-- **When cold emails are ignored**: Make outreach role-relevant, counterintuitive, problem-led, and short enough to read on mobile — because relevance and insight beat generic personalization.
-- **When you are unsure if the pain is real**: Qualify for whether the problem is growing, measured, and already being managed — because real urgency usually has operational evidence.
-- **When you are early-stage and on first calls**: Be openly vulnerable and say you are still learning — because honesty lowers defensiveness and produces better discovery.
-- **When you are tempted to demo immediately**: Don’t show the full demo on the first call — because curiosity is leverage and demos can collapse imagination too early.
-- **When discovery feels vague**: Avoid generic questions like “What keeps you up at night?” — because concrete questions reveal actual buying signals.
-- **When a first call goes well**: Book the second call before ending the first — because momentum decays fast and reluctance is itself a signal.
-- **When the buyer wants the outcome but lacks process**: Sell a tightly scoped 90-day service engagement — because it creates paid learning and increases the odds of a later software sale.
-- **When procurement appears**: Make procurement’s job easy and differentiate clearly — because unclear positioning gets you classified as risky or replaceable.
-- **When a customer asks for a discount**: Only discount if you get something meaningful back — because discounting without exchange weakens your position.
-- **When you think the funnel is broken**: Inspect qualification first — because most downstream problems start with the wrong target or message.
-- **When selling feels uncomfortable**: Frame sales as helping solve a real problem and be willing to say no — because trust is the core currency.
+- **When you face low response rates on outbound**: Do a manual 30-prospect experiment before buying tools or automating outreach — because it validates discoverability, ICP, and messaging before volume hides the real problem.
+- **When you face crowded inboxes and ignored cold emails**: Make outreach role-relevant, counterintuitive, problem-led, and short enough to read on mobile — because relevance and insight beat generic personalization.
+- **When you face uncertainty about whether your issue is a real pain point**: Qualify for whether the problem is growing, being measured, and already being managed or budgeted for — because real urgency usually exists only when the problem is active and operationalized.
+- **When you face first calls with prospects as an early-stage founder**: Be explicit that you’re early stage and still learning — because vulnerability lowers defensiveness and surfaces better market insight.
+- **When you face the temptation to demo immediately**: Don’t show the full demo on the first call — because preserving curiosity improves qualification and keeps the buyer imagining the solution.
+- **When you face vague discovery conversations**: Avoid generic questions like “What keeps you up at night?” — because concrete questions about measurement, management, and prior attempts reveal real buying signals.
+- **When you face a promising first call**: Book the second call before ending the first one — because momentum decays quickly and reluctance to schedule is itself a signal.
+- **When you face a customer who wants the outcome but lacks a process to buy the software**: Sell a tightly scoped 90-day service engagement — because it creates paid learning and increases the odds of the later software contract.
+- **When you face procurement in enterprise deals**: Make procurement’s job easy by filling forms, simplifying your explanation, and clearly stating what you do and do not do — because hard-to-classify vendors get sidelined.
+- **When you face pressure to discount to close a deal**: Only discount when the customer gives something meaningful in return — because discounting without exchange weakens positioning.
+- **When you face uncertainty about where your sales funnel is broken**: Inspect qualification first rather than assuming you have a bottom-of-funnel problem — because most issues start upstream.
+- **When you face discomfort with selling**: Frame sales as helping someone solve a real problem, and be willing to say no when you’re not the right fit — because trust is the core currency in sales.
 
 ## Contrarian Takes
 - **Conventional**: Hire salespeople early so founders can focus on building. → **Their view**: Founders should lead sales through the earliest stage, often until roughly $500K to $1M ARR — because the founder carries the vision best and can detect subtle market signals.
-- **Conventional**: Early sales should optimize for revenue as quickly as possible. → **Their view**: Founder-led sales is primarily a research function — because the goal is to learn fast and earn the right to sell.
-- **Conventional**: Cold outreach success is mostly about personalization and channel tactics. → **Their view**: Relevance and insight matter more — because weak response often reflects weak market insight, not bad mechanics.
-- **Conventional**: Pitch your product and explain why it’s better than competitors. → **Their view**: Sell the problem with a differentiated point of view instead — because “better” is vague and easy to dismiss.
-- **Conventional**: Demo as early as possible to show value. → **Their view**: Don’t demo on the first call — because showing the product too early reduces imagination and narrows the conversation.
-- **Conventional**: Service revenue is bad for SaaS startups. → **Their view**: A time-boxed service engagement can be the right bridge — because it proves intent and creates a path to software adoption.
-- **Conventional**: If deals stall, the problem is usually late-stage closing or procurement. → **Their view**: Most sales problems are qualification problems — because upstream targeting and messaging create downstream symptoms.
+- **Conventional**: Early sales should optimize for revenue as quickly as possible. → **Their view**: Founder-led sales is primarily a research function before it is a revenue function — because the goal is to learn fast and earn the right to sell.
+- **Conventional**: Cold outreach success is mostly about personalization and channel tactics. → **Their view**: Relevance and insight matter more than personalization — because weak response rates often reflect weak market insight.
+- **Conventional**: Pitch your product and explain why it’s better than competitors. → **Their view**: Sell the problem with a differentiated point of view instead — because “better” is hard to define and easy to dismiss.
+- **Conventional**: Demo as early as possible to show value. → **Their view**: Don’t demo on the first call in enterprise sales — because the demo reduces imagination and narrows the conversation too early.
+- **Conventional**: Service revenue is bad for SaaS startups and should be avoided. → **Their view**: A time-boxed service engagement is often the right bridge — because it proves intent and builds the path to software adoption.
+- **Conventional**: If deals stall, the problem is usually late-stage closing or procurement. → **Their view**: Most sales problems are actually qualification problems at the top of the funnel — because the wrong people and wrong message create downstream symptoms.
 
 ## Notable Quotes
 > “The founder is the product.”
