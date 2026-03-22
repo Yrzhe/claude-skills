@@ -79,7 +79,7 @@ Product and business diagnostic advisor powered by distilled wisdom from **289 L
 
 **Manual install:**
 ```bash
-cp -r plugins/lenny-advisor ~/.claude/skills/
+cp -r plugins/lenny-advisor/skills/lenny-advisor ~/.claude/skills/
 ```
 
 The skill activates automatically when you discuss product decisions, business strategy, growth, pricing, or any product/business topic.
