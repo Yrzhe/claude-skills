@@ -1,0 +1,12 @@
+{
+  "name": "youtube-data-api",
+  "version": "1.0.0",
+  "description": "YouTube Data API v3 complete wrapper - search videos, get video/channel/playlist details, get comments, download subtitles, etc. Supports filtering and sorting by time/views/rating and more.",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": ["youtube", "api", "video", "channel", "playlist", "comments", "subtitles", "search"]
+}
