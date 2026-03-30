@@ -1,0 +1,12 @@
+{
+  "name": "skill-improve",
+  "version": "1.0.0",
+  "description": "Improve existing skills after real usage. When a skill has outdated steps, missing edge cases, or unclear instructions, diagnose and fix it with diff preview and user confirmation. Logs improvement history.",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": ["skill-improve", "self-evolution", "maintenance", "auto-fix", "skill-update"]
+}

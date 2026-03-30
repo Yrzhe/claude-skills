@@ -1,0 +1,12 @@
+{
+  "name": "learn",
+  "version": "1.0.0",
+  "description": "Auto-extract reusable skills from complex tasks. After completing a task with 5+ tool calls and cross-scenario reuse potential, suggests distilling the approach into a reusable skill. Supports dedup, scope assessment, and supermemory sync.",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": ["learn", "skill-creation", "self-evolution", "auto-extract", "reusable", "memory", "supermemory"]
+}

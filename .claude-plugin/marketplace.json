@@ -74,6 +74,32 @@
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
       "tags": ["product", "business", "strategy", "growth", "pricing", "pmf", "positioning", "leadership", "lenny"]
+    },
+    {
+      "name": "learn",
+      "source": "./plugins/learn",
+      "description": "Auto-extract reusable skills from complex tasks. After completing a task with 5+ tool calls and cross-scenario reuse potential, suggests distilling the approach into a reusable skill. Supports dedup, scope assessment, and memory sync.",
+      "version": "1.0.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["learn", "skill-creation", "self-evolution", "auto-extract", "reusable", "memory"]
+    },
+    {
+      "name": "skill-improve",
+      "source": "./plugins/skill-improve",
+      "description": "Improve existing skills after real usage. When a skill has outdated steps, missing edge cases, or unclear instructions, diagnose and fix it with diff preview and user confirmation. Logs improvement history.",
+      "version": "1.0.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["skill-improve", "self-evolution", "maintenance", "auto-fix", "skill-update"]
     }
   ]
 }
