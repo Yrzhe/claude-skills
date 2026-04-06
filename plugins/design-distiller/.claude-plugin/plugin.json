@@ -1,0 +1,12 @@
+{
+  "name": "design-distiller",
+  "version": "1.1.0",
+  "description": "Scrape any website's design system into a structured Design MD + decomposed design tokens. Ships with 55 pre-analyzed brand references (Vercel, Stripe, Linear, Notion, etc.) and an 8-dimension Digest Pool for mix-and-match composition.",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": ["design-system", "design-tokens", "scraper", "ui", "ux", "css", "typography", "colors", "components", "design-md"]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "browser-use-cloud",
+  "version": "1.0.0",
+  "description": "Browser Use Cloud \u2014 \u4e91\u7aef\u53cd\u68c0\u6d4b\u6d4f\u89c8\u5668\uff0c\u652f\u6301 Agent \u6a21\u5f0f\uff08LLM \u81ea\u52a8\u6267\u884c\uff09\u548c Browser \u6a21\u5f0f\uff08Playwright \u76f4\u8fde\uff0c\u65e0 LLM \u8d39\u7528\uff09\u3002\u7528\u4e8e\u9700\u8981\u53cd\u68c0\u6d4b\u3001\u4ee3\u7406 IP\u3001\u5f55\u5c4f\u622a\u56fe\u3001\u9a8c\u8bc1\u7801\u7ed5\u8fc7\u7684\u81ea\u52a8\u5316\u573a\u666f\u3002",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": ["browser-use", "cloud-browser", "anti-detect", "playwright", "stealth", "proxy", "recording", "screenshot", "captcha", "automation"]
+}

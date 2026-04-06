@@ -84,6 +84,38 @@ cp -r plugins/lenny-advisor/skills/lenny-advisor ~/.claude/skills/
 
 The skill activates automatically when you discuss product decisions, business strategy, growth, pricing, or any product/business topic.
 
+### design-distiller
+
+Scrape any website's design system into a structured **Design MD** + decomposed **design tokens**. Ships with **55 pre-analyzed brand references** (Vercel, Stripe, Linear, Notion, Claude, Figma, Airbnb, Spotify, and more) and an **8-dimension Digest Pool** for mix-and-match composition.
+
+**Features:**
+- 4-phase pipeline: Scrape → Analyze → Generate → Digest
+- Multi-tier browser support: Browser Use Cloud / Playwright / Chrome Headless / WebFetch fallback
+- 9-module Design MD format following [awesome-design-md](https://github.com/VoltAgent/awesome-design-md) standard
+- 55 pre-loaded brand references with full design system documentation
+- 8-dimension Digest Pool (typography, colors, spacing, components, depth, motion, layouts, philosophy)
+- Compose command: mix-and-match from Digest Pool to generate new design systems
+- Machine-friendly cross-reference tags for programmatic matching
+- Confidence tagging: High (CSS var) / Medium (computed) / Low (visual estimate)
+
+**Install:**
+```bash
+/plugin install design-distiller@yrzhe-skills
+```
+
+**Manual install:**
+```bash
+cp -r plugins/design-distiller/skills/design-distiller ~/.claude/skills/
+```
+
+**Usage:**
+```
+/design-distiller https://vercel.com              # Full pipeline
+/design-distiller compose "Vercel typography + Stripe colors + Linear components"
+/design-distiller compare vercel stripe            # Side-by-side comparison
+/design-distiller list                             # List all 55 references
+```
+
 ## Contributing
 
 Feel free to open issues or submit pull requests to improve these skills.

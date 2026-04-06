@@ -100,6 +100,32 @@
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
       "tags": ["skill-improve", "self-evolution", "maintenance", "auto-fix", "skill-update"]
+    },
+    {
+      "name": "browser-use-cloud",
+      "source": "./plugins/browser-use-cloud",
+      "description": "Browser Use Cloud — 云端反检测浏览器，支持 Agent 模式（LLM 自动执行）和 Browser 模式（Playwright 直连，无 LLM 费用）。用于需要反检测、代理 IP、录屏截图、验证码绕过的自动化场景。",
+      "version": "1.0.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["browser-use", "cloud-browser", "anti-detect", "playwright", "stealth", "proxy", "recording", "screenshot", "captcha", "automation"]
+    },
+    {
+      "name": "design-distiller",
+      "source": "./plugins/design-distiller",
+      "description": "Scrape any website's design system into a structured Design MD + decomposed design tokens. Ships with 55 pre-analyzed brand references and an 8-dimension Digest Pool for mix-and-match composition.",
+      "version": "1.1.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["design-system", "design-tokens", "scraper", "ui", "ux", "css", "typography", "colors", "components", "design-md"]
     }
   ]
 }
