@@ -1,0 +1,93 @@
+{
+  "source": "IPIP 50-item Big-Five Factor Markers (Goldberg, 1992; public domain, https://ipip.ori.org/new_ipip-50-item-scale.htm). We use the canonical 50-item IPIP scale (10 items per domain) rather than BFI-44 because all IPIP items are in the public domain and freely redistributable; BFI-44 items (John & Srivastava, 1999) require attribution and copyright notice. File name retains 'bfi44' for skill compatibility.",
+  "scale": "1=Very inaccurate, 2=Moderately inaccurate, 3=Neither accurate nor inaccurate, 4=Moderately accurate, 5=Very accurate",
+  "response_format": "Respond 1-5. For reverse-keyed items (key='-'), score is reversed as (6 - raw) before summing domain.",
+  "items": [
+    {"id": "E01", "text": "I am the life of the party.", "domain": "extraversion", "key": "+"},
+    {"id": "E02", "text": "I don't talk a lot.", "domain": "extraversion", "key": "-"},
+    {"id": "E03", "text": "I feel comfortable around people.", "domain": "extraversion", "key": "+"},
+    {"id": "E04", "text": "I keep in the background.", "domain": "extraversion", "key": "-"},
+    {"id": "E05", "text": "I start conversations.", "domain": "extraversion", "key": "+"},
+    {"id": "E06", "text": "I have little to say.", "domain": "extraversion", "key": "-"},
+    {"id": "E07", "text": "I talk to a lot of different people at parties.", "domain": "extraversion", "key": "+"},
+    {"id": "E08", "text": "I don't like to draw attention to myself.", "domain": "extraversion", "key": "-"},
+    {"id": "E09", "text": "I don't mind being the center of attention.", "domain": "extraversion", "key": "+"},
+    {"id": "E10", "text": "I am quiet around strangers.", "domain": "extraversion", "key": "-"},
+
+    {"id": "A01", "text": "I feel little concern for others.", "domain": "agreeableness", "key": "-"},
+    {"id": "A02", "text": "I am interested in people.", "domain": "agreeableness", "key": "+"},
+    {"id": "A03", "text": "I insult people.", "domain": "agreeableness", "key": "-"},
+    {"id": "A04", "text": "I sympathize with others' feelings.", "domain": "agreeableness", "key": "+"},
+    {"id": "A05", "text": "I am not interested in other people's problems.", "domain": "agreeableness", "key": "-"},
+    {"id": "A06", "text": "I have a soft heart.", "domain": "agreeableness", "key": "+"},
+    {"id": "A07", "text": "I am not really interested in others.", "domain": "agreeableness", "key": "-"},
+    {"id": "A08", "text": "I take time out for others.", "domain": "agreeableness", "key": "+"},
+    {"id": "A09", "text": "I feel others' emotions.", "domain": "agreeableness", "key": "+"},
+    {"id": "A10", "text": "I make people feel at ease.", "domain": "agreeableness", "key": "+"},
+
+    {"id": "C01", "text": "I am always prepared.", "domain": "conscientiousness", "key": "+"},
+    {"id": "C02", "text": "I leave my belongings around.", "domain": "conscientiousness", "key": "-"},
+    {"id": "C03", "text": "I pay attention to details.", "domain": "conscientiousness", "key": "+"},
+    {"id": "C04", "text": "I make a mess of things.", "domain": "conscientiousness", "key": "-"},
+    {"id": "C05", "text": "I get chores done right away.", "domain": "conscientiousness", "key": "+"},
+    {"id": "C06", "text": "I often forget to put things back in their proper place.", "domain": "conscientiousness", "key": "-"},
+    {"id": "C07", "text": "I like order.", "domain": "conscientiousness", "key": "+"},
+    {"id": "C08", "text": "I shirk my duties.", "domain": "conscientiousness", "key": "-"},
+    {"id": "C09", "text": "I follow a schedule.", "domain": "conscientiousness", "key": "+"},
+    {"id": "C10", "text": "I am exacting in my work.", "domain": "conscientiousness", "key": "+"},
+
+    {"id": "N01", "text": "I get stressed out easily.", "domain": "neuroticism", "key": "+"},
+    {"id": "N02", "text": "I am relaxed most of the time.", "domain": "neuroticism", "key": "-"},
+    {"id": "N03", "text": "I worry about things.", "domain": "neuroticism", "key": "+"},
+    {"id": "N04", "text": "I seldom feel blue.", "domain": "neuroticism", "key": "-"},
+    {"id": "N05", "text": "I am easily disturbed.", "domain": "neuroticism", "key": "+"},
+    {"id": "N06", "text": "I get upset easily.", "domain": "neuroticism", "key": "+"},
+    {"id": "N07", "text": "I change my mood a lot.", "domain": "neuroticism", "key": "+"},
+    {"id": "N08", "text": "I have frequent mood swings.", "domain": "neuroticism", "key": "+"},
+    {"id": "N09", "text": "I get irritated easily.", "domain": "neuroticism", "key": "+"},
+    {"id": "N10", "text": "I often feel blue.", "domain": "neuroticism", "key": "+"},
+
+    {"id": "O01", "text": "I have a rich vocabulary.", "domain": "openness", "key": "+"},
+    {"id": "O02", "text": "I have difficulty understanding abstract ideas.", "domain": "openness", "key": "-"},
+    {"id": "O03", "text": "I have a vivid imagination.", "domain": "openness", "key": "+"},
+    {"id": "O04", "text": "I am not interested in abstract ideas.", "domain": "openness", "key": "-"},
+    {"id": "O05", "text": "I have excellent ideas.", "domain": "openness", "key": "+"},
+    {"id": "O06", "text": "I do not have a good imagination.", "domain": "openness", "key": "-"},
+    {"id": "O07", "text": "I am quick to understand things.", "domain": "openness", "key": "+"},
+    {"id": "O08", "text": "I use difficult words.", "domain": "openness", "key": "+"},
+    {"id": "O09", "text": "I spend time reflecting on things.", "domain": "openness", "key": "+"},
+    {"id": "O10", "text": "I am full of ideas.", "domain": "openness", "key": "+"}
+  ],
+  "scoring": {
+    "instructions": "For each domain, reverse reverse-keyed items (6 - raw) and average the 10 items. Resulting domain score is on 1-5 scale.",
+    "items_per_domain": 10
+  },
+  "norms": {
+    "extraversion": {
+      "mean": 3.25,
+      "sd": 0.90,
+      "source": "Johnson (2014), 'Measuring thirty facets of the Five Factor Model with a 120-item public domain inventory: Development of the IPIP-NEO-120', Journal of Research in Personality 51: 78-89. Adult US sample N=619,150. Domain converted to 1-5 metric.",
+      "note": "Reported raw mean ~36.5/50 on IPIP-50; converted to per-item 3.65 in some reports. Goldberg's IPIP-50 norm table (ipip.ori.org) reports ~3.25 for extraversion in community samples."
+    },
+    "agreeableness": {
+      "mean": 3.64,
+      "sd": 0.72,
+      "source": "Goldberg IPIP-50 norm table, ipip.ori.org; cross-checked with Johnson (2014) IPIP-NEO-120 adult US norms."
+    },
+    "conscientiousness": {
+      "mean": 3.45,
+      "sd": 0.73,
+      "source": "Goldberg IPIP-50 norm table, ipip.ori.org; cross-checked with Johnson (2014) IPIP-NEO-120."
+    },
+    "neuroticism": {
+      "mean": 2.97,
+      "sd": 0.88,
+      "source": "Goldberg IPIP-50 norm table, ipip.ori.org; cross-checked with Johnson (2014) IPIP-NEO-120. Note: IPIP labels this 'Emotional Stability' reverse-scored; reported here as Neuroticism (higher = more neurotic)."
+    },
+    "openness": {
+      "mean": 3.70,
+      "sd": 0.66,
+      "source": "Goldberg IPIP-50 norm table, ipip.ori.org (IPIP calls this 'Intellect/Imagination'); cross-checked with Johnson (2014) IPIP-NEO-120."
+    }
+  }
+}

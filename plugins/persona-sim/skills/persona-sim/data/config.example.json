@@ -1,0 +1,31 @@
+{
+  "_comment": "Copy this file to ~/.claude/data/personas/config.json and fill in api_key. The provider field selects which block under 'providers' is active. NEVER commit the real config.json — it contains secrets.",
+  "provider": "anthropic",
+  "providers": {
+    "anthropic": {
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "api_style": "anthropic",
+      "default_model": "claude-haiku-4-5-20251001",
+      "gradient_model": "claude-sonnet-4-5",
+      "supports_prompt_cache": true
+    },
+    "anthropic_gateway_example": {
+      "_note": "Example for a custom Anthropic-compatible gateway (e.g., enterprise proxy that routes Claude through Vertex). Paste your gateway's base_url and key.",
+      "api_key": "REPLACE_WITH_YOUR_KEY",
+      "base_url": "https://YOUR-GATEWAY-HOST.example.com",
+      "api_style": "anthropic",
+      "default_model": "claude-haiku-4-5",
+      "gradient_model": "claude-sonnet-4-5",
+      "supports_prompt_cache": true
+    },
+    "openai_compat_example": {
+      "_note": "Example for any OpenAI-compatible gateway (OpenRouter, vLLM, Together, etc.).",
+      "api_key": "REPLACE_WITH_YOUR_KEY",
+      "base_url": "https://api.openrouter.ai/v1",
+      "api_style": "openai",
+      "default_model": "anthropic/claude-haiku-4.5",
+      "gradient_model": "anthropic/claude-sonnet-4.5",
+      "supports_prompt_cache": false
+    }
+  }
+}

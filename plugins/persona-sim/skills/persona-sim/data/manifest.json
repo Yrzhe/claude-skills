@@ -1,0 +1,161 @@
+{
+  "version": "1.0",
+  "data_root": "~/.claude/data/personas",
+  "note": "Datasets are NOT redistributed with the skill. Users must fetch them with `python -m persona_sim.fetch <dataset_id>`. See the `redistribute: false` flag per dataset.",
+  "canonical_schema": {
+    "age": "int | null",
+    "gender": "enum[male,female,other] | null",
+    "region": "admin1 code (US state, CN province, JP prefecture, etc.) — NOT ISO country | null",
+    "education": "enum[none,primary,secondary,bachelor,graduate] | null",
+    "occupation_isco": "ISCO-08 code or free text | null",
+    "income_bracket": "enum[low,middle,high] | null",
+    "marital": "enum[single,married,divorced,widowed] | null",
+    "narrative": "text (long-form biography, the prompt backbone)",
+    "source_dataset": "str"
+  },
+  "datasets": {
+    "nemotron_usa": {
+      "source": "hf://nvidia/Nemotron-Personas",
+      "hf_repo": "nvidia/Nemotron-Personas",
+      "license": "CC-BY-4.0",
+      "size_mb": 230,
+      "rows": 100000,
+      "default_mode": "local",
+      "stream_ok": true,
+      "local_path": "nemotron/usa/data.parquet",
+      "redistribute": false,
+      "fetch_cmd": "python -m persona_sim.fetch nemotron_usa",
+      "field_map": {
+        "age": "age",
+        "sex": "gender",
+        "state": "region",
+        "education": "education",
+        "occupation": "occupation_isco",
+        "marital_status": "marital",
+        "professional_persona": "narrative:prof",
+        "sports_persona": "narrative:sports",
+        "arts_persona": "narrative:arts",
+        "travel_persona": "narrative:travel",
+        "culinary_persona": "narrative:culinary"
+      },
+      "narrative_assembly": ["professional_persona", "sports_persona", "arts_persona", "travel_persona", "culinary_persona"]
+    },
+    "nemotron_japan": {
+      "source": "hf://nvidia/Nemotron-Personas-Japan",
+      "hf_repo": "nvidia/Nemotron-Personas-Japan",
+      "license": "CC-BY-4.0",
+      "size_mb": 240,
+      "default_mode": "local",
+      "stream_ok": true,
+      "local_path": "nemotron/japan/data.parquet",
+      "redistribute": false,
+      "fetch_cmd": "python -m persona_sim.fetch nemotron_japan"
+    },
+    "nemotron_india": {
+      "source": "hf://nvidia/Nemotron-Personas-India",
+      "hf_repo": "nvidia/Nemotron-Personas-India",
+      "license": "CC-BY-4.0",
+      "size_mb": 230,
+      "default_mode": "local",
+      "stream_ok": true,
+      "local_path": "nemotron/india/data.parquet",
+      "redistribute": false,
+      "fetch_cmd": "python -m persona_sim.fetch nemotron_india"
+    },
+    "personahub": {
+      "source": "hf://proj-persona/PersonaHub",
+      "hf_repo": "proj-persona/PersonaHub",
+      "license": "research-only (data); Apache-2.0 (code)",
+      "size_mb": 80,
+      "rows": 200000,
+      "default_mode": "local",
+      "stream_ok": true,
+      "local_path": "personahub/elite.jsonl",
+      "redistribute": false,
+      "fetch_cmd": "python -m persona_sim.fetch personahub",
+      "note": "200K elite subset, narrative-only personas (no demographic fields)"
+    },
+    "nature2025_synpop": {
+      "source": "zenodo://10.5281/synpop-2025",
+      "license": "CC-BY-4.0",
+      "size_mb": 20000,
+      "default_mode": "stream",
+      "stream_ok": true,
+      "redistribute": false,
+      "note": "303M individuals, 180+ countries. Too large for default local; per-country slicing recommended."
+    },
+    "gss": {
+      "source": "https://gss.norc.org/get-the-data",
+      "license": "Public use",
+      "default_mode": "ask",
+      "stream_ok": false,
+      "local_path": "surveys/gss.parquet",
+      "redistribute": false,
+      "note": "Used for eval baseline (attitude replication), not persona generation. Manual download + conversion needed."
+    },
+    "wvs_wave7": {
+      "source": "https://www.worldvaluessurvey.org",
+      "license": "WVS terms (academic/nonprofit free)",
+      "default_mode": "ask",
+      "stream_ok": false,
+      "local_path": "surveys/wvs_wave7.parquet",
+      "redistribute": false
+    },
+    "pums_us_1yr": {
+      "source": "https://www.census.gov/programs-surveys/acs/microdata.html",
+      "license": "Public domain (US gov)",
+      "default_mode": "local",
+      "stream_ok": false,
+      "local_path": "census/pums_us_1yr.parquet",
+      "redistribute": true,
+      "note": "Used for post-stratification weighting, not as persona source directly."
+    },
+    "cgss": {
+      "source": "http://cgss.ruc.edu.cn",
+      "license": "Academic (free, registration required, NO redistribution)",
+      "default_mode": "ask",
+      "stream_ok": false,
+      "local_path": "surveys/cgss.parquet",
+      "redistribute": false,
+      "note": "Chinese General Social Survey. Eval baseline only, not persona source. Narrative synthesis needs LLM step."
+    },
+    "census7_cn": {
+      "source": "http://www.stats.gov.cn/sj/pcsj/rkpc/7rp/indexch.htm",
+      "license": "Public (government open data)",
+      "default_mode": "ask",
+      "stream_ok": false,
+      "local_path": "census/census7_cn.parquet",
+      "redistribute": true,
+      "note": "China 7th Census (2020) aggregate tables. Use as IPF marginal anchor for synthetic China persona pool. Only marginal distributions, no individual microdata."
+    },
+    "wvs_wave7_china": {
+      "source": "https://www.worldvaluessurvey.org/WVSDocumentationWV7.jsp",
+      "license": "WVS terms — registration required, NO redistribution",
+      "default_mode": "ask",
+      "stream_ok": false,
+      "local_path": "surveys/wvs_wave7_china.parquet",
+      "redistribute": false,
+      "note": "WVS Wave 7 China slice (~3036 respondents). Values/attitude anchors for Chinese persona value axis."
+    }
+  },
+  "eval_suites": {
+    "gss_20q": {
+      "benchmark": "gss",
+      "metric": "js_divergence",
+      "threshold": 0.15
+    },
+    "bfi44": {
+      "benchmark": "ipip_neo_norms",
+      "metric": "per_dim_zscore",
+      "threshold": 1.0
+    },
+    "test_retest": {
+      "metric": "cohen_kappa",
+      "threshold": 0.6
+    },
+    "diversity": {
+      "metric": "shannon_entropy_ratio",
+      "threshold": 0.7
+    }
+  }
+}

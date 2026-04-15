@@ -1,0 +1,25 @@
+{
+  "name": "persona-sim",
+  "version": "0.1.0",
+  "description": "Simulate feedback from census-grounded virtual populations. Panel-score product/copy, predict votes with IPF post-stratification, or run what-if social-sandbox experiments. Ships with 4 skills (core + product-feedback / vote-predict / social-sandbox), a bias audit module, and 6 eval suites (GSS, BFI, test-retest, diversity, demo-correlation, bias-audit).",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": [
+    "persona",
+    "simulation",
+    "nemotron",
+    "silicon-sample",
+    "synthetic-population",
+    "generative-agents",
+    "sgo",
+    "product-feedback",
+    "vote-predict",
+    "social-sandbox",
+    "ipf",
+    "bias-audit"
+  ]
+}

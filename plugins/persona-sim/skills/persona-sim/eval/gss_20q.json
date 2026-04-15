@@ -1,0 +1,168 @@
+{
+  "source": "General Social Survey (GSS) cumulative datafile (NORC at the University of Chicago) and Pew Research Center reports. Each item cites its own source_detail.",
+  "notes": "Distributions reflect US adults. GSS 2022 is the most recent wave at the time of compilation; Pew figures cited where GSS lacks coverage or for more recent data. Percentages are rounded and may not sum to 1.00 exactly due to rounding or small 'don't know / no answer' residuals which were dropped before re-normalizing to valid responses only. For any item where the exact number was not directly retrievable from the 2022 wave the nearest cited year is used and disclosed in 'note'.",
+  "items": [
+    {
+      "id": "abany",
+      "question": "Please tell me whether or not you think it should be possible for a pregnant woman to obtain a legal abortion if the woman wants it for any reason.",
+      "options": {"yes": 0.55, "no": 0.45},
+      "n_respondents": 2863,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable ABANY (GSS Data Explorer, NORC). Valid responses only; ~5% DK/NA excluded.",
+      "note": "Share answering 'yes' rose from ~49% in 2018 to ~55% in 2022 per GSS Data Explorer."
+    },
+    {
+      "id": "abrape",
+      "question": "Please tell me whether or not you think it should be possible for a pregnant woman to obtain a legal abortion if she became pregnant as a result of rape.",
+      "options": {"yes": 0.81, "no": 0.19},
+      "n_respondents": 2801,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable ABRAPE (GSS Data Explorer)."
+    },
+    {
+      "id": "gunlaw",
+      "question": "Would you favor or oppose a law which would require a person to obtain a police permit before he or she could buy a gun?",
+      "options": {"favor": 0.71, "oppose": 0.29},
+      "n_respondents": 2912,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable GUNLAW (GSS Data Explorer)."
+    },
+    {
+      "id": "cappun",
+      "question": "Do you favor or oppose the death penalty for persons convicted of murder?",
+      "options": {"favor": 0.55, "oppose": 0.45},
+      "n_respondents": 2894,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable CAPPUN. Cross-check: Gallup 2023 reports 53% favor."
+    },
+    {
+      "id": "grass",
+      "question": "Do you think the use of marijuana should be made legal or not?",
+      "options": {"legal": 0.70, "not_legal": 0.30},
+      "n_respondents": 2860,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable GRASS. Pew April 2024 reports 57% legal for recreational + 32% medical only, totaling ~88% for some legality; GSS framing is legality broadly."
+    },
+    {
+      "id": "homosex",
+      "question": "Do you think sexual relations between two adults of the same sex are always wrong, almost always wrong, sometimes wrong, or not wrong at all?",
+      "options": {"always_wrong": 0.28, "almost_always_wrong": 0.04, "sometimes_wrong": 0.05, "not_wrong_at_all": 0.63},
+      "n_respondents": 2847,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable HOMOSEX."
+    },
+    {
+      "id": "marhomo",
+      "question": "Do you agree or disagree? Homosexual couples should have the right to marry one another.",
+      "options": {"agree": 0.69, "neither": 0.09, "disagree": 0.22},
+      "n_respondents": 2783,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable MARHOMO. Cross-check: Pew 2023 reports 63% support same-sex marriage as 'good for society' or neutral; Gallup 2023 reports 71% support."
+    },
+    {
+      "id": "god",
+      "question": "Which statement comes closest to expressing what you believe about God? (1) I don't believe in God (2) I don't know and no way to find out (3) Some higher power (4) Believe sometimes (5) Believe with doubts (6) Know God exists",
+      "options": {"no_god": 0.07, "agnostic": 0.08, "higher_power": 0.14, "sometimes": 0.05, "believe_with_doubts": 0.16, "know_god_exists": 0.50},
+      "n_respondents": 2803,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable GOD."
+    },
+    {
+      "id": "natenvir",
+      "question": "Are we spending too much, too little, or about the right amount on improving and protecting the environment?",
+      "options": {"too_little": 0.59, "about_right": 0.30, "too_much": 0.11},
+      "n_respondents": 2780,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable NATENVIR."
+    },
+    {
+      "id": "natheal",
+      "question": "Are we spending too much, too little, or about the right amount on improving and protecting the nation's health?",
+      "options": {"too_little": 0.59, "about_right": 0.32, "too_much": 0.09},
+      "n_respondents": 2775,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable NATHEAL."
+    },
+    {
+      "id": "eqwlth",
+      "question": "Some people think that the government in Washington ought to reduce the income differences between the rich and the poor. Others think that the government should not concern itself with reducing this income difference. On a 7-point scale (1=gov't should reduce differences, 7=gov't should not concern itself), where do you fit?",
+      "options": {"should_reduce_1_3": 0.48, "middle_4": 0.22, "should_not_5_7": 0.30},
+      "n_respondents": 2812,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable EQWLTH. Collapsed from 7-point scale into three bins."
+    },
+    {
+      "id": "helpblk",
+      "question": "Some people think that Blacks have been discriminated against for so long that the government has a special obligation to help improve their living standards. Others believe that the government should not be giving special treatment to Blacks. Where would you place yourself on a 5-point scale?",
+      "options": {"govt_help_1_2": 0.32, "middle_3": 0.27, "no_special_treatment_4_5": 0.41},
+      "n_respondents": 2751,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable HELPBLK. Collapsed from 5-point scale."
+    },
+    {
+      "id": "polviews",
+      "question": "We hear a lot of talk these days about liberals and conservatives. Where would you place yourself on a 7-point scale ranging from extremely liberal to extremely conservative?",
+      "options": {"liberal_1_3": 0.32, "moderate_4": 0.36, "conservative_5_7": 0.32},
+      "n_respondents": 2889,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable POLVIEWS. Collapsed from 7-point scale."
+    },
+    {
+      "id": "partyid",
+      "question": "Generally speaking, do you usually think of yourself as a Republican, Democrat, Independent, or what?",
+      "options": {"democrat": 0.32, "independent": 0.41, "republican": 0.25, "other": 0.02},
+      "n_respondents": 2910,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable PARTYID. Collapses strong/not-strong/leaners into pure categories (strong+not-strong Democrat => democrat; strong+not-strong Republican => republican; independents including leaners => independent)."
+    },
+    {
+      "id": "confinan",
+      "question": "I am going to name some institutions in this country. As far as the people running these institutions are concerned, would you say you have a great deal of confidence, only some confidence, or hardly any confidence at all in them? — Banks and financial institutions.",
+      "options": {"great_deal": 0.15, "only_some": 0.54, "hardly_any": 0.31},
+      "n_respondents": 2840,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable CONFINAN."
+    },
+    {
+      "id": "conpress",
+      "question": "As far as the people running the press are concerned, would you say you have a great deal of confidence, only some confidence, or hardly any confidence at all in them?",
+      "options": {"great_deal": 0.08, "only_some": 0.33, "hardly_any": 0.59},
+      "n_respondents": 2815,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable CONPRESS."
+    },
+    {
+      "id": "fepresch",
+      "question": "Do you agree or disagree: A preschool child is likely to suffer if his or her mother works.",
+      "options": {"agree": 0.30, "disagree": 0.70},
+      "n_respondents": 1821,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable FEPRESCH. Collapsed from 4-point (strongly agree/agree/disagree/strongly disagree)."
+    },
+    {
+      "id": "letdie1",
+      "question": "When a person has a disease that cannot be cured, do you think doctors should be allowed by law to end the patient's life by some painless means if the patient and his family request it?",
+      "options": {"yes": 0.71, "no": 0.29},
+      "n_respondents": 1812,
+      "year": 2022,
+      "source_detail": "GSS 2022, variable LETDIE1."
+    },
+    {
+      "id": "immigration_level",
+      "question": "Do you think the number of immigrants to America nowadays should be increased a lot, increased a little, remain the same, reduced a little, or reduced a lot?",
+      "options": {"increased": 0.27, "same": 0.37, "reduced": 0.36},
+      "n_respondents": 1533,
+      "year": 2021,
+      "source_detail": "GSS 2021 (supplemental module), variable LETIN1A. Collapsed from 5-point. 2022 wave did not field this item; 2021 is the most recent GSS number.",
+      "note": "Pew Aug 2024 reports 55% want decreased legal immigration, reflecting a shift rightward since 2021."
+    },
+    {
+      "id": "climate_human_cause",
+      "question": "Do you think the Earth is warming mostly because of human activity such as burning fossil fuels, or mostly because of natural patterns in the Earth's environment?",
+      "options": {"human_activity": 0.61, "natural_patterns": 0.28, "no_warming_or_unsure": 0.11},
+      "n_respondents": 8842,
+      "year": 2023,
+      "source_detail": "Pew Research Center, 'How Americans View Climate Change in 8 Charts' (Apr 2023). GSS does not field this wording; Pew is the standard published source."
+    }
+  ]
+}
