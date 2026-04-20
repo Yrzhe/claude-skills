@@ -1,0 +1,12 @@
+{
+  "name": "seed",
+  "version": "0.1.0",
+  "description": "Build-in-public activity recorder. A Stop hook mechanically logs every Claude Code turn (user prompt + tools used + full assistant output) to a per-session markdown file. When you're ready to tweet, /seed reads the log and helps you synthesize draft tweets from real evidence. Includes /seed shot for screenshot capture bound to the current session.",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yrzhe/claude-skills",
+  "keywords": ["build-in-public", "tweet", "session-log", "stop-hook", "screenshot", "activity-capture", "synthesis"]
+}

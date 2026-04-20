@@ -151,6 +151,48 @@ cp -r plugins/design-distiller/skills/design-distiller ~/.claude/skills/
 /design-distiller list                             # List all 55 references
 ```
 
+### seed
+
+Build-in-public activity recorder. A Stop hook mechanically logs every Claude Code turn (user prompt + tools used + full assistant output) to a per-session markdown file. When you're ready to tweet, `/seed` reads the log and helps you synthesize draft tweets from real evidence — no more "wait, what did I actually do today?"
+
+**Features:**
+- Zero-cost Stop hook — mechanical turn capture, no LLM calls, no scoring, zero latency
+- De-duped by user-prompt uuid (Stop hook fires per-turn, so dedup matters)
+- Per-session markdown logs with full assistant output + tool summaries
+- `/seed shot` — screenshot capture bound to the current session (interactive window-pick OR headless Chrome URL mode)
+- `/seed` — Claude reads the log and proposes tweet drafts tied to real evidence (skips routine sessions)
+
+**Install:**
+```bash
+/plugin install seed@yrzhe-skills
+```
+
+**Manual install:**
+```bash
+cp -r plugins/seed/skills/seed ~/.claude/skills/seed
+chmod +x ~/.claude/skills/seed/scripts/*.py
+```
+
+**Hook setup** (one-time, see `plugins/seed/skills/seed/README.md` for full instructions):
+```bash
+cp ~/.claude/skills/seed/hooks/capture-session-seed.sh ~/.claude/hooks/
+chmod +x ~/.claude/hooks/capture-session-seed.sh
+```
+
+Then add to `~/.claude/settings.json`:
+```json
+{ "hooks": { "Stop": [{ "matcher": ".*", "hooks": [{ "type": "command", "command": "~/.claude/hooks/capture-session-seed.sh" }] }] } }
+```
+
+**Usage:**
+```
+/seed                                # synthesize current session → tweet drafts
+/seed shot                           # interactive window pick
+/seed shot localhost:3000            # headless Chrome screenshot
+/seed list                           # list all session logs
+/seed done                           # archive current session
+```
+
 ## Contributing
 
 Feel free to open issues or submit pull requests to improve these skills.

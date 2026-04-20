@@ -139,6 +139,19 @@
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
       "tags": ["persona", "simulation", "nemotron", "silicon-sample", "synthetic-population", "generative-agents", "sgo", "product-feedback", "vote-predict", "social-sandbox", "ipf", "bias-audit"]
+    },
+    {
+      "name": "seed",
+      "source": "./plugins/seed",
+      "description": "Build-in-public activity recorder. A Stop hook mechanically logs every Claude Code turn to a per-session markdown file. When you want to tweet, /seed reads the log and proposes drafts tied to real evidence. Includes /seed shot for screenshot capture bound to the current session.",
+      "version": "0.1.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["build-in-public", "tweet", "session-log", "stop-hook", "screenshot", "activity-capture", "synthesis"]
     }
   ]
 }
