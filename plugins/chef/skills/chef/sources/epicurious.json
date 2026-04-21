@@ -1,0 +1,44 @@
+{
+  "id": "epicurious",
+  "name": "Epicurious (Kaggle 预爬数据集)",
+  "site": "https://www.epicurious.com",
+  "language": "en",
+  "region": "US",
+  "cuisines": ["美式精品", "全球", "烘焙"],
+  "enabled": true,
+  "access_method": "dataset",
+  "access_details": {
+    "download_url": "https://www.kaggle.com/datasets/hugodarwood/epirecipes",
+    "alt_urls": [
+      "https://www.kaggle.com/datasets/ericmcgregor/epicurious-recipes"
+    ],
+    "files_of_interest": {
+      "recipes_full": "full_format_recipes.json",
+      "recipes_flat": "epi_r.csv"
+    },
+    "json_schema_example": {
+      "title": "...",
+      "ingredients": ["..."],
+      "directions": ["..."],
+      "categories": ["..."],
+      "date": "...",
+      "desc": "...",
+      "rating": 4.2,
+      "calories": 520,
+      "protein": 28,
+      "fat": 22,
+      "sodium": 600
+    },
+    "size_mb": 30,
+    "row_count": 20000,
+    "license": "Kaggle 公开数据集。"
+  },
+  "fields_available": ["title", "ingredients", "steps", "nutrition", "tags", "rating", "description"],
+  "rate_limit_sec": 0,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "不涉及在线抓取。",
+  "usage_notes": "精品食谱，含评分和营养。适合西餐精品菜种子。JSON 版字段更完整。",
+  "example_usage": "python scripts/import_dataset.py --source epicurious --file ~/Downloads/full_format_recipes.json --limit 5000",
+  "last_verified": "2026-04-16"
+}

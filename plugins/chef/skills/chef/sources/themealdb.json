@@ -1,0 +1,48 @@
+{
+  "id": "themealdb",
+  "name": "TheMealDB",
+  "site": "https://www.themealdb.com",
+  "language": "en",
+  "region": "global",
+  "cuisines": ["全球", "英伦", "墨西哥", "意餐", "印餐", "中餐", "日餐"],
+  "enabled": true,
+  "access_method": "api",
+  "access_details": {
+    "base_url": "https://www.themealdb.com/api/json/v1/1",
+    "endpoints": {
+      "search_by_name": "/search.php?s={query}",
+      "search_by_first_letter": "/search.php?f={letter}",
+      "lookup_by_id": "/lookup.php?i={id}",
+      "random": "/random.php",
+      "list_categories": "/categories.php",
+      "list_areas": "/list.php?a=list",
+      "list_ingredients": "/list.php?i=list",
+      "filter_by_category": "/filter.php?c={category}",
+      "filter_by_area": "/filter.php?a={area}",
+      "filter_by_ingredient": "/filter.php?i={ingredient}"
+    },
+    "response_format": "json",
+    "root_path": "meals",
+    "field_mapping": {
+      "id": "idMeal",
+      "title": "strMeal",
+      "category": "strCategory",
+      "area": "strArea",
+      "instructions": "strInstructions",
+      "image": "strMealThumb",
+      "tags": "strTags",
+      "video": "strYoutube",
+      "source_url": "strSource",
+      "ingredients": "strIngredient1..strIngredient20 + strMeasure1..strMeasure20"
+    },
+    "bootstrap_strategy": "依次 GET /search.php?f=a..z 拉全量（约 283 道），去重存入 data/recipes/。"
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "category", "cuisine", "tags", "video"],
+  "rate_limit_sec": 1,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "不涉及。",
+  "usage_notes": "开源众包 + 完全免费。开发 key '1' 无限用。冷启动首选；缺点：步骤是一大段文本（strInstructions），需 split 成步骤列表。",
+  "example_usage": "python scripts/api_themealdb.py --search 'chicken'\npython scripts/api_themealdb.py --random\npython scripts/api_themealdb.py --bootstrap",
+  "last_verified": "2026-04-16"
+}

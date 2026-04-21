@@ -1,0 +1,40 @@
+{
+  "id": "xiangha",
+  "name": "香哈菜谱",
+  "site": "https://www.xiangha.com",
+  "language": "zh",
+  "region": "CN",
+  "cuisines": ["中餐家常", "烘焙", "地方菜"],
+  "enabled": true,
+  "access_method": "scrape_list",
+  "access_details": {
+    "list_urls": [
+      "https://www.xiangha.com/caipu/search/?q={query}",
+      "https://www.xiangha.com/caipu/list/{category_id}/"
+    ],
+    "selectors": {
+      "list_item": ".list li, .search-list li",
+      "title": ".list li h2 a, .search-item-title a",
+      "detail_url": ".list li h2 a@href"
+    },
+    "detail_url_pattern": "https://www.xiangha.com/caipu/{id}.html",
+    "detail_selectors": {
+      "title": "h1.recipe-title",
+      "ingredients_row": ".recipe-materials li",
+      "ingredient_name": ".recipe-materials li .name",
+      "ingredient_amount": ".recipe-materials li .amount",
+      "steps": ".recipe-steps .step-text",
+      "step_image": ".recipe-steps img@src",
+      "cover_image": ".recipe-intro img@src",
+      "description": ".recipe-intro .desc"
+    }
+  },
+  "fields_available": ["title", "ingredients", "steps", "image"],
+  "rate_limit_sec": 2,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "未明示。",
+  "usage_notes": "9000 万用户、百万菜谱。家常菜图文并茂，选择器在改版后可能需要调整——用前建议先跑一次 fetch.py 验证。",
+  "example_usage": "python scripts/fetch.py --source xiangha --query 糖醋里脊",
+  "last_verified": "2026-04-16"
+}

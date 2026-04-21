@@ -1,0 +1,46 @@
+{
+  "id": "xiachufang",
+  "name": "下厨房",
+  "site": "https://www.xiachufang.com",
+  "language": "zh",
+  "region": "CN",
+  "cuisines": ["中餐家常", "川菜", "粤菜", "烘焙", "地方菜"],
+  "enabled": true,
+  "access_method": "scrape_list",
+  "access_details": {
+    "list_urls": [
+      "https://www.xiachufang.com/explore/",
+      "https://www.xiachufang.com/category/{category_id}/",
+      "https://www.xiachufang.com/search/?keyword={query}"
+    ],
+    "selectors": {
+      "list_item": "li.recipe, .normal-recipe-list li",
+      "title": "p.name a, .name a",
+      "detail_url": "p.name a@href, .name a@href",
+      "ingredients_hint": "p.ing"
+    },
+    "detail_url_pattern": "https://www.xiachufang.com/recipe/{id}/",
+    "detail_selectors": {
+      "title": "h1.page-title",
+      "ingredients_row": "div.ings tr",
+      "ingredient_name": "td.name a, td.name",
+      "ingredient_amount": "td.unit",
+      "steps": "div.steps p.text",
+      "step_image": "div.steps img@src",
+      "author": "div.author a",
+      "servings": "div.stats .number",
+      "cover_image": "div.cover img@src",
+      "description": "div.desc"
+    },
+    "sitemap_url": "https://www.xiachufang.com/sitemap.xml",
+    "encoding": "utf-8"
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "author", "servings", "tags"],
+  "rate_limit_sec": 5,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "robots.txt 允许 /explore/ /category/；/recipe/*/ 被 Disallow。个人非商用参考忽略。",
+  "usage_notes": "列表页提供标题+URL+食材简略；详情页有完整步骤、图片、作者。**已知风控**：热门 recipe 会触发 humancheck_captcha 滑动验证——302 到 /humancheck 视作退避信号，指数回退 + 暂停该域批量。recipe-scrapers v15 已内置 xiachufang scraper。建议 3-8s 抖动延迟。",
+  "example_usage": "python scripts/fetch.py --source xiachufang --query 红烧肉\npython scripts/fetch.py --source xiachufang --category 家常菜 --pages 5",
+  "last_verified": "2026-04-16"
+}

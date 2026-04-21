@@ -1,0 +1,33 @@
+{
+  "id": "foodnetwork",
+  "name": "Food Network",
+  "site": "https://www.foodnetwork.com",
+  "language": "en",
+  "region": "US",
+  "cuisines": ["美式", "意餐", "全球", "烘焙", "烧烤"],
+  "enabled": true,
+  "access_method": "scrape_with_library",
+  "access_details": {
+    "library": "recipe-scrapers",
+    "example_url": "https://www.foodnetwork.com/recipes/food-network-kitchen/chicken-parmesan-recipe-1953649",
+    "fallback_method": "heading_anchor",
+    "headings": {
+      "title": "h1",
+      "level": "Level",
+      "time": "Total/Prep/Cook",
+      "yield": "Yield",
+      "nutrition": "Nutrition Analysis",
+      "ingredients": "## Ingredients",
+      "steps": "## Directions",
+      "categories": "Categories"
+    }
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "author", "prep_time", "cook_time", "total_time", "servings", "nutrition", "difficulty", "category", "tags"],
+  "rate_limit_sec": 5,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "robots 封禁 GPTBot/ChatGPT-User/CCBot/ClaudeBot/PerplexityBot；Pinterest Crawl-delay=5。",
+  "usage_notes": "字段模板最标准化之一（5/5 解析）。但 Terms 明文禁止 scrape（公共搜索引擎例外）。个人非商用可抓，但低并发、crawl-delay ≥5s、避开 print/embed/ratings/search 路径。",
+  "example_usage": "python scripts/fetch.py --source foodnetwork --url https://www.foodnetwork.com/recipes/food-network-kitchen/chicken-parmesan-recipe-1953649",
+  "last_verified": "2026-04-16"
+}

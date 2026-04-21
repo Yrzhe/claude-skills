@@ -1,0 +1,34 @@
+{
+  "id": "bbcgoodfood",
+  "name": "BBC Good Food",
+  "site": "https://www.bbcgoodfood.com",
+  "language": "en",
+  "region": "UK",
+  "cuisines": ["英伦", "意餐", "印餐", "亚洲", "烘焙", "全球"],
+  "enabled": true,
+  "access_method": "hybrid",
+  "access_details": {
+    "primary": "scrape_with_library",
+    "library": "recipe-scrapers",
+    "example_url": "https://www.bbcgoodfood.com/recipes/classic-lasagne",
+    "search_url": "https://www.bbcgoodfood.com/search?q={query}",
+    "search_selectors": {
+      "list_item": "article.card",
+      "detail_url": "a.card__link@href"
+    },
+    "public_dataset": {
+      "description": "社区维护的 BBC Good Food JSON 数据集",
+      "kaggle_search_keywords": "bbc good food recipes json",
+      "github_search_keywords": "bbc-good-food-recipes",
+      "note": "字段通常含 title/ingredients/time/keywords；烹饪步骤可能不全，需回 BBC 原页补齐。"
+    }
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "prep_time", "cook_time", "total_time", "servings", "nutrition", "cuisine", "tags", "rating"],
+  "rate_limit_sec": 1,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "robots.txt 宽松。",
+  "usage_notes": "17000+ 道，权威英伦菜库。优先 recipe-scrapers；需要批量时搜社区 JSON 数据集但步骤可能缺，用 enrich.py 回补。",
+  "example_usage": "python scripts/fetch.py --source bbcgoodfood --query 'shepherds pie'\npython scripts/fetch.py --source bbcgoodfood --url 'https://www.bbcgoodfood.com/recipes/...'",
+  "last_verified": "2026-04-16"
+}

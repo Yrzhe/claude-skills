@@ -193,6 +193,41 @@ Then add to `~/.claude/settings.json`:
 /seed done                           # archive current session
 ```
 
+### chef
+
+Cooking assistant for Chinese and Western cuisine — **recipes are pulled from real sources, never fabricated**. LLMs have no taste buds; specific quantities, timings, and heat levels must come from real recipe data or be fetched live. Ships with **604 pre-fetched recipes** as evidence.
+
+**Sources (all real):** xiachufang, douguo, meishij (下厨房/豆果美食/美食杰 — Chinese), allrecipes, BBC Good Food, Food Network, TheMealDB, Serious Eats, Epicurious, and 10+ others. Zero fabrication — if a source doesn't have it, the agent says "let me fetch it" before answering.
+
+**Features:**
+- Hard rule: no data = no answer. Every quantity/technique traceable to a source URL
+- Chinese cuisines: 川/粤/鲁/苏/闽/浙/湘/徽/家常
+- Western cuisines: 意/法/美式/地中海/英伦 + categories (mains/baking/soups/salads/breakfast)
+- Recipe walkthroughs with ingredients (name + gram weight), steps (timing/heat/key moments), doneness cues, common pitfalls
+- Ingredient-based suggestions (prioritize recipes covering ≥2 of what you have)
+- Pairing analysis via local co-occurrence + theory (not vibes)
+- Nutrition lookup (Open Food Facts) + substitution advice
+- 604 pre-cached recipes in `data/recipes/*.md` — search before fetch
+
+**Install:**
+```bash
+/plugin install chef@yrzhe-skills
+```
+
+**Manual install:**
+```bash
+cp -r plugins/chef/skills/chef ~/.claude/skills/chef
+```
+
+**Usage:**
+```
+"怎么做西湖醋鱼"            → local search → walkthrough with source URL
+"家里有鸡蛋西红柿土豆能做啥"  → ingredient-match suggestions
+"X 和 Y 搭不搭"            → co-occurrence + pairing theory
+"how do I make carbonara"   → allrecipes/BBC Good Food lookup
+"这菜多少卡路里"            → nutrition from frontmatter or OpenFoodFacts
+```
+
 ## Contributing
 
 Feel free to open issues or submit pull requests to improve these skills.

@@ -1,0 +1,31 @@
+{
+  "id": "kingarthur",
+  "name": "King Arthur Baking",
+  "site": "https://www.kingarthurbaking.com",
+  "language": "en",
+  "region": "US",
+  "cuisines": ["烘焙", "美式烘焙", "面包", "甜点"],
+  "enabled": true,
+  "access_method": "scrape_with_library",
+  "access_details": {
+    "library": "recipe-scrapers",
+    "example_url": "https://www.kingarthurbaking.com/recipes/classic-chocolate-chip-cookies-recipe",
+    "fallback_method": "heading_anchor",
+    "headings": {
+      "title": "h1",
+      "time": "Prep/Bake/Total",
+      "yield": "Yield",
+      "nutrition": "Nutrition Information",
+      "ingredients": "Ingredients",
+      "steps": "Instructions"
+    }
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "prep_time", "cook_time", "total_time", "servings", "nutrition", "rating"],
+  "rate_limit_sec": 4,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "robots 允许公开 recipe；禁 /admin/ /search/ /print/ 等。",
+  "usage_notes": "烘焙权威。Terms 明确禁 automated device/bot/spider/crawler/scraper——个人非商用可抓，但不要批量、不要镜像。",
+  "example_usage": "python scripts/fetch.py --source kingarthur --url https://www.kingarthurbaking.com/recipes/rustic-sourdough-bread-recipe",
+  "last_verified": "2026-04-16"
+}

@@ -1,0 +1,36 @@
+{
+  "id": "xinshipu",
+  "name": "新食谱",
+  "site": "https://www.xinshipu.com",
+  "language": "zh",
+  "region": "CN",
+  "cuisines": ["中餐家常", "地方菜"],
+  "enabled": true,
+  "access_method": "scrape_list",
+  "access_details": {
+    "list_urls": [
+      "https://www.xinshipu.com/sousuo/?q={query}",
+      "https://www.xinshipu.com/caipu/{category_slug}/"
+    ],
+    "selectors": {
+      "list_item": ".recipe-list .item, .cp-item",
+      "title": ".item .title a, .cp-item h3 a",
+      "detail_url": ".item .title a@href"
+    },
+    "detail_url_pattern": "https://www.xinshipu.com/zuofa/{id}",
+    "detail_selectors": {
+      "title": "h1",
+      "ingredients_row": ".ings li",
+      "steps": ".steps li .text",
+      "cover_image": ".recipe-cover img@src"
+    }
+  },
+  "fields_available": ["title", "ingredients", "steps", "image"],
+  "rate_limit_sec": 2,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "未明示。",
+  "usage_notes": "Food-530 数据集（53 万张食物图）以此为菜名来源，学术采集有先例。BeautifulSoup 即可。",
+  "example_usage": "python scripts/fetch.py --source xinshipu --query 鱼香肉丝",
+  "last_verified": "2026-04-16"
+}

@@ -1,0 +1,40 @@
+{
+  "id": "openfoodfacts",
+  "name": "Open Food Facts",
+  "site": "https://world.openfoodfacts.org",
+  "language": "mix",
+  "region": "global",
+  "cuisines": [],
+  "enabled": true,
+  "access_method": "api",
+  "access_details": {
+    "base_url": "https://world.openfoodfacts.org",
+    "endpoints": {
+      "search_by_name": "/cgi/search.pl?search_terms={query}&search_simple=1&action=process&json=1&page_size=20",
+      "product_by_barcode": "/api/v2/product/{barcode}.json",
+      "ingredient_taxonomy": "/ingredients.json"
+    },
+    "cn_base_url": "https://cn.openfoodfacts.org",
+    "response_format": "json",
+    "purpose": "营养数据库；用来补充食谱里缺失的卡路里/蛋白质/脂肪/碳水。非食谱本身。",
+    "field_mapping": {
+      "name": "product_name",
+      "calories_per_100g": "nutriments.energy-kcal_100g",
+      "protein_g_per_100g": "nutriments.proteins_100g",
+      "fat_g_per_100g": "nutriments.fat_100g",
+      "carbs_g_per_100g": "nutriments.carbohydrates_100g",
+      "sugar_g_per_100g": "nutriments.sugars_100g",
+      "sodium_mg_per_100g": "nutriments.sodium_100g",
+      "fiber_g_per_100g": "nutriments.fiber_100g",
+      "nutriscore": "nutriscore_grade"
+    }
+  },
+  "fields_available": ["nutrition"],
+  "rate_limit_sec": 1,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "开放数据库，ODbL 协议。",
+  "usage_notes": "不是食谱源，是营养源。用法：食谱存好后，若 frontmatter.nutrition 缺，按食材名挨个查询 → 按克重线性估算总营养。标 estimated: true。",
+  "example_usage": "python scripts/api_openfoodfacts.py --query '鸡蛋'\npython scripts/api_openfoodfacts.py --query 'chicken breast'",
+  "last_verified": "2026-04-16"
+}

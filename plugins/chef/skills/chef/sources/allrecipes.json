@@ -1,0 +1,30 @@
+{
+  "id": "allrecipes",
+  "name": "AllRecipes",
+  "site": "https://www.allrecipes.com",
+  "language": "en",
+  "region": "US",
+  "cuisines": ["美式", "意餐", "墨西哥", "亚洲", "烘焙", "全球"],
+  "enabled": true,
+  "access_method": "scrape_with_library",
+  "access_details": {
+    "library": "recipe-scrapers",
+    "example_url": "https://www.allrecipes.com/recipe/23600/worlds-best-lasagna/",
+    "fallback_method": "json-ld",
+    "wild_mode": false,
+    "search_url": "https://www.allrecipes.com/search?q={query}",
+    "search_selectors": {
+      "list_item": "a.mntl-card-list-items",
+      "detail_url": "a.mntl-card-list-items@href"
+    },
+    "notes": "页面以 JSON-LD 嵌入 Recipe schema，recipe-scrapers 直接支持，2026-04 爬取难度 1/5。"
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "author", "prep_time", "cook_time", "total_time", "servings", "nutrition", "rating", "category", "cuisine", "tags"],
+  "rate_limit_sec": 1,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "robots.txt 宽松。",
+  "usage_notes": "结构化最好的英文站之一。search_url 先搜到详情 URL，再喂 recipe-scrapers。",
+  "example_usage": "python scripts/fetch.py --source allrecipes --query 'chicken tikka masala'\npython scripts/fetch.py --source allrecipes --url 'https://www.allrecipes.com/recipe/...'",
+  "last_verified": "2026-04-16"
+}

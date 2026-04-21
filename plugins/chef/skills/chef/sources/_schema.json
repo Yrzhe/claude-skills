@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Recipe Source Config",
+  "description": "一个食谱数据源的自描述配置。chef skill 的 scripts/fetch.py 按此文件分派抓取/调用方式。",
+  "type": "object",
+  "required": ["id", "name", "site", "language", "access_method", "enabled"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "短 id（小写、snake_case），文件名与 CLI --source 参数引用。"
+    },
+    "name": { "type": "string", "description": "展示名" },
+    "site": { "type": "string", "description": "主站 URL" },
+    "language": { "enum": ["zh", "en", "mix"] },
+    "region": { "type": "string", "description": "CN/US/UK/global 等" },
+    "cuisines": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "覆盖菜系，如 中餐家常、川菜、意餐、美式等"
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "false = 默认跳过（需 API key / 付费 / 未验证）"
+    },
+    "access_method": {
+      "enum": ["scrape_list", "scrape_with_library", "api", "dataset", "hybrid"],
+      "description": "scrape_list=手写选择器; scrape_with_library=recipe-scrapers 库; api=官方/免费 API; dataset=预爬数据集下载; hybrid=组合"
+    },
+    "access_details": {
+      "type": "object",
+      "description": "字段按 access_method 变化，见下述示例"
+    },
+    "fields_available": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "title", "ingredients", "steps", "image", "author",
+          "prep_time", "cook_time", "total_time", "servings",
+          "nutrition", "tags", "cuisine", "video", "rating",
+          "equipment", "category"
+        ]
+      }
+    },
+    "rate_limit_sec": { "type": "number", "description": "相邻请求最小间隔秒数" },
+    "requires_auth": { "type": "boolean" },
+    "auth_env_var": { "type": ["string", "null"] },
+    "robots_note": { "type": "string", "description": "robots.txt 限制说明（仅参考，本 skill 个人非商用）" },
+    "usage_notes": { "type": "string", "description": "怎么用、抓什么页、坑在哪" },
+    "example_usage": { "type": "string", "description": "典型命令示例" },
+    "last_verified": { "type": "string", "description": "YYYY-MM-DD 最后核验" }
+  },
+  "accessDetailsByMethod": {
+    "scrape_list": {
+      "list_urls": ["array of URL templates, e.g. 'https://.../explore/?page={page}'"],
+      "selectors": {
+        "list_item": "CSS selector for each recipe card in list",
+        "title": "relative selector inside list_item",
+        "detail_url": "selector with @href",
+        "ingredients_hint": "optional brief ingredients on list page"
+      },
+      "detail_url_pattern": "optional URL shape for detail pages",
+      "detail_selectors": {
+        "title": "...",
+        "ingredients_row": "row-level selector",
+        "ingredient_name": "inside row",
+        "ingredient_amount": "inside row",
+        "steps": "selector for step paragraphs",
+        "author": "optional",
+        "servings": "optional"
+      }
+    },
+    "scrape_with_library": {
+      "library": "recipe-scrapers",
+      "example_url": "canonical URL of one recipe to test",
+      "wild_mode": "boolean — try parsing even if not in the supported list"
+    },
+    "api": {
+      "base_url": "https://.../api",
+      "endpoints": {
+        "search_by_name": "/search?q={query}",
+        "random": "/random",
+        "...": "..."
+      },
+      "response_format": "json|xml",
+      "root_path": "JSON path to list of recipes",
+      "field_mapping": {
+        "title": "strMeal",
+        "ingredients": "custom handler",
+        "steps": "strInstructions"
+      }
+    },
+    "dataset": {
+      "download_url": "URL to dataset page or direct file",
+      "alt_urls": ["mirror URLs"],
+      "files_of_interest": {
+        "recipes": "csv/json file",
+        "interactions": "optional"
+      },
+      "csv_columns": {
+        "id": "column name",
+        "name": "...",
+        "ingredients": "...",
+        "steps": "...",
+        "nutrition": "...",
+        "time": "...",
+        "tags": "..."
+      },
+      "size_mb": "approximate size",
+      "license": "license / usage note"
+    }
+  }
+}

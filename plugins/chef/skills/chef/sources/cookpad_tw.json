@@ -1,0 +1,35 @@
+{
+  "id": "cookpad_tw",
+  "name": "Cookpad 台湾站",
+  "site": "https://cookpad.com/tw",
+  "language": "zh-TW",
+  "region": "TW",
+  "cuisines": ["台式家常", "中餐", "日餐", "全球"],
+  "enabled": true,
+  "access_method": "scrape_list",
+  "access_details": {
+    "list_urls": [
+      "https://cookpad.com/tw/搜尋/{query}",
+      "https://cookpad.com/tw/recipes"
+    ],
+    "selectors": {
+      "list_item": "a[href*='/tw/食譜/']",
+      "detail_url": "a[href*='/tw/食譜/']@href"
+    },
+    "detail_url_pattern": "https://cookpad.com/tw/食譜/{id}",
+    "parse_strategy": "heading_anchor",
+    "headings": {
+      "title": "h1",
+      "ingredients": "## 預備食材",
+      "steps": "## 料理步驟"
+    }
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "author"],
+  "rate_limit_sec": 4,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "公开 recipe 详情页可索引；搜索/账户路径受限。",
+  "usage_notes": "解析友好度 5/5。但 cookie 显式带 Perimeter X (_px*)——有 bot 管理能力。建议 3-6s 抖动 + 低并发 + 维持 session。",
+  "example_usage": "python scripts/fetch.py --source cookpad_tw --query 肉燥飯",
+  "last_verified": "2026-04-16"
+}

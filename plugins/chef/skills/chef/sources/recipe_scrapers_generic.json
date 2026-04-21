@@ -1,0 +1,32 @@
+{
+  "id": "recipe_scrapers_generic",
+  "name": "recipe-scrapers 通用适配（631+ 站点）",
+  "site": "https://github.com/hhursev/recipe-scrapers",
+  "language": "mix",
+  "region": "global",
+  "cuisines": ["全球"],
+  "enabled": true,
+  "access_method": "scrape_with_library",
+  "access_details": {
+    "library": "recipe-scrapers",
+    "install": "pip install recipe-scrapers",
+    "supported_sites_count": 631,
+    "sample_sites": [
+      "101cookbooks.com", "ambitiouskitchen.com", "barefootcontessa.com",
+      "bettycrocker.com", "tasty.co", "food52.com", "simplyrecipes.com",
+      "seriouseats.com", "bonappetit.com", "smittenkitchen.com",
+      "nytimes.com/recipes", "delish.com", "thespruceeats.com",
+      "foodnetwork.com", "eatingwell.com"
+    ],
+    "usage_pattern": "from recipe_scrapers import scrape_me; s = scrape_me(url); s.title(); s.ingredients(); s.instructions_list(); s.nutrients()",
+    "wild_mode": "scrape_me(url, wild_mode=True) — 未在支持列表时尝试 JSON-LD 兜底"
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "author", "total_time", "servings", "nutrition", "cuisine", "category", "rating"],
+  "rate_limit_sec": 1,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "各站不同，库本身不强制。",
+  "usage_notes": "当用户给一个任意英文食谱 URL 时，先尝试 recipe-scrapers；失败回退 wild_mode；再失败用 scrape_web.py 的 JSON-LD 通用解析。完整支持列表见 https://github.com/hhursev/recipe-scrapers#scrapers-available-for",
+  "example_usage": "python scripts/fetch.py --url 'https://www.food52.com/recipes/...'\npython scripts/scrape_web.py --url 'https://...' --wild",
+  "last_verified": "2026-04-16"
+}

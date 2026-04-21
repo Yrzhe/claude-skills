@@ -1,0 +1,41 @@
+{
+  "id": "icook",
+  "name": "爱料理 iCook",
+  "site": "https://icook.tw",
+  "language": "zh-TW",
+  "region": "TW",
+  "cuisines": ["台式家常", "中餐", "日餐", "烘焙"],
+  "enabled": true,
+  "access_method": "scrape_list",
+  "access_details": {
+    "list_urls": [
+      "https://icook.tw/search/{query}/",
+      "https://icook.tw/categories/recipes"
+    ],
+    "selectors": {
+      "list_item": "a[href^='/recipes/']",
+      "detail_url": "a[href^='/recipes/']@href"
+    },
+    "detail_url_pattern": "https://icook.tw/recipes/{id}",
+    "parse_strategy": "heading_anchor",
+    "headings": {
+      "title": "h1",
+      "description": "## 描述",
+      "servings": "## 份量",
+      "time": "## 時間",
+      "ingredients": "## 食材",
+      "steps": "## 步驟",
+      "calories": "## 熱量"
+    },
+    "image_domain": "imgproxy.icook.network",
+    "json_endpoint_blocked": "/recipes/*.json 被官方 robots.txt 明确 Disallow——即使端点存在也不要调。"
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "author", "servings", "total_time", "tags"],
+  "rate_limit_sec": 3,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "公开 HTML 可读；/recipes/*.json 和 /users/* 被 Disallow。条款禁止规避 robot exclusion headers。",
+  "usage_notes": "解析友好度 5/5（报告结论）。正文是教科书级 heading-anchor 模板。Accept-Language: zh-TW。",
+  "example_usage": "python scripts/fetch.py --source icook --query 麻婆豆腐",
+  "last_verified": "2026-04-16"
+}

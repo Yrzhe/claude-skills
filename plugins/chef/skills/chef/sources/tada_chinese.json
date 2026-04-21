@@ -1,0 +1,28 @@
+{
+  "id": "tada_chinese",
+  "name": "Ta-da 中文菜谱学术数据集",
+  "site": "https://github.com/(search)",
+  "language": "zh",
+  "region": "CN",
+  "cuisines": ["中餐家常", "地方菜"],
+  "enabled": true,
+  "access_method": "dataset",
+  "access_details": {
+    "download_url": "",
+    "search_hints": "GitHub/Hugging Face 搜 'Ta-da Chinese recipe dataset' / 'Chinese cooking knowledge graph'",
+    "files_of_interest": {
+      "recipes_json": "recipes.json",
+      "knowledge_graph": "kg.tsv"
+    },
+    "row_count": 12142,
+    "license": "研究用途，部分公开。下载前阅读原仓库 README。"
+  },
+  "fields_available": ["title", "ingredients", "steps", "cuisine", "tags"],
+  "rate_limit_sec": 0,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "不涉及在线抓取。",
+  "usage_notes": "中文冷启动备选。12k 道含知识图谱（食材-菜品关系），适合用来初始化 ingredient_pairing 的共现统计。实际下载地址需先用 WebFetch 或 Huggingface 工具搜。",
+  "example_usage": "# 1. 先找到下载链接（用 WebFetch 或 hf_hub_query）\n# 2. python scripts/import_dataset.py --source tada_chinese --file ~/Downloads/recipes.json",
+  "last_verified": "2026-04-16"
+}

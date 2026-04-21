@@ -152,6 +152,19 @@
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
       "tags": ["build-in-public", "tweet", "session-log", "stop-hook", "screenshot", "activity-capture", "synthesis"]
+    },
+    {
+      "name": "chef",
+      "source": "./plugins/chef",
+      "description": "Cooking assistant for Chinese and Western cuisine. Recipes pulled from real sources — xiachufang, douguo, meishij, allrecipes, BBC Good Food, Food Network, TheMealDB — never fabricated. Ships with 604 pre-fetched recipes as evidence. Supports walkthroughs, ingredient-based suggestions, nutrition, pairing, and substitution advice.",
+      "version": "0.1.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["cooking", "recipe", "chinese-cuisine", "western-cuisine", "xiachufang", "allrecipes", "themealdb", "nutrition", "pairing", "ingredient-substitution", "real-data"]
     }
   ]
 }

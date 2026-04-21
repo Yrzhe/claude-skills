@@ -1,0 +1,45 @@
+{
+  "id": "meishij",
+  "name": "美食杰",
+  "site": "https://www.meishij.net",
+  "language": "zh",
+  "region": "CN",
+  "cuisines": ["八大菜系", "川菜", "粤菜", "鲁菜", "苏菜", "浙菜", "闽菜", "湘菜", "徽菜"],
+  "enabled": true,
+  "access_method": "scrape_list",
+  "access_details": {
+    "list_urls": [
+      "https://so.meishij.net/index.php?q={query}",
+      "https://www.meishij.net/chufang/diy/{category_slug}/",
+      "https://www.meishij.net/chufang/diy/jiangchangcaipu/"
+    ],
+    "selectors": {
+      "list_item": "div.listtyle1, a.big-list-img",
+      "title": ".listtyle1_w h3 a, .big-list-title",
+      "detail_url": ".listtyle1_w h3 a@href"
+    },
+    "detail_url_pattern": "https://www.meishij.net/zuofa/{slug}.html",
+    "detail_selectors": {
+      "title": ".recipe_title h1",
+      "ingredients_row": ".materials li, .yl li",
+      "ingredient_name": ".materials li a, .yl li .c1",
+      "ingredient_amount": ".materials li span, .yl li .c2",
+      "steps": ".recipeStep li .recipeStep_word, .method_detail",
+      "step_image": ".recipeStep li img@src",
+      "prep_time": ".recipe_de_tags .recipe_de_prep",
+      "cook_time": ".recipe_de_tags .recipe_de_cook",
+      "servings": ".recipe_de_tags .recipe_de_people",
+      "difficulty": ".recipe_de_tags .recipe_de_difficulty",
+      "cuisine": ".recipeCategory_sub_R .recipeCategory_sub_name",
+      "cover_image": ".recipe_de_img img@src"
+    }
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "prep_time", "cook_time", "servings", "cuisine", "tags"],
+  "rate_limit_sec": 2,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "未明示。部分页面需 cookie。",
+  "usage_notes": "菜系分类系统最完整的中文站，八大菜系标签清晰。学术研究（Geography and similarity of regional cuisines in China）曾以此为数据源。反爬：可能需要 referer + cookie。",
+  "example_usage": "python scripts/fetch.py --source meishij --query 麻婆豆腐\npython scripts/fetch.py --source meishij --cuisine 川菜 --pages 10",
+  "last_verified": "2026-04-16"
+}

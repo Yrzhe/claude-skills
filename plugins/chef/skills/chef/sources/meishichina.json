@@ -1,0 +1,39 @@
+{
+  "id": "meishichina",
+  "name": "美食天下",
+  "site": "https://home.meishichina.com",
+  "language": "zh",
+  "region": "CN",
+  "cuisines": ["中餐家常", "八大菜系", "地方菜"],
+  "enabled": true,
+  "access_method": "scrape_list",
+  "access_details": {
+    "list_urls": [
+      "https://home.meishichina.com/search-{query}.html",
+      "https://home.meishichina.com/recipe-type.html"
+    ],
+    "selectors": {
+      "list_item": "a[href*='/recipe/']",
+      "detail_url": "a[href*='/recipe/']@href"
+    },
+    "detail_url_pattern": "https://m.meishichina.com/recipe/{id}/",
+    "prefer_mobile": true,
+    "parse_strategy": "heading_anchor",
+    "headings": {
+      "title": "h1",
+      "description": "p (第一段)",
+      "meta": "难度/技法/口味/耗时 内联标签",
+      "ingredients_root": "## 食材明细",
+      "ingredients_groups": ["### 主料", "### 辅料", "### 调料"],
+      "steps": "做法步骤 1..n"
+    }
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "difficulty", "tags", "cuisine"],
+  "rate_limit_sec": 2,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "公开页可索引；版权声明禁止镜像、站外 API/RSS 间接使用视作接受条款。",
+  "usage_notes": "解析友好度 4/5（移动版最干净）。注意区分：美食天下 meishichina.com ≠ 美食杰 meishij.net。主料/辅料/调料三分组建议分别保存。",
+  "example_usage": "python scripts/fetch.py --source meishichina --query 鱼香肉丝",
+  "last_verified": "2026-04-16"
+}

@@ -1,0 +1,48 @@
+{
+  "id": "food_com",
+  "name": "Food.com (Kaggle 预爬数据集)",
+  "site": "https://www.food.com",
+  "language": "en",
+  "region": "US",
+  "cuisines": ["美式", "全球", "家常"],
+  "enabled": true,
+  "access_method": "dataset",
+  "access_details": {
+    "download_url": "https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions",
+    "alt_urls": [
+      "https://www.kaggle.com/datasets/irkaal/foodcom-recipes-and-reviews"
+    ],
+    "files_of_interest": {
+      "recipes": "RAW_recipes.csv",
+      "interactions": "RAW_interactions.csv"
+    },
+    "csv_columns": {
+      "id": "id",
+      "name": "name",
+      "ingredients": "ingredients",
+      "steps": "steps",
+      "nutrition": "nutrition",
+      "time": "minutes",
+      "tags": "tags",
+      "description": "description",
+      "n_ingredients": "n_ingredients",
+      "n_steps": "n_steps"
+    },
+    "field_notes": {
+      "ingredients": "CSV 里是字符串化的 Python list: \"['eggs', 'flour', ...]\"，import 时用 ast.literal_eval 还原。",
+      "steps": "同上，stringified list。",
+      "nutrition": "长度 7 的数值列表 [calories, total_fat_PDV, sugar_PDV, sodium_PDV, protein_PDV, saturated_fat_PDV, carbs_PDV]（PDV = Percent Daily Value）。"
+    },
+    "size_mb": 250,
+    "row_count": 180000,
+    "license": "Kaggle 公开数据集；原始发布者 shuyangli94。个人使用无限制。"
+  },
+  "fields_available": ["title", "ingredients", "steps", "nutrition", "total_time", "tags", "description"],
+  "rate_limit_sec": 0,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "不涉及在线抓取。",
+  "usage_notes": "冷启动首选英文数据集。18 万道足够种子用。大版本（shuyangli94/irkaal）含 52 万道 + 140 万条评论。下载后用 import_dataset.py 转 md。",
+  "example_usage": "python scripts/import_dataset.py --source food_com --file ~/Downloads/RAW_recipes.csv --limit 5000",
+  "last_verified": "2026-04-16"
+}

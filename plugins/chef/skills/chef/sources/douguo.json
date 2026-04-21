@@ -1,0 +1,42 @@
+{
+  "id": "douguo",
+  "name": "豆果美食",
+  "site": "https://www.douguo.com",
+  "language": "zh",
+  "region": "CN",
+  "cuisines": ["中餐家常", "烘焙", "地方菜", "创意菜"],
+  "enabled": true,
+  "access_method": "scrape_list",
+  "access_details": {
+    "list_urls": [
+      "https://www.douguo.com/caipu/{query}",
+      "https://www.douguo.com/caipu/hot",
+      "https://m.douguo.com/search/{query}"
+    ],
+    "selectors": {
+      "list_item": "li.clearfix, .cp-list li",
+      "title": ".cp a.cp-name, a.cp-name",
+      "detail_url": ".cp a.cp-name@href",
+      "author": ".author"
+    },
+    "detail_url_pattern": "https://www.douguo.com/cookbook/{id}.html",
+    "detail_selectors": {
+      "title": "h1",
+      "ingredients_row": ".recipe-ingredients li, .ct-item",
+      "ingredient_name": ".recipe-ingredients li span:first-child, .ct-item span.name",
+      "ingredient_amount": ".recipe-ingredients li span:last-child, .ct-item span.amount",
+      "steps": ".step-detail, .step-txt",
+      "step_image": ".step-pic img@src",
+      "author": ".recipe-user-name, .author a",
+      "cover_image": ".recipe-head-pic img@src"
+    }
+  },
+  "fields_available": ["title", "ingredients", "steps", "image", "author"],
+  "rate_limit_sec": 2,
+  "requires_auth": false,
+  "auth_env_var": null,
+  "robots_note": "未明示。反爬较强（IP 限速、UA 检测），建议 sleep ≥ 3s + 随机 UA。",
+  "usage_notes": "3 亿用户、300 万菜谱。PC 站和 m.douguo.com（移动站）结构不同，移动站更容易抓。",
+  "example_usage": "python scripts/fetch.py --source douguo --query 宫保鸡丁",
+  "last_verified": "2026-04-16"
+}
