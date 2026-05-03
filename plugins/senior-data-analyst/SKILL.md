@@ -1,13 +1,6 @@
 ---
 name: senior-data-analyst
-description: |
-  Senior data analyst skill. Turns any agent into a professional, full-stack data analyst capable of handling business questions end-to-end: intake → safe data profiling → method routing (descriptive / inferential / predictive / exploratory-factor) → analysis with anti-amateur guardrails (multiple-comparison, leakage, p-hacking, assumption checks) → dual-track interpretation (business-grounded + cross-domain analogy) → narrative reporting.
-
-  Use when the user asks: "analyze this data / dataset / CSV", "find drivers / factors / what causes X", "is this difference significant", "run a regression / correlation / hypothesis test / PCA / factor analysis", "build a model / predict / classify / cluster / segment", "what does this data mean", "do a deep / proper / professional analysis", "what factors drive X", "explain this metric", "find the underlying dimensions".
-
-  Triggers: data analysis, data analyst, data scientist, senior analyst, find drivers, find factors, hypothesis test, significance test, correlation, regression, PCA, factor analysis, EFA, CFA, classification, clustering, segmentation, time-series, predict, model, EDA, exploratory analysis, multivariate analysis, feature importance, drivers of growth, churn drivers, retention drivers.
-
-  Skip when: user only wants a single chart / dashboard with no analytical question (use data-storytelling), only wants raw data extraction with no analysis (use data-analysis), is asking a closed factual question with no data attached, or is asking for academic-only stats reporting in APA format (use statistical-analysis directly).
+description: Use when the user wants a real data analysis on a dataset — finding what drives a metric, testing whether a difference is real, building a predictive model, reducing many variables to a few, or interpreting what numbers mean for the business. Trigger phrases include "analyze this data", "what drives X", "is this significant", "build a model to predict", "find the factors", "do a proper analysis", "what does this data mean". Skip when the user only wants a chart, only wants raw data pulled with no question, asks a closed factual question with no data, or just wants APA-formatted stats output.
 ---
 
 # Senior Data Analyst
