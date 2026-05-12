@@ -1,0 +1,8 @@
+{
+  "name": "agentlog",
+  "version": "0.0.1",
+  "description": "Multi-agent multi-device activity pool. Sync your Claude Code, Codex, Maestri, and browser-use sessions across machines via a private GitHub repo.",
+  "author": "yrzhe",
+  "license": "MIT",
+  "skill_path": "SKILL.md"
+}
