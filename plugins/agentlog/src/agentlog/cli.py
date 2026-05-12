@@ -62,7 +62,8 @@ def cmd_init(args: argparse.Namespace) -> int:
                 "Do not edit manually.\n"
             )
             (root / ".gitignore").write_text(
-                "state/cursors/\nstate/quarantine/\nstate/sync.lock\nstate/this-device.json\n"
+                "state/cursors/\nstate/quarantine/\nstate/sync.lock\n"
+                "state/sync-state.json\nstate/this-device.json\n"
             )
             (root / ".gitattributes").write_text(
                 "pool/**/*.jsonl merge=union\n*.jsonl text eol=lf\n"
@@ -80,6 +81,66 @@ def cmd_init(args: argparse.Namespace) -> int:
     _ok(f"Device: {dev.device_id}  (host: {dev.host})")
     _ok(f"Pool root: {root}")
     _ok("Done. Next: `agentlog poll --once --source claude_code` to smoke test.")
+    return 0
+
+
+def _device_or_error():
+    dev = config.load_device()
+    if dev is None:
+        raise RuntimeError("No device id. Run `agentlog init` first.")
+    return dev
+
+
+def cmd_pull(args: argparse.Namespace) -> int:
+    try:
+        from .sync import Sync
+
+        dev = _device_or_error()
+        result = Sync(config.pool_root(), dev.device_id).pull()
+    except RuntimeError as e:
+        return _err(str(e))
+
+    print(json.dumps(result.__dict__, indent=2))
+    return 0 if result.ok else 1
+
+
+def cmd_push(args: argparse.Namespace) -> int:
+    try:
+        from .sync import Sync
+
+        dev = _device_or_error()
+        result = Sync(config.pool_root(), dev.device_id).push(force=args.force)
+    except RuntimeError as e:
+        return _err(str(e))
+
+    print(json.dumps(result.__dict__, indent=2))
+    return 0 if result.ok else 1
+
+
+def cmd_sync(args: argparse.Namespace) -> int:
+    try:
+        from .sync import Sync
+
+        dev = _device_or_error()
+        pull_result, push_result = Sync(config.pool_root(), dev.device_id).sync()
+    except RuntimeError as e:
+        return _err(str(e))
+
+    print(json.dumps({"pull": pull_result.__dict__, "push": push_result.__dict__}, indent=2))
+    return 0 if pull_result.ok and push_result.ok else 1
+
+
+def cmd_config_set_remote(args: argparse.Namespace) -> int:
+    try:
+        from .sync import Sync
+
+        dev = config.load_device()
+        device_id = dev.device_id if dev is not None else "uninitialized"
+        Sync(config.pool_root(), device_id).set_remote(args.url)
+    except Exception as e:
+        return _err(str(e))
+
+    _ok(f"Remote origin set to {args.url}")
     return 0
 
 
@@ -335,6 +396,50 @@ def cmd_migrate_seed(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------- daemon
+
+
+def cmd_daemon(args: argparse.Namespace) -> int:
+    if getattr(args, "daemon_cmd", None):
+        return args.func(args)
+    from . import daemon as _d
+    sources = tuple(
+        s.strip() for s in (args.sources or ",".join(_d.DEFAULT_SOURCES)).split(",")
+        if s.strip()
+    )
+    dev = config.load_device()
+    if dev is None:
+        return _err("Run `agentlog init` first.")
+    stats = _d.run(
+        sources=sources,
+        poll_interval_s=args.poll_interval,
+        sync_interval_s=args.sync_interval,
+        once=args.once,
+    )
+    if args.once:
+        print(json.dumps({
+            "polls": stats.polls,
+            "syncs": stats.syncs,
+            "errors": stats.errors,
+            "per_source_emitted": stats.per_source_emitted,
+        }, indent=2))
+    return 0
+
+
+def cmd_daemon_install(args: argparse.Namespace) -> int:
+    from . import daemon as _d
+    if args.type == "launchd":
+        print(_d.launchd_plist(agentlog_bin=args.bin))
+        print("# Save to ~/Library/LaunchAgents/ai.agentlog.daemon.plist", file=sys.stderr)
+        print("# Then: launchctl load ~/Library/LaunchAgents/ai.agentlog.daemon.plist", file=sys.stderr)
+    else:
+        print(_d.systemd_unit(agentlog_bin=args.bin))
+        print("# Save to ~/.config/systemd/user/agentlog.service", file=sys.stderr)
+        print("# Then: systemctl --user daemon-reload && systemctl --user enable --now agentlog",
+              file=sys.stderr)
+    return 0
+
+
 # ---------------------------------------------------------------- stubs
 
 
@@ -399,7 +504,39 @@ def build_parser() -> argparse.ArgumentParser:
     p_bf.add_argument("--from", dest="from_date", help="only backfill rows after this YYYY-MM-DD")
     p_bf.set_defaults(func=cmd_backfill)
 
-    for stub_name in ("sync", "pull", "push", "shot", "daemon", "config"):
+    p_pull = sub.add_parser("pull", help="fetch and rebase from origin")
+    p_pull.set_defaults(func=cmd_pull)
+
+    p_push = sub.add_parser("push", help="commit local pool changes and push")
+    p_push.add_argument("--force", action="store_true", help="bypass debounce/backoff")
+    p_push.set_defaults(func=cmd_push)
+
+    p_sync = sub.add_parser("sync", help="pull then push")
+    p_sync.set_defaults(func=cmd_sync)
+
+    p_config = sub.add_parser("config", help="configuration operations")
+    config_sub = p_config.add_subparsers(dest="config_cmd", required=True)
+    p_config_set = config_sub.add_parser("set", help="set a config value")
+    config_set_sub = p_config_set.add_subparsers(dest="config_set_cmd", required=True)
+    p_config_remote = config_set_sub.add_parser("remote", help="set git remote origin")
+    p_config_remote.add_argument("url", help="git remote URL")
+    p_config_remote.set_defaults(func=cmd_config_set_remote)
+
+    # daemon (v0.7)
+    p_daemon = sub.add_parser("daemon", help="run the background poll+sync loop")
+    daemon_sub = p_daemon.add_subparsers(dest="daemon_cmd")
+    p_daemon.add_argument("--once", action="store_true", help="single iteration then exit")
+    p_daemon.add_argument("--sources", help="comma-separated source list (default: claude_code,codex)")
+    p_daemon.add_argument("--poll-interval", type=int, default=30, help="seconds between polls")
+    p_daemon.add_argument("--sync-interval", type=int, default=300, help="seconds between syncs")
+    p_daemon.set_defaults(func=cmd_daemon)
+
+    p_di = daemon_sub.add_parser("install", help="print launchd/systemd unit")
+    p_di.add_argument("--type", choices=["launchd", "systemd"], default="launchd")
+    p_di.add_argument("--bin", help="absolute path to agentlog launcher")
+    p_di.set_defaults(func=cmd_daemon_install)
+
+    for stub_name in ("shot",):
         sp = sub.add_parser(stub_name, help=f"{stub_name} (not yet implemented)")
         sp.set_defaults(func=cmd_stub(stub_name))
 
