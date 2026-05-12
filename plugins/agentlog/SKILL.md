@@ -98,25 +98,17 @@ agentlog daemon start
 
 | File | Covers |
 |---|---|
-| `references/setup.md` | Full multi-device install, GitHub PAT vs ssh, repo permissions |
-| `references/schema-v0.md` | Event schema fields, validation rules, examples |
-| `references/cli-reference.md` | Every CLI flag with examples |
-| `references/adapters/claude-code.md` | ClaudeCodeAdapter config + extension hooks |
-| `references/adapters/codex.md` | CodexAdapter config + backfill |
-| `references/adapters/maestri.md` | MaestriAdapter polling tuning |
-| `references/adapters/browser-use.md` | BrowserUseAdapter session config |
-| `references/troubleshooting.md` | Git sync conflicts, corrupted cursors, adapter failures |
-| `references/upgrade-from-seed.md` | How agentlog and seed coexist; migration details |
-| `docs/design/03-spec-v0.5-merged.md` | Authoritative v0.5 spec (read first if extending) |
+| `references/setup.md` | Full multi-device install, GitHub remote, env vars, daemon install |
+| `references/cli-reference.md` | Every CLI command with examples |
+
+For schema details read `src/agentlog/schema.py` directly — the type hints + validate() are the source of truth.
 
 ## When extending
 
-- Adding a new source → implement `SourceAdapter` interface (`src/agentlog/adapters/base.py`), register in CLI
-- Changing event schema → bump `schema_version`, write a converter in `src/agentlog/migrations/`
-- Adding a CLI command → see `src/agentlog/cli.py`
-
-The full design rationale (why GitHub sync, why per-device sharding, why two-layer dedupe) lives in `docs/design/`. Read those before non-trivial changes.
+- Adding a new source → implement `SourceAdapter` interface (`src/agentlog/adapters/base.py`), register in `_ADAPTER_REGISTRY` in `src/agentlog/cli.py`
+- Changing event schema → bump `SCHEMA_VERSION` in `src/agentlog/schema.py` and write a converter
+- Adding a CLI command → wire into `build_parser()` in `src/agentlog/cli.py`
 
 ## Status
 
-v0 — implementation in progress. Functional smoke test target: end-to-end Claude Code → pool → recap on a single Mac. Subsequent: Codex adapter, multi-device, Maestri adapter, BrowserUse adapter.
+v0 — schema + pool + 4 adapters (claude_code, codex, maestri, browser_use) + GitHub sync + daemon + shot + recap. Tests: 39 passing.
