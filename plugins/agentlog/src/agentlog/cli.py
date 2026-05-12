@@ -197,6 +197,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 _ADAPTER_REGISTRY = {
     "claude_code": ("agentlog.adapters.claude_code", "ClaudeCodeAdapter"),
     "codex": ("agentlog.adapters.codex", "CodexAdapter"),
+    "maestri": ("agentlog.adapters.maestri", "MaestriAdapter"),
 }
 
 
