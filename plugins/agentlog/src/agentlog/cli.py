@@ -133,31 +133,79 @@ def cmd_status(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------- poll
 
 
+_ADAPTER_REGISTRY = {
+    "claude_code": ("agentlog.adapters.claude_code", "ClaudeCodeAdapter"),
+    "codex": ("agentlog.adapters.codex", "CodexAdapter"),
+}
+
+
+def _load_adapter(source: str):
+    import importlib
+
+    if source not in _ADAPTER_REGISTRY:
+        return None, f"adapter `{source}` not yet implemented (available: {', '.join(sorted(_ADAPTER_REGISTRY))})"
+    mod_name, cls_name = _ADAPTER_REGISTRY[source]
+    try:
+        mod = importlib.import_module(mod_name)
+        return getattr(mod, cls_name), None
+    except ImportError as e:
+        return None, f"adapter module not built yet: {e}"
+
+
 def cmd_poll(args: argparse.Namespace) -> int:
     source = args.source
     if not source:
-        return _err("--source required for now (only `claude_code` supported in v0)")
+        return _err(f"--source required (one of: {', '.join(sorted(_ADAPTER_REGISTRY))})")
 
-    if source != "claude_code":
-        return _err(f"adapter `{source}` not yet implemented (see docs/design/03-spec-v0.5-merged.md §3.3)")
+    cls, err = _load_adapter(source)
+    if cls is None:
+        return _err(err)
 
     try:
-        from .pool import Pool  # provided by Cistern
-        from .adapters.claude_code import ClaudeCodeAdapter  # provided by Junction
+        from .pool import Pool
     except ImportError as e:
-        return _err(
-            f"adapter modules not yet built: {e}. "
-            "Cistern and Junction are still writing pool.py and claude_code.py."
-        )
+        return _err(f"pool module not built: {e}")
 
     dev = config.load_device()
     if dev is None:
         return _err("No device id. Run `agentlog init` first.")
 
     pool = Pool(root_dir=config.pool_root(), device_id=dev.device_id)
-    adapter = ClaudeCodeAdapter(pool=pool, device_id=dev.device_id)
+    adapter = cls(pool=pool, device_id=dev.device_id)
     result = adapter.pollOnce()
     print(f"Emitted: {result['emitted']}, skipped: {result['skipped']}")
+    return 0
+
+
+def cmd_backfill(args: argparse.Namespace) -> int:
+    """Backfill archived/historical adapter data with extra flags."""
+    source = args.source
+    if not source:
+        return _err("--source required for backfill")
+
+    cls, err = _load_adapter(source)
+    if cls is None:
+        return _err(err)
+
+    try:
+        from .pool import Pool
+    except ImportError as e:
+        return _err(f"pool module not built: {e}")
+
+    dev = config.load_device()
+    if dev is None:
+        return _err("Run `agentlog init` first.")
+
+    pool = Pool(root_dir=config.pool_root(), device_id=dev.device_id)
+
+    kwargs = {"pool": pool, "device_id": dev.device_id}
+    if source == "codex":
+        kwargs["include_archive"] = True
+        if args.from_date:
+            kwargs["from_date"] = args.from_date
+    adapter = cls(**kwargs)
+    result = adapter.pollOnce()
+    print(f"Backfill done. Emitted: {result['emitted']}, skipped: {result['skipped']}")
     return 0
 
 
@@ -346,7 +394,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_mig.add_argument("--seed-dir", help="override seed sessions dir")
     p_mig.set_defaults(func=cmd_migrate_seed)
 
-    for stub_name in ("sync", "pull", "push", "shot", "backfill", "daemon", "config"):
+    p_bf = sub.add_parser("backfill", help="backfill archive/history for an adapter (e.g. codex)")
+    p_bf.add_argument("--source", required=True, help="adapter source_type (e.g. codex)")
+    p_bf.add_argument("--from", dest="from_date", help="only backfill rows after this YYYY-MM-DD")
+    p_bf.set_defaults(func=cmd_backfill)
+
+    for stub_name in ("sync", "pull", "push", "shot", "daemon", "config"):
         sp = sub.add_parser(stub_name, help=f"{stub_name} (not yet implemented)")
         sp.set_defaults(func=cmd_stub(stub_name))
 
