@@ -441,6 +441,33 @@ def cmd_daemon_install(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------- shot
+
+
+def cmd_shot(args: argparse.Namespace) -> int:
+    from .shot import take_shot
+
+    result = take_shot(
+        target=args.target,
+        note=args.note,
+        width=args.width,
+        height=args.height,
+        session_id=args.session_id,
+        project=args.project,
+        flush=args.flush,
+    )
+    if not result.ok:
+        return _err(result.error or "shot failed")
+    print(json.dumps({
+        "ok": True,
+        "path": str(result.path),
+        "event_id": result.event_id,
+        "sha256": result.sha256,
+        "bytes": result.bytes,
+    }, indent=2))
+    return 0
+
+
 # ---------------------------------------------------------------- stubs
 
 
@@ -537,9 +564,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_di.add_argument("--bin", help="absolute path to agentlog launcher")
     p_di.set_defaults(func=cmd_daemon_install)
 
-    for stub_name in ("shot",):
-        sp = sub.add_parser(stub_name, help=f"{stub_name} (not yet implemented)")
-        sp.set_defaults(func=cmd_stub(stub_name))
+    p_shot = sub.add_parser("shot", help="capture a screenshot (window pick or URL) and log it")
+    p_shot.add_argument("target", nargs="?", help="URL to capture (omit for interactive window pick)")
+    p_shot.add_argument("--note", default="", help="extra note saved in the event payload")
+    p_shot.add_argument("--width", type=int, default=1280)
+    p_shot.add_argument("--height", type=int, default=800)
+    p_shot.add_argument("--session-id", default=None, help="bind shot to this agent session")
+    p_shot.add_argument("--project", default="shot", help="project.name for the event (default: shot)")
+    p_shot.add_argument("--flush", action="store_true", help="trigger immediate sync push")
+    p_shot.set_defaults(func=cmd_shot)
 
     return p
 
