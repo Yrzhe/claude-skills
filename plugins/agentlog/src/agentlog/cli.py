@@ -198,6 +198,7 @@ _ADAPTER_REGISTRY = {
     "claude_code": ("agentlog.adapters.claude_code", "ClaudeCodeAdapter"),
     "codex": ("agentlog.adapters.codex", "CodexAdapter"),
     "maestri": ("agentlog.adapters.maestri", "MaestriAdapter"),
+    "browser_use": ("agentlog.adapters.browser_use", "BrowserUseAdapter"),
 }
 
 
