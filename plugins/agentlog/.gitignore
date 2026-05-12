@@ -20,5 +20,7 @@ dist/
 # OS
 .DS_Store
 
-# Internal design docs (Codex multi-agent coordination, not part of release)
-docs/
+# Internal design notes (Codex multi-agent coordination, not part of release).
+# User-facing docs/reference material under `docs/` stays tracked.
+docs/internal/
+docs/design/
