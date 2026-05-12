@@ -70,6 +70,13 @@ Fetch + rebase remote on local. Safe even if nothing changed.
 ### `agentlog push [--force]`
 Commit local pool changes and push. `--force` bypasses the 30s push debounce.
 
+## Shell-level hooks
+
+### `agentlog hook stop [--quiet]`
+Claude Code Stop hook entry point. Reads `{session_id, transcript_path, cwd}` JSON on stdin and captures new turns from that single transcript file into the pool. Much faster than a full `agentlog poll` because it only reads one file.
+
+Install via `hooks/capture-claude-code.sh` — see `references/setup.md` §6.
+
 ## Daemon
 
 ### `agentlog daemon [--once] [--sources X,Y] [--poll-interval 30] [--sync-interval 300]`

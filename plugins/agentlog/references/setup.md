@@ -74,7 +74,37 @@ agentlog migrate-from-seed
 
 This imports `~/.claude/skills/seed/state/sessions/*.md` into the pool as `source_type="claude_code_seed"` events (distinct from live `claude_code` to avoid duplicate-counting).
 
-## 6. (Optional) Run the daemon
+## 6. (Optional) Install the Claude Code Stop hook
+
+For near-real-time capture (so your most recent turn shows up in `agentlog pool` immediately instead of waiting for the next daemon poll), install the bundled Stop hook:
+
+```bash
+cp <agentlog-dir>/hooks/capture-claude-code.sh ~/.claude/hooks/agentlog-stop.sh
+chmod +x ~/.claude/hooks/agentlog-stop.sh
+```
+
+Then add it to `~/.claude/settings.json` under the `Stop` hook list:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          { "command": "bash ~/.claude/hooks/agentlog-stop.sh", "type": "command" }
+        ],
+        "matcher": ""
+      }
+    ]
+  }
+}
+```
+
+Cost: ~150ms per turn (warm cursor) — the hook only reads new lines from the current session's transcript, not the whole `~/.claude/projects/` tree.
+
+The hook coexists with the `seed` skill's hook — both can run side-by-side without conflict.
+
+## 7. (Optional) Run the daemon
 
 Foreground (good for sanity check):
 
