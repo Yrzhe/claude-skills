@@ -207,6 +207,58 @@ def cmd_event_push(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------- pool / recap
+
+
+def cmd_pool(args: argparse.Namespace) -> int:
+    from datetime import datetime, timezone
+    from .reader import walk_events, parse_window, now_utc
+    from . import recap as _recap
+
+    since = None
+    if args.last:
+        try:
+            since = now_utc() - parse_window(args.last)
+        except ValueError as e:
+            return _err(str(e))
+
+    events = list(walk_events(
+        since=since,
+        sources=[args.source] if args.source else None,
+        projects=[args.project] if args.project else None,
+    ))
+
+    if not events:
+        print("(no events match filters)")
+        return 0
+
+    if args.by:
+        print(_recap.format_grouped(events, by=args.by))
+    else:
+        print(_recap.format_flat(events, limit=args.limit))
+    return 0
+
+
+def cmd_recap(args: argparse.Namespace) -> int:
+    from datetime import datetime, timezone, timedelta, date as date_cls
+    from .reader import walk_events
+    from . import recap as _recap
+
+    if args.date:
+        try:
+            d = date_cls.fromisoformat(args.date)
+        except ValueError:
+            return _err(f"invalid --date: {args.date} (use YYYY-MM-DD)")
+    else:
+        d = datetime.now(timezone.utc).date()
+
+    since = datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
+    until = since + timedelta(days=1)
+    events = list(walk_events(since=since, until=until))
+    print(_recap.format_recap(d.isoformat(), events, by=args.by))
+    return 0
+
+
 # ---------------------------------------------------------------- stubs
 
 
@@ -245,7 +297,22 @@ def build_parser() -> argparse.ArgumentParser:
     p_event_push.add_argument("--flush", action="store_true", help="trigger immediate push")
     p_event_push.set_defaults(func=cmd_event_push)
 
-    for stub_name in ("sync", "pull", "push", "pool", "recap", "shot", "backfill",
+    p_pool = sub.add_parser("pool", help="view events in the pool")
+    p_pool.add_argument("--last", help="time window (e.g. 4h, 2d, 1w)")
+    p_pool.add_argument("--by", choices=["source", "project", "agent", "device"],
+                         help="group results")
+    p_pool.add_argument("--source", help="filter by source_type")
+    p_pool.add_argument("--project", help="filter by project name")
+    p_pool.add_argument("--limit", type=int, default=50, help="max rows (flat mode)")
+    p_pool.set_defaults(func=cmd_pool)
+
+    p_recap = sub.add_parser("recap", help="per-day recap across all sources")
+    p_recap.add_argument("--date", help="YYYY-MM-DD (default: today UTC)")
+    p_recap.add_argument("--by", choices=["source", "project", "agent", "device"],
+                          default="source", help="grouping inside the recap (default: source)")
+    p_recap.set_defaults(func=cmd_recap)
+
+    for stub_name in ("sync", "pull", "push", "shot", "backfill",
                        "migrate-from-seed", "daemon", "config"):
         sp = sub.add_parser(stub_name, help=f"{stub_name} (not yet implemented)")
         sp.set_defaults(func=cmd_stub(stub_name))
