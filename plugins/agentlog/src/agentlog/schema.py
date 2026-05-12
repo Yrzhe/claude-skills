@@ -12,7 +12,7 @@ SCHEMA_VERSION = "agentlog.event.v0"
 MAX_SUMMARY_CHARS = 240
 MAX_TEXT_EXCERPT_CHARS = 2_000
 
-SOURCE_TYPES = {"claude_code", "codex", "maestri", "browser_use", "manual"}
+SOURCE_TYPES = {"claude_code", "claude_code_seed", "codex", "maestri", "browser_use", "manual"}
 ACTOR_KINDS = {"human", "agent", "system"}
 ACTION_TYPES = {
     "session_started",

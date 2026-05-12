@@ -259,6 +259,34 @@ def cmd_recap(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------- migrate-from-seed
+
+
+def cmd_migrate_seed(args: argparse.Namespace) -> int:
+    from pathlib import Path as _P
+    from .pool import Pool
+    from .migrate_seed import migrate, DEFAULT_SEED_DIR
+
+    dev = config.load_device()
+    if dev is None:
+        return _err("Run `agentlog init` first.")
+
+    seed_dir = _P(args.seed_dir).expanduser() if args.seed_dir else DEFAULT_SEED_DIR
+    if not seed_dir.exists():
+        return _err(f"seed dir not found: {seed_dir}")
+
+    pool = Pool(root_dir=config.pool_root(), device_id=dev.device_id)
+    result = migrate(pool, seed_dir=seed_dir, device_id=dev.device_id, dry_run=args.dry_run)
+
+    mode = "DRY RUN" if args.dry_run else "migrated"
+    print(f"{mode}: {result.sessions_scanned} sessions scanned, "
+          f"{result.turns_emitted} turns emitted, "
+          f"{result.quarantined} quarantined")
+    if args.dry_run:
+        print("(re-run without --dry-run to write)")
+    return 0
+
+
 # ---------------------------------------------------------------- stubs
 
 
@@ -312,8 +340,13 @@ def build_parser() -> argparse.ArgumentParser:
                           default="source", help="grouping inside the recap (default: source)")
     p_recap.set_defaults(func=cmd_recap)
 
-    for stub_name in ("sync", "pull", "push", "shot", "backfill",
-                       "migrate-from-seed", "daemon", "config"):
+    p_mig = sub.add_parser("migrate-from-seed",
+                             help="import ~/.claude/skills/seed/state/sessions/*.md into agentlog pool")
+    p_mig.add_argument("--dry-run", action="store_true", help="count only, do not write")
+    p_mig.add_argument("--seed-dir", help="override seed sessions dir")
+    p_mig.set_defaults(func=cmd_migrate_seed)
+
+    for stub_name in ("sync", "pull", "push", "shot", "backfill", "daemon", "config"):
         sp = sub.add_parser(stub_name, help=f"{stub_name} (not yet implemented)")
         sp.set_defaults(func=cmd_stub(stub_name))
 
