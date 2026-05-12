@@ -70,13 +70,14 @@ def make_adapter(tmp_path: Path, pool: MockPool) -> MaestriAdapter:
     return MaestriAdapter(pool, cursor_path=tmp_path / "maestri-cursor.json", device_id="test-device")
 
 
-def test_first_poll_emits_three_agents_and_two_notes(tmp_path: Path, monkeypatch) -> None:
+def test_first_poll_emits_two_peer_agents_and_two_notes(tmp_path: Path, monkeypatch) -> None:
+    """The local agent ("You:" section, here "Junction") is skipped — only
+    connected peers + connected notes are emitted."""
     notes = {
         "agentlog-spec-v0": "[2 lines total]\n1\tagentlog spec\n2\tphase one\n",
         "agentlog-adapter-design": "[2 lines total]\n1\tagentlog adapter\n2\tv0 design\n",
     }
     agents = {
-        "Junction": "working on adapter\n",
         "Claude Code": "waiting for architects\n",
         "Cistern": "pool design done\n",
     }
@@ -85,16 +86,14 @@ def test_first_poll_emits_three_agents_and_two_notes(tmp_path: Path, monkeypatch
 
     result = make_adapter(tmp_path, pool).pollOnce()
 
-    assert result["emitted"] == 5
+    assert result["emitted"] == 4
     assert [event["action"]["type"] for event in pool.events] == [
-        "session_started",
         "session_started",
         "session_started",
         "note_created",
         "note_created",
     ]
-    assert [event["summary"] for event in pool.events[:3]] == [
-        "Maestri agent connected: Junction",
+    assert [event["summary"] for event in pool.events[:2]] == [
         "Maestri agent connected: Claude Code",
         "Maestri agent connected: Cistern",
     ]
@@ -108,7 +107,6 @@ def test_second_poll_without_change_emits_zero(tmp_path: Path, monkeypatch) -> N
         "agentlog-adapter-design": "[1 line total]\n1\tagentlog adapter\n",
     }
     agents = {
-        "Junction": "working on adapter\n",
         "Claude Code": "waiting for architects\n",
         "Cistern": "pool design done\n",
     }
@@ -119,9 +117,9 @@ def test_second_poll_without_change_emits_zero(tmp_path: Path, monkeypatch) -> N
     first = adapter.pollOnce()
     second = adapter.pollOnce()
 
-    assert first["emitted"] == 5
+    assert first["emitted"] == 4
     assert second["emitted"] == 0
-    assert len(pool.events) == 5
+    assert len(pool.events) == 4
 
 
 def test_note_content_change_emits_one_note_updated(tmp_path: Path, monkeypatch) -> None:

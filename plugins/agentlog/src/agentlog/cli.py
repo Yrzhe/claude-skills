@@ -293,6 +293,7 @@ def cmd_event_push(args: argparse.Namespace) -> int:
 
     # Backfill required fields when caller omits them
     event.setdefault("id", make_event_id())
+    event.setdefault("source_event_id", f"manual:{event['id']}")
     event.setdefault("schema_version", "agentlog.event.v0")
     event.setdefault("source_type", "manual")
     event.setdefault("source", {})
@@ -442,6 +443,59 @@ def cmd_daemon_install(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------- hook
+
+
+def cmd_hook_stop(args: argparse.Namespace) -> int:
+    """Claude Code Stop hook: capture one session's new turns immediately.
+
+    Reads the Stop-hook JSON on stdin: `{session_id, transcript_path, cwd}`.
+    Emits only the events from that single transcript file, much faster than
+    a full `agentlog poll --once --source claude_code` scan.
+    """
+    try:
+        payload = json.load(sys.stdin)
+    except json.JSONDecodeError as e:
+        return _err(f"invalid Stop-hook JSON on stdin: {e}")
+
+    transcript_path = payload.get("transcript_path")
+    if not transcript_path or not Path(transcript_path).is_file():
+        # Nothing to do — return 0 so we never block Claude Code's exit.
+        return 0
+
+    dev = config.load_device()
+    if dev is None:
+        return _err("Run `agentlog init` first.")
+
+    from .pool import Pool
+    from .adapters.claude_code import ClaudeCodeAdapter
+
+    pool = Pool(root_dir=config.pool_root(), device_id=dev.device_id)
+    adapter = ClaudeCodeAdapter(pool=pool, device_id=dev.device_id)
+
+    cursor = adapter.loadCursor()
+    files_cursor = cursor.setdefault("files", {})
+    file_cursor = files_cursor.get(transcript_path, {})
+
+    emitted = 0
+    skipped = 0
+    for source_event in adapter._read_new_events(Path(transcript_path), file_cursor):
+        event = adapter.normalize(source_event)
+        if event is None:
+            skipped += 1
+            adapter.advanceCursor(cursor, source_event, None)
+            continue
+        result = pool.append(event)
+        emitted += 1
+        adapter.advanceCursor(cursor, source_event, result)
+
+    adapter.saveCursor(cursor)
+    if args.quiet:
+        return 0
+    print(json.dumps({"emitted": emitted, "skipped": skipped, "transcript": transcript_path}))
+    return 0
+
+
 # ---------------------------------------------------------------- shot
 
 
@@ -564,6 +618,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_di.add_argument("--type", choices=["launchd", "systemd"], default="launchd")
     p_di.add_argument("--bin", help="absolute path to agentlog launcher")
     p_di.set_defaults(func=cmd_daemon_install)
+
+    p_hook = sub.add_parser("hook", help="hook handlers for shell-level integration")
+    hook_sub = p_hook.add_subparsers(dest="hook_cmd", required=True)
+    p_hook_stop = hook_sub.add_parser("stop", help="Claude Code Stop hook: capture one session's new turns from stdin JSON")
+    p_hook_stop.add_argument("--quiet", action="store_true", help="suppress stdout, exit 0 silently")
+    p_hook_stop.set_defaults(func=cmd_hook_stop)
 
     p_shot = sub.add_parser("shot", help="capture a screenshot (window pick or URL) and log it")
     p_shot.add_argument("target", nargs="?", help="URL to capture (omit for interactive window pick)")

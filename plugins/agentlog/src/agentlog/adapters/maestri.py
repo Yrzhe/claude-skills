@@ -193,7 +193,9 @@ class MaestriAdapter(SourceAdapter):
         for raw_line in text.splitlines():
             line = raw_line.strip()
             if line.startswith("You:"):
-                section = "agents"
+                # "You:" lists the local agent itself — `maestri check` cannot
+                # target self, so we skip every name under this section.
+                section = "_self"
                 continue
             if line.startswith("Connected agents:"):
                 section = "agents"
@@ -214,6 +216,7 @@ class MaestriAdapter(SourceAdapter):
                 notes.append(name)
             elif section == "portals":
                 portals.append(name)
+            # section == "_self" or None: drop silently
 
         return {
             "agents": list(dict.fromkeys(agents)),
