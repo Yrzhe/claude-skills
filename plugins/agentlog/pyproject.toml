@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentlog"
-version = "0.10.0"
-description = "Multi-agent, multi-device activity pool synced via private GitHub repo"
+version = "0.11.0"
+description = "Multi-agent, multi-device activity pool + project context layer. Captures Claude Code / Codex / Cursor / Maestri / browser-use sessions to a shared GitHub-synced pool, and distills per-project state into AGENTS.md + CLAUDE.md."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "yrzhe" }]

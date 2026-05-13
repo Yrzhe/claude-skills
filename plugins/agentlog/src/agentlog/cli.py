@@ -197,6 +197,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 _ADAPTER_REGISTRY = {
     "claude_code": ("agentlog.adapters.claude_code", "ClaudeCodeAdapter"),
     "codex": ("agentlog.adapters.codex", "CodexAdapter"),
+    "cursor": ("agentlog.adapters.cursor", "CursorAdapter"),
     "maestri": ("agentlog.adapters.maestri", "MaestriAdapter"),
     "browser_use": ("agentlog.adapters.browser_use", "BrowserUseAdapter"),
 }
@@ -526,6 +527,99 @@ def cmd_shot(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------- stubs
 
 
+# ---------------------------------------------------------------- brief / context (Layer 2)
+
+
+def cmd_brief(args: argparse.Namespace) -> int:
+    try:
+        from . import brief
+        from .reader import parse_window, walk_events
+    except ImportError as e:
+        return _err(f"brief module not available: {e}")
+
+    project_name = args.project
+    if not project_name:
+        return _err("--project required (e.g. --project agentlog)")
+
+    project_root = Path(args.project_root or ".").expanduser().resolve()
+    if not project_root.exists():
+        return _err(f"project root does not exist: {project_root}")
+
+    window = args.last or "7d"
+    try:
+        delta = parse_window(window)
+    except ValueError as e:
+        return _err(str(e))
+
+    from datetime import datetime, timezone
+
+    since = datetime.now(timezone.utc) - delta
+    events = list(walk_events(since=since, projects=[project_name]))
+    if not events:
+        _ok(f"No events for project {project_name!r} in window {window}.")
+        return 0
+
+    try:
+        result = brief.run_brief(
+            project_name=project_name,
+            project_root=project_root,
+            events=events,
+        )
+    except RuntimeError as e:
+        return _err(str(e))
+
+    _ok(
+        f"brief written for {project_name}: "
+        f"{result['events_used']} events distilled → "
+        f"{project_root}/docs/agent-context/"
+    )
+    return 0
+
+
+def cmd_context_init(args: argparse.Namespace) -> int:
+    try:
+        from . import context
+    except ImportError as e:
+        return _err(f"context module not available: {e}")
+
+    project_root = Path(args.project_root or ".").expanduser().resolve()
+    if not project_root.exists():
+        return _err(f"project root does not exist: {project_root}")
+
+    result = context.init_project(project_root)
+    if result["created"]:
+        _ok(f"agent context scaffold created at {project_root}")
+    else:
+        _ok(f"agent context already initialized at {project_root}")
+    return 0
+
+
+def cmd_context_sync(args: argparse.Namespace) -> int:
+    """Sync state.md / next-steps.md from disk into AGENTS.md + CLAUDE.md blocks."""
+    try:
+        from . import context
+    except ImportError as e:
+        return _err(f"context module not available: {e}")
+
+    project_root = Path(args.project_root or ".").expanduser().resolve()
+    state_path = project_root / context.AGENT_CONTEXT_DIR / context.STATE_FILE
+    next_path = project_root / context.AGENT_CONTEXT_DIR / context.NEXT_STEPS_FILE
+
+    if not state_path.exists() or not next_path.exists():
+        return _err(
+            "state.md or next-steps.md missing — run `agentlog context init` first "
+            "or `agentlog brief --project <name>` to populate."
+        )
+
+    context.sync_state(
+        project_root,
+        state_md=state_path.read_text(),
+        next_steps_md=next_path.read_text(),
+    )
+    _ok(f"AGENTS.md + CLAUDE.md synced from docs/agent-context/ at {project_root}")
+    return 0
+
+
 def cmd_stub(name: str):
     def _fn(args):
         return _err(
@@ -624,6 +718,29 @@ def build_parser() -> argparse.ArgumentParser:
     p_hook_stop = hook_sub.add_parser("stop", help="Claude Code Stop hook: capture one session's new turns from stdin JSON")
     p_hook_stop.add_argument("--quiet", action="store_true", help="suppress stdout, exit 0 silently")
     p_hook_stop.set_defaults(func=cmd_hook_stop)
+
+    # Layer 2: brief + context
+    p_brief = sub.add_parser(
+        "brief",
+        help="distill recent events for a project into docs/agent-context/{state,decisions,next-steps}.md via Haiku",
+    )
+    p_brief.add_argument("--project", required=True, help="project.name to distill")
+    p_brief.add_argument("--last", default="7d", help="time window (default: 7d)")
+    p_brief.add_argument("--project-root", help="project root path (default: cwd)")
+    p_brief.set_defaults(func=cmd_brief)
+
+    p_ctx = sub.add_parser("context", help="manage per-project context files")
+    ctx_sub = p_ctx.add_subparsers(dest="context_cmd", required=True)
+    p_ctx_init = ctx_sub.add_parser(
+        "init", help="create AGENTS.md + CLAUDE.md + docs/agent-context/ skeleton"
+    )
+    p_ctx_init.add_argument("--project-root", help="project root path (default: cwd)")
+    p_ctx_init.set_defaults(func=cmd_context_init)
+    p_ctx_sync = ctx_sub.add_parser(
+        "sync", help="re-sync state block in AGENTS.md + CLAUDE.md from docs/agent-context/"
+    )
+    p_ctx_sync.add_argument("--project-root", help="project root path (default: cwd)")
+    p_ctx_sync.set_defaults(func=cmd_context_sync)
 
     p_shot = sub.add_parser("shot", help="capture a screenshot (window pick or URL) and log it")
     p_shot.add_argument("target", nargs="?", help="URL to capture (omit for interactive window pick)")

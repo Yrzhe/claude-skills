@@ -1,11 +1,14 @@
 ---
 name: agentlog
-description: Load when the user wants to view, sync, or analyze multi-agent activity across multiple devices — Claude Code / Codex / Maestri / browser-use sessions captured to a shared GitHub-synced pool. Triggers on "agentlog X" commands, "what did I do today across all my agents", "show me my pool", "sync the pool", "拉一下另一台机器上的 agent 记录", "看看 vps 上跑的", "跨设备 agent log". Do NOT load for single-machine tweet material capture (use `seed`) or one-off project planning.
+description: Load when the user wants to view, sync, or analyze multi-agent activity across multiple devices — Claude Code / Codex / Cursor / Maestri / browser-use sessions captured to a shared GitHub-synced pool, OR wants a distilled per-project context document so a fresh agent in a different tool can pick up where another left off. Triggers on "agentlog X" commands, "what did I do today across all my agents", "show me my pool", "sync the pool", "拉一下另一台机器上的 agent 记录", "看看 vps 上跑的", "跨设备 agent log", "跨工具上下文", "switch from Codex to Claude Code", "AGENTS.md / CLAUDE.md", "项目状态文档", "agent context". Do NOT load for single-machine tweet material capture (use `seed`) or one-off project planning.
 ---
 
-# agentlog · Multi-agent, multi-device activity pool
+# agentlog · Multi-agent, multi-device activity pool + project context layer
 
-agentlog captures notable activity from all your AI agents (Claude Code, Codex, Maestri canvas, browser-use, etc.) across all your machines (Macs + VPS) into one normalized event pool, synced via a private GitHub repo. It's the **"one person, many agents"** version of team activity dashboards.
+agentlog has two layers:
+
+- **Layer 1 — event pool**: captures notable activity from all your AI agents (Claude Code, Codex, Cursor, Maestri, browser-use) across all your machines (Macs + VPS) into one normalized event pool, synced via a private GitHub repo.
+- **Layer 2 — project context**: distills the pool into a per-project `AGENTS.md` + `CLAUDE.md` + `docs/agent-context/` snapshot, so any AI coding agent entering the project reads the same up-to-date state, decisions, and next steps.
 
 ## Boundaries (when NOT to use)
 
@@ -82,6 +85,18 @@ agentlog push --force
 agentlog event push '{"action":{"type":"checkpoint","status":"completed","label":"deploy success"},"summary":"shipped api v2"}'
 ```
 
+### Distill a project's recent activity into a context document (Layer 2)
+```bash
+agentlog context init --project-root .
+agentlog brief --project agentlog --last 7d
+```
+Writes `AGENTS.md` + `CLAUDE.md` + `docs/agent-context/{state,decisions,next-steps}.md` so the next agent (Cursor / Codex / Claude Code) entering the project reads a unified state. Requires `ANTHROPIC_API_KEY`.
+
+### Re-sync entry-file blocks after manually editing state
+```bash
+agentlog context sync
+```
+
 ### Migrate historical seed data (one-time)
 ```bash
 agentlog migrate-from-seed --dry-run
@@ -101,6 +116,9 @@ agentlog daemon start
 | `references/cheatsheet.md` | **Start here** — one-page mental model: commands, capture modes, push rhythm, file layout, schema |
 | `references/setup.md` | Full multi-device install, GitHub remote, env vars, daemon install |
 | `references/cli-reference.md` | Every CLI command with examples |
+| `references/cursor-adapter.md` | Cursor IDE SQLite storage layout, action-type mapping, schema-drift handling |
+| `references/brief.md` | Haiku distill prompt contract, event selection, idempotency rules |
+| `references/context-contract.md` | AGENTS.md + CLAUDE.md double-write, decisions append-only, decision entry format |
 
 For schema details read `src/agentlog/schema.py` directly — the type hints + validate() are the source of truth.
 
@@ -112,4 +130,4 @@ For schema details read `src/agentlog/schema.py` directly — the type hints + v
 
 ## Status
 
-v0 — schema + pool + 4 adapters (claude_code, codex, maestri, browser_use) + GitHub sync + daemon + shot + recap. Tests: 39 passing.
+v0 — schema + pool + 5 adapters (claude_code, codex, cursor, maestri, browser_use) + GitHub sync + daemon + shot + recap + Layer 2 (brief + context). Tests: 59 passing.

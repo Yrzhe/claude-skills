@@ -78,3 +78,36 @@ def test_validate_rejects_summary_over_240_chars():
 
     with pytest.raises(EventValidationError, match="summary exceeds"):
         validate(event)
+
+
+def test_validate_accepts_cursor_source_type():
+    event = valid_event(source_type="cursor")
+    event["actor"] = {"id": "cursor:local-default", "name": "Cursor", "kind": "agent"}
+    event["source_event_id"] = "cursor:workspace-abc:msg-1"
+
+    assert validate(event) == event
+
+
+def test_validate_accepts_decision_action_type():
+    event = valid_event(
+        action={
+            "type": "decision",
+            "status": "completed",
+            "label": "use AGENTS.md double-write",
+        },
+        payload={
+            "rationale": "covers Cursor + Codex without duplication",
+            "alternatives_considered": ["single docs/agent-context.md include"],
+        },
+    )
+
+    assert validate(event) == event
+
+
+def test_validate_accepts_next_step_action_type():
+    event = valid_event(
+        action={"type": "next_step", "status": "in_progress", "label": "wire CLI"},
+        payload={"priority": "high", "blocked_by": []},
+    )
+
+    assert validate(event) == event

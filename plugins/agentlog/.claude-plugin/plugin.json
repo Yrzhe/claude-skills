@@ -1,7 +1,7 @@
 {
   "name": "agentlog",
-  "version": "0.0.1",
-  "description": "Multi-agent multi-device activity pool. Sync your Claude Code, Codex, Maestri, and browser-use sessions across machines via a private GitHub repo.",
+  "version": "0.11.0",
+  "description": "Multi-agent, multi-device activity pool + per-project context layer. Captures Claude Code, Codex, Cursor, Maestri, and browser-use sessions across machines via a private GitHub repo, and distills recent activity into AGENTS.md + CLAUDE.md + docs/agent-context/ so any AI agent entering the project picks up where the last one left off.",
   "author": "yrzhe",
   "license": "MIT",
   "skill_path": "SKILL.md"
