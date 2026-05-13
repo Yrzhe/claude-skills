@@ -98,6 +98,7 @@ agentlog daemon start
 
 | File | Covers |
 |---|---|
+| `references/cheatsheet.md` | **Start here** — one-page mental model: commands, capture modes, push rhythm, file layout, schema |
 | `references/setup.md` | Full multi-device install, GitHub remote, env vars, daemon install |
 | `references/cli-reference.md` | Every CLI command with examples |
 
