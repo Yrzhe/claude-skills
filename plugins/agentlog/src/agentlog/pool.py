@@ -169,7 +169,9 @@ class Pool:
 
     def _append_line(self, path: Path, line: str, *, flush: bool) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as file:
+        # errors='replace' tolerates lone surrogates (e.g. truncated emoji in
+        # Claude Code tool_use_error text like '\ud83d…') instead of crashing.
+        with path.open("a", encoding="utf-8", errors="replace") as file:
             file.write(line)
             if flush:
                 file.flush()

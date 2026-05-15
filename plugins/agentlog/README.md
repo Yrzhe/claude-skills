@@ -23,13 +23,25 @@ The default model of every AI tool is "this conversation lives in this app." Whe
 ## Quick start
 
 ```bash
-# Install the package
+# Get the source
 git clone https://github.com/Yrzhe/claude-skills.git ~/code/claude-skills
-cd ~/code/claude-skills/plugins/agentlog
-pip install -e .
+
+# Install — option A: pipx (recommended for end users, isolates dependencies)
+pipx install ~/code/claude-skills/plugins/agentlog
+
+# Install — option B: editable pip (for hacking the skill)
+pip install --upgrade pip setuptools wheel   # required: system setuptools is often <61
+pip install -e ~/code/claude-skills/plugins/agentlog
+
+# Verify install (you should see the subcommand list)
+agentlog --help | head -5
+# If `agentlog` isn't found but the install succeeded, also try: python3 -m agentlog --help
 
 # Create your private pool repo (one time, anywhere)
 gh repo create agent-seeds --private --confirm
+
+# Verify GitHub SSH access before init (the next step clones via SSH)
+ssh -T git@github.com   # expect: "Hi <user>! You've successfully authenticated..."
 
 # Initialize on each device (run on every machine you want to capture from)
 agentlog init --repo git@github.com:YOUR_USER/agent-seeds.git
@@ -40,7 +52,7 @@ agentlog pool --last 4h
 agentlog recap
 ```
 
-Full setup, daemon install, Stop hook install: see [`references/setup.md`](references/setup.md). Every command flag with examples: [`references/cli-reference.md`](references/cli-reference.md).
+Full setup, daemon install, Stop hook install: see [`references/setup.md`](references/setup.md). Every command flag with examples: [`references/cli-reference.md`](references/cli-reference.md). Common install / sync failures and fixes: [`references/troubleshooting.md`](references/troubleshooting.md).
 
 ## What it is NOT
 

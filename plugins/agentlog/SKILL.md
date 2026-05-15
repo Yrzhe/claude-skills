@@ -115,6 +115,7 @@ agentlog daemon start
 |---|---|
 | `references/cheatsheet.md` | **Start here** — one-page mental model: commands, capture modes, push rhythm, file layout, schema |
 | `references/setup.md` | Full multi-device install, GitHub remote, env vars, daemon install |
+| `references/troubleshooting.md` | Common install / sync failures with root-cause + fix (UNKNOWN-0.0.0, command not found, SSH publickey, hostname collision, Cursor adapter blank) |
 | `references/cli-reference.md` | Every CLI command with examples |
 | `references/cursor-adapter.md` | Cursor IDE SQLite storage layout, action-type mapping, schema-drift handling |
 | `references/brief.md` | Haiku distill prompt contract, event selection, idempotency rules |

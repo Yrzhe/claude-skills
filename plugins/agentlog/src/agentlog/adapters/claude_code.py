@@ -471,7 +471,8 @@ class ClaudeCodeAdapter(SourceAdapter):
         return self._sha256(f"{self.source_type}|{self.device_id}|{source_event_id}|{timestamp}|{summary}")
 
     def _sha256(self, value: str) -> str:
-        return hashlib.sha256(value.encode("utf-8")).hexdigest()
+        # errors='replace' tolerates lone surrogates in tool_use_error text
+        return hashlib.sha256(value.encode("utf-8", errors="replace")).hexdigest()
 
     def _truncate(self, value: Any, limit: int) -> str:
         text = "" if value is None else str(value)

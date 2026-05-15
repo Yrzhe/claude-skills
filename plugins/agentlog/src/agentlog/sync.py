@@ -236,6 +236,8 @@ class Sync:
             "state/sync.lock\n",
             "state/sync-state.json\n",
             "state/this-device.json\n",
+            "state/daemon.log\n",
+            "state/*.log\n",
         ):
             self._ensure_line(self.root_dir / ".gitignore", line)
 

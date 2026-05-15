@@ -226,7 +226,9 @@ def normalize_dedupe_key(event: dict[str, Any]) -> str:
             summary,
         ]
     )
-    return "sha256:" + hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    # errors='replace' guards against lone surrogates from Claude Code tool-error
+    # text (e.g. truncated emoji like '\ud83d') that break strict utf-8 encoding.
+    return "sha256:" + hashlib.sha256(raw.encode("utf-8", errors="replace")).hexdigest()
 
 
 def _validate_artifact_ref(artifact: Any, index: int) -> None:
