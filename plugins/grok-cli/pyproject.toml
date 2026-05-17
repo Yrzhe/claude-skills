@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grok-cli-skill"
+version = "0.2.0"
+description = "Reusable skill package for SuperGrok OAuth login, xAI Responses chat, X Search, Grok Imagine image/video generation, and persistent CLI sessions."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["requests>=2.31.0"]
+authors = [{name = "grok-cli skill"}]
+license = {text = "MIT"}
+
+[project.scripts]
+grok-cli = "grok_cli.cli:main"
+grok = "grok_cli.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["grok_cli*"]

@@ -1,0 +1,8 @@
+{
+  "name": "grok-cli",
+  "version": "0.2.0",
+  "description": "Local CLI wrapper around Grok/xAI using your own SuperGrok / X Premium account via browser OAuth (no paid xAI API key). Chat with Grok, generate images and videos with Grok Imagine, search X/Twitter via x_search, with persistent SQLite sessions.",
+  "author": "yrzhe",
+  "license": "MIT",
+  "skill_path": "SKILL.md"
+}

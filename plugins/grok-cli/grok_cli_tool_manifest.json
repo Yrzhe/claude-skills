@@ -1,0 +1,72 @@
+{
+  "skill": "grok-cli",
+  "version": "0.2.0",
+  "purpose": "Local Grok/xAI CLI for SuperGrok OAuth, xAI API key fallback, Responses chat, X Search, Grok Imagine image/video generation, and persistent sessions.",
+  "entrypoints": {
+    "cli": "grok-cli",
+    "module": "python -m grok_cli"
+  },
+  "state": {
+    "default_home": "~/.grok-cli",
+    "override_env": "GROK_CLI_HOME",
+    "auth": "auth.json",
+    "config": "config.json",
+    "database": "sessions.sqlite3"
+  },
+  "commands": {
+    "login": {
+      "command": "grok-cli login [--no-browser] [--port 56121] [--timeout 180]",
+      "description": "Start xAI/SuperGrok OAuth login using browser PKCE flow."
+    },
+    "status": {
+      "command": "grok-cli status",
+      "description": "Show sanitized auth/config status."
+    },
+    "ask_json": {
+      "command": "grok-cli ask \"<prompt>\" --session \"<session>\" --json",
+      "description": "Ask Grok once and return machine-readable JSON."
+    },
+    "search_json": {
+      "command": "grok-cli search \"<query>\" --json --save",
+      "description": "Search X using xAI x_search and save result to session if requested."
+    },
+    "chat": {
+      "command": "grok-cli chat --session \"<session>\"",
+      "description": "Interactive persistent chat REPL."
+    },
+    "image": {
+      "command": "grok-cli image \"<prompt>\" --yes [-n N] [-o out.jpg] [--json]",
+      "description": "Grok Imagine image generation (synchronous, paid ~$0.02/image). Requires --yes in non-interactive use."
+    },
+    "video": {
+      "command": "grok-cli video \"<prompt>\" --yes [-o out.mp4] [--no-wait] [--json]  |  grok-cli video --fetch <request_id>",
+      "description": "Grok Imagine video generation (async poll, paid ~$0.40/8s, ~20x an image). Requires --yes in non-interactive use."
+    },
+    "sessions": {
+      "command": "grok-cli session list|new|use|delete|export|show",
+      "description": "Manage local SQLite sessions."
+    }
+  },
+  "credential_precedence": [
+    "xai-oauth from grok-cli login",
+    "XAI_API_KEY environment variable",
+    "stored API key from grok-cli key set"
+  ],
+  "x_search_parameters": {
+    "query": "required string",
+    "allowed_x_handles": "optional max 10 handles, mutually exclusive with excluded_x_handles",
+    "excluded_x_handles": "optional max 10 handles, mutually exclusive with allowed_x_handles",
+    "from_date": "optional YYYY-MM-DD",
+    "to_date": "optional YYYY-MM-DD",
+    "enable_image_understanding": "optional boolean",
+    "enable_video_understanding": "optional boolean"
+  },
+  "security_rules": [
+    "Do not ask for xAI password.",
+    "Do not scrape browser cookies.",
+    "Do not print tokens or API keys.",
+    "Prefer OAuth for SuperGrok users.",
+    "Image/video generation is paid; do not auto-pass --yes without user intent.",
+    "No credentials are bundled; each user logs in with their own account."
+  ]
+}

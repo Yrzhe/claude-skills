@@ -165,6 +165,19 @@
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
       "tags": ["cooking", "recipe", "chinese-cuisine", "western-cuisine", "xiachufang", "allrecipes", "themealdb", "nutrition", "pairing", "ingredient-substitution", "real-data"]
+    },
+    {
+      "name": "grok-cli",
+      "source": "./plugins/grok-cli",
+      "description": "Local CLI wrapper around Grok/xAI using your own SuperGrok / X Premium account via browser OAuth (no paid xAI API key). Chat with Grok, generate images and videos with Grok Imagine, search X/Twitter via x_search, with persistent SQLite sessions.",
+      "version": "0.2.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": ["grok", "xai", "supergrok", "x-premium", "oauth", "grok-imagine", "image-generation", "video-generation", "x-search", "tweets", "cli"]
     }
   ]
 }
