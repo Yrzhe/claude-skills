@@ -3,7 +3,7 @@ name: adaptive-compaction
 description: >-
   Adaptive add-on policy and recovery layer that decides WHEN to compact,
   prune, snapshot, or fork -- replacing fixed-percent auto-compaction across
-  Claude Code, Codex, and MCP agents. Trigger on auto-compact timing or
+  Claude Code, Codex, and MCP-capable hosts. Trigger on auto-compact timing or
   damage: "when should I compact", "is it safe to compact now or start a fresh
   session", "auto-compact fires too early/mid-task", "switching to an
   unrelated task but the window still has space", "context rot", "answers get

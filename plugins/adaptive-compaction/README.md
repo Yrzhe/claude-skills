@@ -2,9 +2,16 @@
 
 An add-on policy & recovery layer that decides **WHEN** a coding agent should
 compact, prune, snapshot, or fork — replacing dumb fixed-percent
-auto-compaction with an adaptive, signal-driven decision. Works across
-**Claude Code, Codex, and MCP-capable agents**. No model calls, no network,
-zero added token cost in the hot path.
+auto-compaction with an adaptive, signal-driven decision. Built for
+**Claude Code**, with safe degradation on Codex and MCP-only hosts (see
+capability tiers). No model calls, no network, zero added token cost in the
+hot path.
+
+**It does not compact for you.** It scores every turn deterministically and,
+at a real compaction boundary, snapshots your state and gates that compaction
+(block / allow-with-snapshot). It cannot start a compaction on its own — the
+native threshold or you (`/compact`) trigger it; for non-space conditions it
+surfaces the call and you act. It decides WHEN; you stay in control.
 
 ## Why
 
@@ -29,8 +36,9 @@ These map through a canonical decision table to one action:
 `NOOP · ZERO_LLM_PRUNE · SAVE_STATE · PREPARE_FOR_COMPACT · FORCED_COMPACT ·
 FORK_OR_RESET · ASK_USER`.
 
-Two hard disciplines: never auto-compact mid-task unless at the hard cap, and
-on a topic shift prefer `FORK_OR_RESET` over an in-place destructive summary.
+Two hard disciplines: never let a compaction proceed mid-task unless at the
+hard cap, and on a topic shift prefer `FORK_OR_RESET` over an in-place
+destructive summary.
 
 ## Host capability tiers
 
@@ -65,5 +73,10 @@ threshold fires. See the **Install It Yourself** section in `SKILL.md`.
 - MCP persistence layer deferred to v1.5 (v1 = hooks + local files).
 - Native auto-compact threshold is user-configurable on Codex; on Claude Code
   it relies on PreCompact interception.
+- The policy does not initiate a compaction by itself. It gates and snapshots
+  a compaction the native threshold or the user triggers; for relevance /
+  topic / burden conditions while the window is not full, it surfaces a prompt
+  and you run `/compact`. Full any-condition auto-execution needs an external
+  supervisor (deferred to v1.5).
 
 License: MIT.
