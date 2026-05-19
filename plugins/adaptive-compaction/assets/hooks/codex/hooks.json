@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "command": "ADAPTIVE_COMPACTION_SKILL_DIR=<skill-dir> python3 <skill-dir>/scripts/hook_bridge.py codex-session-start"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "command": "ADAPTIVE_COMPACTION_SKILL_DIR=<skill-dir> python3 <skill-dir>/scripts/hook_bridge.py codex-user-prompt-submit"
+      }
+    ],
+    "Stop": [
+      {
+        "command": "ADAPTIVE_COMPACTION_SKILL_DIR=<skill-dir> python3 <skill-dir>/scripts/hook_bridge.py codex-stop"
+      }
+    ]
+  },
+  "adaptive_compaction_claim": "Codex integration is advise/persist only. It snapshots state, logs decisions, and shapes prompts; it does not claim control over opaque server compaction content."
+}

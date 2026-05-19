@@ -1,0 +1,21 @@
+{
+  "host": "codex",
+  "host_capability_tier": "advise-persist",
+  "tokens_used": 176000,
+  "effective_window": 200000,
+  "reserved_output": 20000,
+  "user_prompt": "Continue implementing the adaptive compaction decision policy.",
+  "objective": "Implement adaptive compaction decision policy scripts.",
+  "accepted_constraints": ["No model calls", "No network", "JSON stdin stdout"],
+  "hot_files": ["scripts/decide.py", "scripts/score_signals.py"],
+  "touched_symbols": ["decide", "score"],
+  "plan_items": ["finish deterministic scorer", "run fixtures"],
+  "recent_turns": [
+    {"role": "assistant", "summary": "Implemented scorer and decision table", "tokens": 1200}
+  ],
+  "tool_events": [
+    {"type": "read", "target": "scripts/decide.py", "content_hash": "a1", "tokens": 3000, "errored": false, "turn": 8}
+  ],
+  "turns_since_last_compaction": 10,
+  "explicit_new_task_marker": false
+}

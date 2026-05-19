@@ -1,0 +1,24 @@
+{
+  "host": "claude-code",
+  "host_capability_tier": "hook-rich",
+  "tokens_used": 90000,
+  "effective_window": 200000,
+  "reserved_output": 20000,
+  "user_prompt": "Clean up repeated reads while continuing the decision policy scripts.",
+  "objective": "Implement adaptive compaction decision policy scripts.",
+  "accepted_constraints": ["No model calls", "No network", "JSON stdin stdout"],
+  "hot_files": ["scripts/decide.py", "scripts/score_signals.py"],
+  "touched_symbols": ["decision", "thresholds", "pruning"],
+  "plan_items": [],
+  "recent_turns": [
+    {"role": "tool", "summary": "Large repeated file reads were inspected", "tokens": 8000}
+  ],
+  "tool_events": [
+    {"type": "read", "target": "logs/build.log", "content_hash": "same", "tokens": 18000, "errored": false, "turn": 1},
+    {"type": "read", "target": "logs/build.log", "content_hash": "same", "tokens": 18000, "errored": false, "turn": 2},
+    {"type": "write", "target": "scripts/decide.py", "content_hash": "w1", "tokens": 7000, "errored": false, "turn": 3},
+    {"type": "read", "target": "scripts/decide.py", "content_hash": "r1", "tokens": 9000, "errored": false, "turn": 4}
+  ],
+  "turns_since_last_compaction": 10,
+  "explicit_new_task_marker": false
+}

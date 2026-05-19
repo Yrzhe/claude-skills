@@ -1,0 +1,12 @@
+{
+  "healthy_headroom_min": 0.40,
+  "soft_headroom_low": 0.20,
+  "forced_headroom_floor": 0.175,
+  "hard_cap_floor": 0.125,
+  "thrash_cooldown_turns": 6,
+  "min_recovery_ratio": 0.20,
+  "zero_llm_success_ratio": 0.60,
+  "topic_shift_confirmation_turns": 2,
+  "large_output_quarantine_tokens": 5000,
+  "error_input_purge_turns": 4
+}

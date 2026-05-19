@@ -1,0 +1,45 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<skill-dir>/assets/hooks/claude-code/pre-compact.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<skill-dir>/assets/hooks/claude-code/pre-compact.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<skill-dir>/assets/hooks/claude-code/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<skill-dir>/assets/hooks/claude-code/user-prompt-submit.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "host": "claude-code",
+  "host_capability_tier": "hook-rich",
+  "tokens_used": 148000,
+  "effective_window": 200000,
+  "reserved_output": 20000,
+  "user_prompt": "Continue the adaptive compaction decide.py implementation and preserve the threshold policy.",
+  "objective": "Implement adaptive compaction decision policy scripts.",
+  "accepted_constraints": ["No model calls", "No network", "JSON stdin stdout"],
+  "hot_files": ["scripts/decide.py", "scripts/score_signals.py"],
+  "touched_symbols": ["decide", "thresholds", "FORCED_COMPACT"],
+  "plan_items": [],
+  "recent_turns": [
+    {"role": "assistant", "summary": "Decision table is ready for forced-zone validation", "tokens": 1100}
+  ],
+  "tool_events": [
+    {"type": "read", "target": "scripts/decide.py", "content_hash": "d2", "tokens": 3000, "errored": false, "turn": 12}
+  ],
+  "turns_since_last_compaction": 10,
+  "explicit_new_task_marker": false
+}

@@ -1,0 +1,21 @@
+{
+  "host": "claude-code",
+  "host_capability_tier": "hook-rich",
+  "tokens_used": 60000,
+  "effective_window": 200000,
+  "reserved_output": 20000,
+  "user_prompt": "Finish the decide.py thresholds handling for the adaptive compaction policy.",
+  "objective": "Implement adaptive compaction decision policy scripts.",
+  "accepted_constraints": ["No model calls", "No network", "JSON stdin stdout"],
+  "hot_files": ["scripts/decide.py", "scripts/score_signals.py"],
+  "touched_symbols": ["decide", "thresholds"],
+  "plan_items": [],
+  "recent_turns": [
+    {"role": "assistant", "summary": "Working on deterministic threshold handling", "tokens": 900}
+  ],
+  "tool_events": [
+    {"type": "read", "target": "scripts/decide.py", "content_hash": "d1", "tokens": 2500, "errored": false, "turn": 5}
+  ],
+  "turns_since_last_compaction": 10,
+  "explicit_new_task_marker": false
+}

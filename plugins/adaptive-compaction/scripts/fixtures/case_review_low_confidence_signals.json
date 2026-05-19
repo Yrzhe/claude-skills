@@ -1,0 +1,11 @@
+{
+  "headroom_frac": 0.55,
+  "relevance": 0.12,
+  "relevance_confidence": 0.30,
+  "low_relevance_streak": 2,
+  "burden_tokens": 0,
+  "reclaimable_burden_frac": 0.0,
+  "continuity": 0.0,
+  "continuity_flags": [],
+  "host_capability_tier": "hook-rich"
+}

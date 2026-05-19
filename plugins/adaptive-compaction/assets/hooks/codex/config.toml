@@ -1,0 +1,15 @@
+# Adaptive compaction Codex snippet.
+# Replace <skill-dir> with the installed skill path.
+# This is advise/persist level only; it does not control opaque server compaction content.
+
+[hooks]
+config_file = "<skill-dir>/assets/hooks/codex/hooks.json"
+
+compact_prompt = """
+Before compacting, preserve an operational state packet, not a prose recap.
+Include Goal, Accepted constraints, Current branch/workspace, Touched files/symbols,
+Decisions, Failing tests/commands/exact repro, Open risks, Exact next action,
+Files to reload first, and Raw transcript dump pointer.
+Do not claim the compacted server item is auditable. After compaction, reload
+TASK_STATE.md from the adaptive-compaction runtime directory when available.
+"""

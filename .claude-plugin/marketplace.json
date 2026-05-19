@@ -21,7 +21,14 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["scraping", "web", "automation", "browser", "crawl4ai", "playwright"]
+      "tags": [
+        "scraping",
+        "web",
+        "automation",
+        "browser",
+        "crawl4ai",
+        "playwright"
+      ]
     },
     {
       "name": "feishu-bot-dev",
@@ -34,7 +41,16 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["feishu", "lark", "bot", "飞书", "机器人", "消息", "群组", "API"]
+      "tags": [
+        "feishu",
+        "lark",
+        "bot",
+        "飞书",
+        "机器人",
+        "消息",
+        "群组",
+        "API"
+      ]
     },
     {
       "name": "akshare-a-shares",
@@ -47,7 +63,18 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["akshare", "A股", "股票", "行情", "K线", "分时", "复权", "股东户数", "东方财富", "新浪"]
+      "tags": [
+        "akshare",
+        "A股",
+        "股票",
+        "行情",
+        "K线",
+        "分时",
+        "复权",
+        "股东户数",
+        "东方财富",
+        "新浪"
+      ]
     },
     {
       "name": "youtube-data-api",
@@ -60,7 +87,16 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["youtube", "api", "video", "channel", "playlist", "comments", "subtitles", "search"]
+      "tags": [
+        "youtube",
+        "api",
+        "video",
+        "channel",
+        "playlist",
+        "comments",
+        "subtitles",
+        "search"
+      ]
     },
     {
       "name": "lenny-advisor",
@@ -73,7 +109,17 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["product", "business", "strategy", "growth", "pricing", "pmf", "positioning", "leadership", "lenny"]
+      "tags": [
+        "product",
+        "business",
+        "strategy",
+        "growth",
+        "pricing",
+        "pmf",
+        "positioning",
+        "leadership",
+        "lenny"
+      ]
     },
     {
       "name": "learn",
@@ -86,7 +132,14 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["learn", "skill-creation", "self-evolution", "auto-extract", "reusable", "memory"]
+      "tags": [
+        "learn",
+        "skill-creation",
+        "self-evolution",
+        "auto-extract",
+        "reusable",
+        "memory"
+      ]
     },
     {
       "name": "skill-improve",
@@ -99,7 +152,13 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["skill-improve", "self-evolution", "maintenance", "auto-fix", "skill-update"]
+      "tags": [
+        "skill-improve",
+        "self-evolution",
+        "maintenance",
+        "auto-fix",
+        "skill-update"
+      ]
     },
     {
       "name": "browser-use-cloud",
@@ -112,7 +171,18 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["browser-use", "cloud-browser", "anti-detect", "playwright", "stealth", "proxy", "recording", "screenshot", "captcha", "automation"]
+      "tags": [
+        "browser-use",
+        "cloud-browser",
+        "anti-detect",
+        "playwright",
+        "stealth",
+        "proxy",
+        "recording",
+        "screenshot",
+        "captcha",
+        "automation"
+      ]
     },
     {
       "name": "design-distiller",
@@ -125,7 +195,18 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["design-system", "design-tokens", "scraper", "ui", "ux", "css", "typography", "colors", "components", "design-md"]
+      "tags": [
+        "design-system",
+        "design-tokens",
+        "scraper",
+        "ui",
+        "ux",
+        "css",
+        "typography",
+        "colors",
+        "components",
+        "design-md"
+      ]
     },
     {
       "name": "persona-sim",
@@ -138,7 +219,20 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["persona", "simulation", "nemotron", "silicon-sample", "synthetic-population", "generative-agents", "sgo", "product-feedback", "vote-predict", "social-sandbox", "ipf", "bias-audit"]
+      "tags": [
+        "persona",
+        "simulation",
+        "nemotron",
+        "silicon-sample",
+        "synthetic-population",
+        "generative-agents",
+        "sgo",
+        "product-feedback",
+        "vote-predict",
+        "social-sandbox",
+        "ipf",
+        "bias-audit"
+      ]
     },
     {
       "name": "seed",
@@ -151,7 +245,15 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["build-in-public", "tweet", "session-log", "stop-hook", "screenshot", "activity-capture", "synthesis"]
+      "tags": [
+        "build-in-public",
+        "tweet",
+        "session-log",
+        "stop-hook",
+        "screenshot",
+        "activity-capture",
+        "synthesis"
+      ]
     },
     {
       "name": "chef",
@@ -164,7 +266,19 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["cooking", "recipe", "chinese-cuisine", "western-cuisine", "xiachufang", "allrecipes", "themealdb", "nutrition", "pairing", "ingredient-substitution", "real-data"]
+      "tags": [
+        "cooking",
+        "recipe",
+        "chinese-cuisine",
+        "western-cuisine",
+        "xiachufang",
+        "allrecipes",
+        "themealdb",
+        "nutrition",
+        "pairing",
+        "ingredient-substitution",
+        "real-data"
+      ]
     },
     {
       "name": "grok-cli",
@@ -177,7 +291,43 @@
       },
       "repository": "https://github.com/yrzhe/claude-skills",
       "license": "MIT",
-      "tags": ["grok", "xai", "supergrok", "x-premium", "oauth", "grok-imagine", "image-generation", "video-generation", "x-search", "tweets", "cli"]
+      "tags": [
+        "grok",
+        "xai",
+        "supergrok",
+        "x-premium",
+        "oauth",
+        "grok-imagine",
+        "image-generation",
+        "video-generation",
+        "x-search",
+        "tweets",
+        "cli"
+      ]
+    },
+    {
+      "name": "adaptive-compaction",
+      "source": "./plugins/adaptive-compaction",
+      "description": "Adaptive add-on policy and recovery layer that decides WHEN a coding agent should compact, prune, snapshot, or fork -- replacing fixed-percent auto-compaction across Claude Code, Codex, and MCP agents. Deterministic 4-signal scorer (headroom/relevance/burden/continuity), zero-LLM pruning, state snapshots with secret redaction, host-capability-aware downgrade, self-installing hooks. No model calls, no network.",
+      "version": "1.0.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/yrzhe/claude-skills",
+      "license": "MIT",
+      "tags": [
+        "compaction",
+        "context-window",
+        "auto-compact",
+        "context-rot",
+        "claude-code",
+        "codex",
+        "mcp",
+        "hooks",
+        "state-recovery",
+        "policy"
+      ]
     }
   ]
 }
