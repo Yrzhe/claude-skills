@@ -36,6 +36,7 @@ Follow these rules before taking action:
 6. Keep stable instructions before volatile state to avoid prompt-cache churn.
 7. Log every decision with thresholds and host capability tier.
 8. Use portable paths such as `<skill-dir>/scripts/decide.py`; do not hardcode install paths.
+9. When the per-turn `additionalContext` reports a non-NOOP action, **lead your next reply by surfacing it to the user in their language** (forced compaction needed, fork recommended, decision needs confirmation). Then continue with the user's actual request. Do not silently swallow these signals — that is the only channel by which the skill can ask the user to act.
 
 ## Load References Conditionally
 

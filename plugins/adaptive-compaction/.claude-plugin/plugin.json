@@ -1,7 +1,7 @@
 {
   "name": "adaptive-compaction",
-  "version": "1.0.0",
-  "description": "Adaptive add-on policy and recovery layer that decides WHEN a coding agent should compact, prune, snapshot, or fork -- replacing fixed-percent auto-compaction across Claude Code, Codex, and MCP agents. Deterministic 4-signal scorer (headroom/relevance/burden/continuity), zero-LLM pruning, operational state snapshots with secret redaction, host-capability-aware downgrade, and self-installing hooks. No model calls, no network.",
+  "version": "1.2.0",
+  "description": "Adaptive add-on policy and recovery layer that decides WHEN a coding agent should compact, prune, snapshot, or fork -- replacing fixed-percent auto-compaction across Claude Code, Codex, and MCP-capable hosts. Deterministic 4-signal scorer (headroom/relevance/burden/continuity), zero-LLM pruning, operational state snapshots with secret redaction, host-capability-aware downgrade, and self-installing hooks. Does not compact for you: it flags the moment, snapshots state, and gates a triggered compaction; user runs /compact. No model calls, no network.",
   "author": "yrzhe",
   "license": "MIT",
   "skill_path": "SKILL.md"

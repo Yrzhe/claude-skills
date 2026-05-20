@@ -195,11 +195,37 @@ def maybe_prune(telem: dict[str, Any], rt_dir: Path, decision_obj: dict[str, Any
     return prune_zero_llm.plan_prune(prune_input)
 
 
+ACT_NOW_ACTIONS = {"FORCED_COMPACT", "FORK_OR_RESET", "ASK_USER"}
+ATTENTION_ACTIONS = {"SAVE_STATE", "PREPARE_FOR_COMPACT", "ZERO_LLM_PRUNE"}
+
+
+def user_facing_suggestion(action: str, task_state_path: str | None, reason: str) -> str:
+    state_ref = task_state_path or "(state was not snapshotted)"
+    if action == "FORCED_COMPACT":
+        return (
+            f"Context window is at the forced band — recommend running `/compact` now. "
+            f"I've already saved current state to {state_ref}, so nothing is lost when you compact."
+        )
+    if action == "FORK_OR_RESET":
+        return (
+            f"This looks like a topic shift unrelated to the prior task. Recommend forking a fresh "
+            f"session for the new work instead of compacting here (the prior task's state is saved "
+            f"at {state_ref})."
+        )
+    if action == "ASK_USER":
+        return (
+            f"Policy hit an ambiguous case ({reason}) — need a quick confirmation before continuing."
+        )
+    return ""
+
+
 def additional_context(decision_obj: dict[str, Any], task_state_path: str | None, prune_result: dict[str, Any] | None) -> str:
+    action = decision_obj["action"]
+    reason = decision_obj["reason"]
     lines = [
         "Adaptive compaction policy decision:",
-        f"- action: {decision_obj['action']}",
-        f"- reason: {decision_obj['reason']}",
+        f"- action: {action}",
+        f"- reason: {reason}",
         f"- host note: {decision_obj['host_note']}",
     ]
     if task_state_path:
@@ -207,6 +233,27 @@ def additional_context(decision_obj: dict[str, Any], task_state_path: str | None
     if prune_result:
         lines.append(f"- zero-LLM recovered tokens: {prune_result['recovered_tokens']}")
         lines.append(f"- quarantine dir: {prune_result['quarantine_dir']}")
+
+    if action in ACT_NOW_ACTIONS:
+        suggestion = user_facing_suggestion(action, task_state_path, reason)
+        lines.append("")
+        lines.append(
+            "AGENT DIRECTIVE (act-now): Before responding to the user's next message, "
+            "surface this to them in plain language in their language, then continue "
+            "with their actual request. Suggested wording (translate / adapt to the "
+            "user's language and tone):"
+        )
+        lines.append("")
+        lines.append(f"  > {suggestion}")
+        lines.append("")
+        lines.append("Do not silently swallow this signal — this is the only channel by which the policy can ask the user to act.")
+    elif action in ATTENTION_ACTIONS:
+        lines.append("")
+        lines.append(
+            "AGENT NOTE: The policy took a non-trivial action this turn "
+            "(snapshot / prune / prepare). Mention to the user briefly if relevant; "
+            "otherwise continue with their request."
+        )
     return "\n".join(lines)
 
 
@@ -232,12 +279,78 @@ def hook_response(mode: str, decision_obj: dict[str, Any], context: str, task_st
     return response
 
 
+def last_log_decision(rt_dir: Path) -> dict[str, Any] | None:
+    log_path = rt_dir / "decision_log.jsonl"
+    if not log_path.exists():
+        return None
+    try:
+        with log_path.open("rb") as handle:
+            handle.seek(0, 2)
+            size = handle.tell()
+            if size == 0:
+                return None
+            handle.seek(max(0, size - 8192))
+            tail = handle.read().decode("utf-8", errors="ignore")
+        lines = [ln for ln in tail.splitlines() if ln.strip()]
+        if not lines:
+            return None
+        return json.loads(lines[-1])
+    except (OSError, ValueError):
+        return None
+
+
+def precompact_override(payload: dict[str, Any], telem: dict[str, Any], rt_dir: Path) -> dict[str, Any] | None:
+    """v1.1: Claude Code's PreCompact event does NOT pass token counts.
+    Fresh scoring would see headroom_frac ~= 1.0 and emit NOOP, which would
+    incorrectly block every native compaction. When telemetry is missing,
+    base the gate on the most recent UserPromptSubmit decision (the live
+    signal); if even that is unavailable, default to allow+snapshot rather
+    than second-guess the harness."""
+    if telem["tokens_used"] > 0:
+        return None
+    last = last_log_decision(rt_dir)
+    if last and last.get("action"):
+        return {
+            "action": str(last["action"]),
+            "reason": f"PreCompact telemetry missing; using last live decision from decision_log ({last['action']}).",
+            "require_snapshot": True,
+            "thresholds_used": last.get("thresholds", {}),
+            "host_note": "v1.1 PreCompact override: replayed last UserPromptSubmit decision.",
+        }
+    return {
+        "action": "FORCED_COMPACT",
+        "reason": "PreCompact telemetry missing and no prior decision log; default allow+snapshot (harness triggered this event).",
+        "require_snapshot": True,
+        "thresholds_used": {},
+        "host_note": "v1.1 PreCompact safe-fallback: allow+snapshot.",
+    }
+
+
+def synthetic_signals(telem: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "headroom_frac": 0.0,
+        "relevance": 0.0,
+        "relevance_confidence": 0.0,
+        "burden_tokens": 0,
+        "continuity": 0.0,
+        "continuity_flags": [],
+        "host_capability_tier": telem["host_capability_tier"],
+        "turns_since_last_compaction": telem["turns_since_last_compaction"],
+    }
+
+
 def run(mode: str, payload: dict[str, Any]) -> tuple[int, dict[str, Any], str]:
     rt_dir = runtime_dir(payload)
     telem = telemetry(mode, payload)
-    signals = score_signals.score(telem)
-    signals["turns_since_last_compaction"] = telem["turns_since_last_compaction"]
-    decision_obj = decide.decide(signals)
+
+    override = precompact_override(payload, telem, rt_dir) if mode == "claude-pre-compact" else None
+    if override is not None:
+        decision_obj = override
+        signals = synthetic_signals(telem)
+    else:
+        signals = score_signals.score(telem)
+        signals["turns_since_last_compaction"] = telem["turns_since_last_compaction"]
+        decision_obj = decide.decide(signals)
 
     task_state_path = None
     if decision_obj["require_snapshot"] or mode in {"claude-pre-compact", "codex-pre-compact-advice"}:
