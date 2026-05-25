@@ -1,0 +1,10 @@
+# appsnap runtime deps (macOS only). Install into a venv:
+#   python3 -m venv <skill-dir>/.venv
+#   <skill-dir>/.venv/bin/pip install -r <skill-dir>/requirements.txt
+# Then run scripts with <skill-dir>/.venv/bin/python.
+pyobjc-framework-Cocoa>=10.0
+pyobjc-framework-Quartz>=10.0
+pyobjc-framework-ApplicationServices>=10.0
+pyobjc-framework-Vision>=10.0
+pillow>=10.0
+numpy>=1.26

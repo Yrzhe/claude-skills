@@ -1,0 +1,8 @@
+{
+  "name": "appsnap",
+  "version": "1.0.0",
+  "description": "Capture a Mac app window as agent context: hover-pick a window, get a high-res screenshot plus Accessibility-tree text. Smart auto mode scroll-stitches scrollable windows into a seamless full-page image (sidebars cropped, ratio-split into readable tiles, silent, manual stop). The screenshot is primary context the agent reads with its own vision; AX text is supplementary. macOS only. No network, no model calls.",
+  "author": "yrzhe",
+  "license": "MIT",
+  "skill_path": "SKILL.md"
+}
