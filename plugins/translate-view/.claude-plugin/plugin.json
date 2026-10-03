@@ -1,0 +1,20 @@
+{
+  "name": "translate-view",
+  "version": "0.1.0",
+  "description": "Translate outgoing prompts and stream reply translations into a side pane with configurable LLM and Jev detection.",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "homepage": "https://github.com/Yrzhe/claude-skills/tree/main/plugins/translate-view",
+  "repository": "https://github.com/Yrzhe/claude-skills",
+  "license": "MIT",
+  "keywords": [
+    "translation",
+    "mod",
+    "terminal",
+    "jev",
+    "llm"
+  ],
+  "types": "./types/index.d.ts"
+}

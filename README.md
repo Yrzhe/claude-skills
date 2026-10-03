@@ -39,6 +39,18 @@ Copy-Item -Recurse plugins\intelligent-web-scraper\skills\intelligent-web-scrape
 
 ## Available Plugins
 
+### translate-view
+
+Translate outgoing prompts into the agent's target language and stream reply translations into a right-hand pane while keeping the original reply. Includes separate language targets, local/LLM/Jev detection, custom translation prompts, and private API configuration.
+
+```text
+/plugin install translate-view@yrzhe-skills
+/reload-plugins
+/translate settings
+```
+
+Requires Claude Code 2.1.287+, Python 3, a Chat Completions-compatible translation endpoint, and fullscreen mode for right docking. [Setup and data-flow guide](plugins/translate-view/README.md).
+
 ### reply-view
 
 Preview pasted images and the images/videos linked in Claude's last reply above the terminal prompt. Open websites, localhost URLs, or media with a button; copy all visible assistant text from the last turn with one click.
