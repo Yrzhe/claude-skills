@@ -123,6 +123,14 @@ class Harness:
                 if chunk.startswith(text):
                     print('Click',text,'at',column+1,row+1,flush=True); self.send(f'\x1b[<0;{column+1};{row+1}M'); time.sleep(.08); self.send(f'\x1b[<0;{column+1};{row+1}m'); return
         raise AssertionError('No clickable '+text)
+    def resize_pane(self, columns=90):
+        self.read(.2)
+        divider = next(col for col in range(self.columns) if self.screen.buffer[0][col].data == '│')
+        target=self.columns-columns
+        self.send(f'\x1b[<0;{divider+1};8M'); time.sleep(.15)
+        self.send(f'\x1b[<32;{target};8M'); time.sleep(.15)
+        self.send(f'\x1b[<0;{target};8m')
+        self.wait(lambda:any(self.screen.buffer[0][col].data=='│' for col in range(max(1,target-3),min(self.columns,target+3))), f'pane resized to about {columns} columns')
     def close(self):
         try:
             self.send('\x1b');self.read(.2);self.send('/exit\r')
@@ -138,12 +146,19 @@ class Harness:
 def settings_check(h):
     h.click('设置')
     h.wait(lambda:'模型接口' in h.view() and '语言检测:' in h.view(),'settings opens language detection overview')
+    if '--settings-wide' in sys.argv:
+        assert all(name in h.screen.display[1] for name in ['语言检测','模型接口','环境变量','Jev 接口','翻译 Prompt']), 'wide tabs are not on one row'
     h.click('语言检测:')
     h.send('\x1b[B\r')
     h.wait(lambda:'检测模型:' in h.view(),'LLM detection exposes an independent model field')
-    for section, fields in [('模型接口',['Base URL:', 'POST URL:', '模型名:', '新 API Key:']), ('环境变量',['URL 变量名:', 'Key 变量名:', '模型变量名:']), ('Jev 接口',['POST URL:', '模型名:', '新 API Key:']), ('翻译 Prompt',['发送前:', '回复:'])]:
+    for section, fields in [('模型接口',['接口 Base URL:', '翻译模型名:', '新的 API Key:', '完整 POST URL（可选）:']), ('环境变量',['地址变量名:', '密钥变量名:', '模型变量名:']), ('Jev 接口',['Jev POST URL:', 'Jev 模型名:', '新的 Jev API Key:']), ('翻译 Prompt',['发送前:', '回复:'])]:
         h.click(section)
-        h.wait(lambda:all(field in h.view() for field in fields), 'settings fields reachable: '+section)
+        h.wait(lambda:fields[0] in h.view(), 'settings fields reachable: '+section)
+        for field in fields[1:]:
+            end=time.monotonic()+5
+            while field not in h.view() and time.monotonic()<end:
+                h.send(f'\x1b[<65;{h.columns-5};{h.rows-9}M'); h.read(.08)
+            assert field in h.view(), 'unreachable setting: '+field
     h.click('取消')
     h.wait(lambda:'Translation' in h.view() and '翻译设置' not in h.view(),'closing settings restores translation pane')
     h.click('设置')
@@ -155,12 +170,15 @@ def main():
     root=Path(tempfile.mkdtemp(prefix='translate-view-smoke-'))
     print('Artifacts:',root,flush=True)
     narrow = '--settings-only' in sys.argv
-    h=Harness(root,120 if narrow else 160,28 if narrow else 40)
+    wide = '--settings-wide' in sys.argv
+    h=Harness(root,220 if wide else 120 if narrow else 160,40 if wide else 28 if narrow else 40)
     try:
         h.wait(lambda:'等待 Agent 回复' in h.view(),'full-height translation dock')
-        if narrow:
+        if wide: h.resize_pane()
+        elif narrow: h.resize_pane(22)
+        if narrow or wide:
             settings_check(h)
-            print('Narrow terminal settings smoke completed.',flush=True); return
+            print('Settings smoke completed.',flush=True); return
         first='请解释第一个功能。';second='请说明第二个功能。'
         h.send(first+'\r')
         h.wait(lambda:'这是译文。' in h.view() and first in h.view(),'first translated reply with original prompt')

@@ -1,4 +1,6 @@
 export type Config = {
+  sources?: Record<string, string>; envStatus?: Record<string, boolean>; effectiveJevModel?: string;
+  jevConfigSource?: string; jevUrlEnv?: string; jevModelEnv?: string;
   llmConfigSource?: string; detectionModel?: string; effectiveModel?: string;
   enabled: boolean; incomingLanguage: string; outgoingLanguage: string; detection: string;
   baseUrl: string; postUrl: string; model: string; baseUrlEnv: string; apiKeyEnv: string; modelEnv: string;
@@ -96,4 +98,17 @@ export function markdownParts(source: string): { text: string; plain: boolean }[
     }
   }
   return parts
+}
+
+export function settingsGroups<T extends { label: string }>(items: T[], columns: number): T[][] {
+  const groups: T[][] = []
+  let group: T[] = [], used = 0
+  for (const item of items) {
+    // Four cells for the native button brackets/padding, two for its active marker.
+    const width = Array.from(item.label).reduce((sum, char) => sum + cells(char), 6)
+    if (group.length && used + 1 + width > columns) { groups.push(group); group = []; used = 0 }
+    used += (group.length ? 1 : 0) + width; group.push(item)
+  }
+  if (group.length) groups.push(group)
+  return groups
 }

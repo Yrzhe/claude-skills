@@ -22,6 +22,7 @@ DEFAULTS = dict(enabled=False, incomingLanguage='en', outgoingLanguage='zh', det
     llmConfigSource='manual', detectionModel='',
     baseUrl='', postUrl='', apiKey='', model='', baseUrlEnv='OPENAI_BASE_URL',
     apiKeyEnv='OPENAI_API_KEY', modelEnv='OPENAI_MODEL',
+    jevConfigSource='manual', jevUrlEnv='TYPESAFE_POST_URL', jevModelEnv='TYPESAFE_MODEL',
     jevUrl='https://api.typesafe.ai/v1/systemone', jevKey='', jevKeyEnv='TYPESAFE_API_KEY',
     jevModel='jev-latest', incomingPrompt=DEFAULT_PROMPT, outgoingPrompt=DEFAULT_PROMPT)
 LANGUAGES = dict(zh='Simplified Chinese', en='English', ja='Japanese', ko='Korean',
@@ -62,11 +63,11 @@ def validate_config(cfg):
             if type(v) is not bool: raise TranslationError('enabled 必须是布尔值。')
         elif not isinstance(v,str) or len(v)>16000:
             raise TranslationError('配置字段格式不正确：'+k)
-    if cfg['llmConfigSource'] not in ('manual','env'): raise TranslationError('未知配置来源。')
+    if any(cfg[k] not in ('manual','env') for k in ('llmConfigSource','jevConfigSource')): raise TranslationError('未知配置来源。')
     if cfg['detection'] not in ('script','llm','jev'): raise TranslationError('未知检测方式。')
     for k in ('incomingLanguage','outgoingLanguage'):
         if not re.fullmatch(r'[A-Za-z][A-Za-z0-9-]{0,29}',cfg[k]): raise TranslationError('请填写语言代码，例如 en、zh、ja。')
-    for k in ('baseUrlEnv','apiKeyEnv','modelEnv','jevKeyEnv'):
+    for k in ('baseUrlEnv','apiKeyEnv','modelEnv','jevUrlEnv','jevKeyEnv','jevModelEnv'):
         if cfg[k] and not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*',cfg[k]): raise TranslationError('环境变量名格式不正确。')
     for k in ('baseUrl','postUrl','jevUrl'):
         if cfg[k]: validate_url(cfg[k])
@@ -77,6 +78,11 @@ def public_config(cfg):
     # Values of environment variables, especially secrets, never leave this helper.
     result['effectiveModel'] = value(cfg,'model','modelEnv')
     result['ready'] = bool(result['effectiveModel'] and ((cfg['postUrl'] if cfg['llmConfigSource']=='manual' else '') or value(cfg,'baseUrl','baseUrlEnv')))
+    bindings = [('baseUrl','baseUrlEnv'),('apiKey','apiKeyEnv'),('model','modelEnv'),('jevUrl','jevUrlEnv'),('jevKey','jevKeyEnv'),('jevModel','jevModelEnv')]
+    result['envStatus'] = {env: bool(cfg[env] and os.environ.get(cfg[env],'').strip()) for _,env in bindings}
+    result['sources'] = {literal: config_source(cfg,literal,env) for literal,env in bindings}
+    if cfg['llmConfigSource']=='manual' and cfg['postUrl'].strip(): result['sources']['baseUrl']='manual'
+    result['effectiveJevModel'] = value(cfg,'jevModel','jevModelEnv')
     return result
 
 def save_config(patch):
@@ -102,10 +108,15 @@ def save_config(patch):
         if os.path.exists(tmp): os.unlink(tmp)
     return public_config(cfg)
 
+def config_source(cfg, literal, env):
+    source = cfg['jevConfigSource'] if literal.startswith('jev') else cfg['llmConfigSource']
+    if source!='env' and cfg[literal].strip(): return 'manual'
+    return 'env' if cfg[env] and os.environ.get(cfg[env],'').strip() else 'missing'
+
 def value(cfg, literal, env):
-    if cfg['llmConfigSource']=='env' and literal in ('baseUrl','apiKey','model'):
-        return os.environ.get(cfg[env],'').strip()
-    return cfg[literal].strip() or os.environ.get(cfg[env],'').strip()
+    source=config_source(cfg,literal,env)
+    if source=='manual': return cfg[literal].strip()
+    return os.environ.get(cfg[env],'').strip() if source=='env' else ''
 
 def validate_url(url):
     try:
@@ -212,8 +223,8 @@ def detect(cfg,text):
         code=chat_text(data).strip().strip('`"\n ').lower()
         code='zh-TW' if code=='zh-tw' else code
         return code if code in LANGUAGES or code in ('mixed','none') else 'unknown'
-    body=dict(model=cfg['jevModel'],state=prose(text),questions={'language':dict(type='choice',instructions=instruction,criteria={**LANGUAGES,'mixed':'Substantial prose in multiple languages','none':'No natural-language prose','unknown':'Uncertain or another language'})})
-    data=json_response(request(cfg['jevUrl'],value(cfg,'jevKey','jevKeyEnv'),body))
+    body=dict(model=value(cfg,'jevModel','jevModelEnv'),state=prose(text),questions={'language':dict(type='choice',instructions=instruction,criteria={**LANGUAGES,'mixed':'Substantial prose in multiple languages','none':'No natural-language prose','unknown':'Uncertain or another language'})})
+    data=json_response(request(value(cfg,'jevUrl','jevUrlEnv'),value(cfg,'jevKey','jevKeyEnv'),body))
     answer=data.get('answers',{}).get('language',{})
     code=answer.get('choice')
     confidence=answer.get('confidence',0)

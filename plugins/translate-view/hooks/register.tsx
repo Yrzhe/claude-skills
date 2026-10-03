@@ -1,6 +1,6 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, HookStream, ProcessSpawnChunk, ProcessSpawnResult, Register } from 'claude-code'
-import { isControlPrompt, languageOptions, nextSegment, markdownParts } from './core'
+import { isControlPrompt, languageOptions, nextSegment, markdownParts, settingsGroups } from './core'
 import type { Config } from './core'
 
 const PANE = 'translate-view'
@@ -228,13 +228,21 @@ export const register: Register = on => {
     const settings = () => { draft = { ...cfg }; page = 'settings'; tab = 'language'; settingsStart = true; notice = ''; redraw($) }
     const set = (key: string, value: unknown) => { draft[key] = value }
     const field = (key: string, label: string, placeholder = '') => <Box flexDirection="column"><Text dimColor>{label + ':'}</Text><Input key={`input-${key}`} label="" value={String(draft[key] ?? '')} placeholder={placeholder} onInput={value => set(key, value)} onSubmit={value => set(key, value)} /></Box>
+    const envNames: Record<string, string> = { baseUrlEnv: 'OPENAI_BASE_URL', apiKeyEnv: 'OPENAI_API_KEY', modelEnv: 'OPENAI_MODEL', jevUrlEnv: 'TYPESAFE_POST_URL', jevKeyEnv: 'TYPESAFE_API_KEY', jevModelEnv: 'TYPESAFE_MODEL' }
+    const sourceName = (value?: string) => value === 'manual' ? '本机填写' : value === 'env' ? '环境变量' : '未配置'
+    const sourcePicker = (key: string) => <Select key={key} label="配置来源" value={String(draft[key] || 'manual')} options={[{ value: 'manual', label: '本机填写优先' }, { value: 'env', label: '读取环境变量' }]} onSelect={value => { set(key, value); settingsStart = true; redraw($) }} />
+    const environmentFields = (provider: 'llm' | 'jev') => <Box flexDirection="column">
+      {(provider === 'llm' ? [['baseUrlEnv', '地址变量名'], ['apiKeyEnv', '密钥变量名'], ['modelEnv', '模型变量名']] : [['jevUrlEnv', 'Jev 地址变量名'], ['jevKeyEnv', 'Jev 密钥变量名'], ['jevModelEnv', 'Jev 模型变量名']]).map(([key, label]) => <Box key={`binding-${key}`} flexDirection="column">
+        {field(key!, label!, envNames[key!] + '（推荐名称）')}
+        <Text dimColor>{!draft[key!] ? '尚未绑定；上方灰字仅是示例。' : draft[key!] !== cfg?.[key as keyof Config] ? '保存后检查此变量。' : `${String(draft[key!])}：${cfg?.envStatus?.[key!] ? '已读取（不显示变量值）' : '当前进程未设置'}`}</Text>
+      </Box>)}
+    </Box>
     const sections = [
       { value: 'language', label: '语言检测' }, { value: 'llm', label: '模型接口' },
       { value: 'env', label: '环境变量' }, { value: 'jev', label: 'Jev 接口' }, { value: 'prompt', label: '翻译 Prompt' },
     ]
     const narrowSettings = e.props.bodyColumns < 42
-    const navColumns = narrowSettings ? 1 : 3
-    const groups = Array.from({ length: Math.ceil(sections.length / navColumns) }, (_, index) => sections.slice(index * navColumns, (index + 1) * navColumns))
+    const groups = settingsGroups(sections, e.props.bodyColumns)
     const settingsRows = (narrowSettings ? 2 : 1) + groups.length + 1
     const settingsHeader = <Box key="settings-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={settingsRows} flexDirection="column" backgroundColor="background">
       <Box flexDirection={narrowSettings ? 'column' : 'row'} justifyContent="space-between" width={Math.max(1, e.props.bodyColumns - 4)}>
@@ -245,7 +253,7 @@ export const register: Register = on => {
         </Box>
       </Box>
       {groups.map((group, index) => <Box key={`settings-nav-${index}`} flexDirection="row" columnGap={1} height={1}>
-        {group.map(section => <Button key={`tab-${section.value}`} label={(tab === section.value ? '● ' : '') + section.label} onPress={() => { tab = section.value; settingsStart = true; notice = ''; redraw($) }} />)}
+        {group.map(section => <Button key={`tab-${section.value}`} label={(tab === section.value ? '● ' : '  ') + section.label} onPress={() => { tab = section.value; settingsStart = true; notice = ''; redraw($) }} />)}
       </Box>)}
       <Text dimColor wrap="truncate">{'当前检测：' + ({ script: '本地脚本', llm: 'LLM', jev: 'Jev' }[cfg.detection] || cfg.detection) + ' · 模型：' + (cfg.effectiveModel || cfg.model || '未配置')}</Text>
     </Box>
@@ -264,32 +272,44 @@ export const register: Register = on => {
         <Text dimColor>发送前译文不会另占一行；右侧译文保留左侧原回复。</Text>
       </Box>}
       {tab === 'llm' && <Box flexDirection="column">
-        <Text dimColor>翻译接口 · Chat Completions</Text>
-        <Select key="llmConfigSource" label="配置来源" value={String(draft.llmConfigSource || 'manual')} options={[{ value: 'manual', label: '填写配置（留空读环境变量）' }, { value: 'env', label: '只读环境变量' }]} onSelect={value => { set('llmConfigSource', value); redraw($) }} />
-        {field('baseUrl', 'Base URL', 'https://provider.example/v1')}
-        {field('postUrl', 'POST URL', '可留空')}
-        {field('model', '模型名')}
-        {field('apiKey', '新 API Key', cfg.hasApiKey ? '已保存，留空保留' : '可留空，用环境变量')}
-        <Text dimColor>新输入的密钥会显示；保存后不再回显。</Text>
-        <Button key="clear-api-key" plain label="清除已保存密钥" onPress={() => { set('clearApiKey', true); set('apiKey', ''); notice = '保存后清除密钥'; redraw($) }} />
-        <Text dimColor>「只读环境变量」会忽略本页填写的值，但不会删除它们。到「环境变量」分类设置变量名。完整 POST URL 优先于 Base URL。</Text>
+        <Text bold>翻译模型 · Chat Completions</Text>
+        <Text dimColor>这些值保存在本机，不在插件代码中；新安装不预填你的接口和模型。</Text>
+        {sourcePicker('llmConfigSource')}
+        <Text>{'当前生效：' + (cfg.effectiveModel || '未配置') + ' · ' + sourceName(cfg.sources?.model)}</Text>
+        {draft.llmConfigSource === 'env' ? environmentFields('llm') : <Box flexDirection="column">
+          {field('baseUrl', '接口 Base URL', 'https://provider.example/v1')}
+          {field('model', '翻译模型名', '填写你的服务商提供的型号')}
+          <Text dimColor>{'密钥来源：' + sourceName(cfg.sources?.apiKey) + (cfg.hasApiKey ? '（已保存，不回显）' : '')}</Text>
+          {field('apiKey', '新的 API Key', cfg.hasApiKey ? '留空保留已保存密钥' : '填入密钥')}
+          <Button key="clear-api-key" plain label="清除已保存密钥" onPress={() => { set('clearApiKey', true); set('apiKey', ''); notice = '保存后清除密钥'; redraw($) }} />
+          {field('postUrl', '完整 POST URL（可选）', '填写时替代 Base URL')}
+          <Text dimColor>手填项留空时才读取绑定变量。新输入的密钥会显示；保存后不回显。</Text>
+        </Box>}
       </Box>}
       {tab === 'env' && <Box flexDirection="column">
-        <Text bold>LLM 环境变量</Text>
-        <Select key="envConfigSource" label="配置来源" value={String(draft.llmConfigSource || 'manual')} options={[{ value: 'manual', label: '填写配置（留空读环境变量）' }, { value: 'env', label: '只读环境变量' }]} onSelect={value => { set('llmConfigSource', value); redraw($) }} />
-        {field('baseUrlEnv', 'URL 变量名', 'OPENAI_BASE_URL')}
-        {field('apiKeyEnv', 'Key 变量名', 'OPENAI_API_KEY')}
-        {field('modelEnv', '模型变量名', 'OPENAI_MODEL')}
-        <Text dimColor>填写变量名，不带 $；变量需要在启动 Claude 前导出。修改 shell 环境后需重启 Claude。</Text>
-        <Text dimColor>只读环境变量模式不会读取本机其他文件寻找密钥，也不会删除已保存的手填配置。</Text>
+        <Text bold>环境变量绑定</Text>
+        <Text dimColor>这里填写变量的名字，不是 URL 或密钥本身。变量由启动 Claude 的终端提供。</Text>
+        <Text bold>{'翻译接口 · ' + (draft.llmConfigSource === 'env' ? '读取环境变量' : '本机填写优先')}</Text>
+        {environmentFields('llm')}
+        <Text bold>{'Jev 检测 · ' + (draft.jevConfigSource === 'env' ? '读取环境变量' : '本机填写优先')}</Text>
+        {environmentFields('jev')}
+        <Button key="suggest-env-names" label="填入推荐变量名" onPress={() => { for (const [key, name] of Object.entries(envNames)) if (!draft[key]) set(key, name); redraw($) }} />
+        <Text dimColor>绑定名字不会自动创建变量，也不会切换配置来源。请在模型接口或 Jev 页选择「读取环境变量」。</Text>
+        <Text dimColor>例：export OPENAI_MODEL="服务商模型名"。修改终端环境后，需重启 Claude。</Text>
       </Box>}
       {tab === 'jev' && <Box flexDirection="column">
-        <Text dimColor>Jev 仅判断语言；实际翻译仍使用 「模型接口」中的模型。</Text>
-        {field('jevUrl', 'POST URL')}
-        {field('jevModel', '模型名')}
-        {field('jevKey', '新 API Key', cfg.hasJevKey ? '已保存，留空保留' : '可留空，用环境变量')}
-        {field('jevKeyEnv', 'Key 环境变量')}
-        <Button key="clear-jev-key" plain label="清除已保存 Jev 密钥" onPress={() => { set('clearJevKey', true); set('jevKey', ''); notice = '保存后清除密钥'; redraw($) }} />
+        <Text bold>Jev · 只判断语言，不生成译文</Text>
+        <Text>{draft.detection === 'jev' ? '当前启用 Jev 检测。' : '当前未启用；在「语言检测」中选 Jev 后才会调用。'}</Text>
+        {sourcePicker('jevConfigSource')}
+        <Text dimColor>{'当前模型来源：' + sourceName(cfg.sources?.jevModel)}</Text>
+        {draft.jevConfigSource === 'env' ? environmentFields('jev') : <Box flexDirection="column">
+          {field('jevUrl', 'Jev POST URL', 'https://api.typesafe.ai/v1/systemone')}
+          {field('jevModel', 'Jev 模型名', 'jev-latest（官方示例）')}
+          <Text dimColor>{'密钥来源：' + sourceName(cfg.sources?.jevKey) + (cfg.hasJevKey ? '（已保存，不回显）' : '')}</Text>
+          {field('jevKey', '新的 Jev API Key', cfg.hasJevKey ? '留空保留已保存密钥' : '填入密钥')}
+          <Button key="clear-jev-key" plain label="清除已保存 Jev 密钥" onPress={() => { set('clearJevKey', true); set('jevKey', ''); notice = '保存后清除密钥'; redraw($) }} />
+          <Text dimColor>默认地址和 jev-latest 是官方公开示例；你的网关配置只保存在本机。环境变量请在「环境变量」页绑定。</Text>
+        </Box>}
       </Box>}
       {tab === 'prompt' && <Box flexDirection="column">
         <Text dimColor>分别设置两个方向的系统提示词。变量：{'{target_language}'}、{'{source_language}'}。</Text>

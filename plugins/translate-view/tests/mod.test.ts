@@ -1,6 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { isControlPrompt, nextSegment, wrapLines, markdownParts } from '../hooks/core'
+import { isControlPrompt, nextSegment, wrapLines, markdownParts, settingsGroups } from '../hooks/core'
 const CONFIG = {
   enabled: true, incomingLanguage: 'en', outgoingLanguage: 'zh', detection: 'script',
   baseUrl: 'http://localhost:9999/v1', postUrl: '', model: 'test', baseUrlEnv: '', apiKeyEnv: '', modelEnv: '',
@@ -273,16 +273,33 @@ test('settings expose detector, environment fields and reset to the language ove
   await ui.input({ key: 'input-detectionModel', text: 'gemini-example' })
   await ui.press({ key: 'tab-env' })
   for (const key of ['baseUrlEnv', 'apiKeyEnv', 'modelEnv']) expect(await ui.find({ key: `input-${key}` })).toBeDefined()
-  await ui.select({ key: 'envConfigSource', value: 'env' })
+  await ui.press({ key: 'tab-llm' })
+  await ui.select({ key: 'llmConfigSource', value: 'env' })
+  expect(await ui.find({ key: 'input-baseUrl' })).toBeUndefined()
+  expect(await ui.find({ key: 'input-apiKey' })).toBeUndefined()
   await ui.input({ key: 'input-apiKeyEnv', text: 'MY_TRANSLATOR_KEY' })
+  await ui.press({ key: 'tab-jev' })
+  await ui.select({ key: 'jevConfigSource', value: 'env' })
+  expect(await ui.find({ key: 'input-jevKey' })).toBeUndefined()
+  expect(await ui.find({ key: 'input-jevUrlEnv' })).toBeDefined()
+  expect(await ui.find({ key: 'input-jevModelEnv' })).toBeDefined()
   await ui.press({ key: 'tab-prompt' })
   await ui.press({ key: 'save-settings' })
-  expect(saved).toMatchObject({ detection: 'llm', detectionModel: 'gemini-example', llmConfigSource: 'env', apiKeyEnv: 'MY_TRANSLATOR_KEY' })
+  expect(saved).toMatchObject({ jevConfigSource: 'env', detection: 'llm', detectionModel: 'gemini-example', llmConfigSource: 'env', apiKeyEnv: 'MY_TRANSLATOR_KEY' })
   await ui.press({ key: 'settings-button' })
   expect((await ui.find({ key: 'tab-language' }))?.props.label).toBe('● 语言检测')
   await ui.redraw({ ...PANE.props, scroll: { offset: 17, bodyRows: 12 } })
   expect((await ui.find({ key: 'settings-header' }))?.props.top).toBe(17)
+  await ui.redraw({ ...PANE.props, bodyColumns: 100 })
+  expect((await ui.find({ key: 'settings-header' }))?.props.height).toBe(3)
   await ui.redraw({ ...PANE.props, bodyColumns: 22, scroll: { offset: 0, bodyRows: 23 } })
   expect((await ui.find({ key: 'settings-header' }))?.props.height).toBe(8)
   expect((await ui.findAll({ type: 'Button' })).filter(item => String(item.props.key || '').startsWith('tab-')).length).toBe(5)
+})
+
+test('wide settings fit all five tabs on one row while narrow panes retain all tabs', () => {
+  const sections = ['语言检测','模型接口','环境变量','Jev 接口','翻译 Prompt'].map(label => ({ label }))
+  expect(settingsGroups(sections, 90)).toEqual([sections])
+  expect(settingsGroups(sections, 22)).toHaveLength(5)
+  expect(settingsGroups(sections, 52).flat()).toEqual(sections)
 })

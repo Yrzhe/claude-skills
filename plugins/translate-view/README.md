@@ -46,7 +46,7 @@ CLAUDE_CODE_NO_FLICKER=1 claude --continue
 
 ## 设置
 
-首次安装默认关闭。设置顶部固定显示五个分类：「语言检测 / 模型接口 / 环境变量 / Jev 接口 / 翻译 Prompt」。打开设置会回到语言检测首页，并显示当前生效的检测方式和翻译模型。填好接口后开启自动翻译并保存。
+首次安装默认关闭。设置顶部固定显示五个分类，按实际宽度排布，空间足够时五项在同一行：「语言检测 / 模型接口 / 环境变量 / Jev 接口 / 翻译 Prompt」。打开设置会回到语言检测首页，并显示当前生效的检测方式和翻译模型。填好接口后开启自动翻译并保存。
 
 ### 语言与检测
 
@@ -64,13 +64,35 @@ CLAUDE_CODE_NO_FLICKER=1 claude --continue
 - `POST URL`：完整地址，填写时优先于 Base URL。
 - 模型名：填写该服务实际支持 Chat Completions 的模型/别名。能列出模型不代表其支持该协议。
 - API Key：使用 `Authorization: Bearer ...`。本地无认证接口可留空，并清空 Key 环境变量。
-- 环境变量：可分别填写 URL、Key、模型的变量名。默认 `OPENAI_BASE_URL`、`OPENAI_API_KEY`、`OPENAI_MODEL`。在「环境变量」分类填写变量名，不带 `$`。默认「填写配置」模式下手填值优先、留空读环境变量；选择「只读环境变量」后，LLM 的 Base URL、Key、模型全部从环境读取，手填值和 POST URL 被忽略但不会被删除。环境变量需要在启动 Claude 前导出，修改 shell 环境后要重启 Claude。Jev 仍使用自己的独立接口设置。
+- 环境变量：可分别填写 URL、Key、模型的变量名。默认 `OPENAI_BASE_URL`、`OPENAI_API_KEY`、`OPENAI_MODEL`。在「环境变量」分类填写变量名，不带 `$`。默认「本机填写优先」模式下手填值优先、留空读环境变量；选择「读取环境变量」后，LLM 的 Base URL、Key、模型全部从环境读取，手填值和 POST URL 被忽略但不会被删除。环境变量需要在启动 Claude 前导出，修改 shell 环境后要重启 Claude。Jev 有独立的配置来源、地址、模型和密钥绑定。
 
 非流式响应读取 `choices[0].message.content`；流式响应读取 `choices[0].delta.content`。返回普通 JSON 的服务也可使用，但译文在该批完成后显示。不支持直接使用 Anthropic Messages、Gemini 原生接口或 Responses API 的 URL。
 
 ### Jev
 
-分别填写 POST URL、模型、API Key 或 Key 环境变量。默认公开接口为 TypeSafe 的 `/v1/systemone`，模型 `jev-latest`，环境变量 `TYPESAFE_API_KEY`。自建网关可更换这些值。请求包含 `state`、`model`、`questions`，读取 `answers.language.choice` 和 `confidence`。
+Jev 只判断语言，不生成译文；选择其他检测方式时不会调用它。其配置来源独立于翻译模型：
+
+- 「本机填写优先」：填写 POST URL、Jev 模型名和 API Key。默认公开接口为 TypeSafe 的 `/v1/systemone`，模型示例为 `jev-latest`；自建网关可以更换。
+- 「读取环境变量」：填写变量名，默认推荐 `TYPESAFE_POST_URL`、`TYPESAFE_MODEL`、`TYPESAFE_API_KEY`，已保存的手填值会保留但不参与这一路请求。
+
+使用 TypeSafe System One 请求格式，请求包含 `state`、`model`、`questions`，读取 `answers.language.choice` 和 `confidence`。
+
+### 看懂配置来源
+
+设置会标出当前生效模型与字段来源：本机填写、环境变量或未配置。模型/地址输入框里的实值来自这台机器的私有配置；公开插件不包含你的私有地址、密钥或已选择的翻译型号。
+
+环境变量页填写的是**名字**，不是变量值。界面逐项显示「已读取」「当前进程未设置」或「尚未绑定」，不显示环境变量的内容。灰色示例不代表已经绑定；「填入推荐变量名」只填写名字，不创建变量、不写入密钥，也不自动切换配置来源。新的变量名保存后检查。
+
+| 用途 | 推荐变量名 |
+| --- | --- |
+| 翻译 Base URL | `OPENAI_BASE_URL` |
+| 翻译 API Key | `OPENAI_API_KEY` |
+| 翻译模型名 | `OPENAI_MODEL` |
+| Jev POST URL | `TYPESAFE_POST_URL` |
+| Jev API Key | `TYPESAFE_API_KEY` |
+| Jev 模型名 | `TYPESAFE_MODEL` |
+
+可以改用自己的变量名。变量需要由启动 Claude 的终端导出；给变量名并不会让插件自动扫描电脑上的其他密钥文件。
 
 ### 自定义 Prompt
 

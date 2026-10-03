@@ -101,6 +101,20 @@ class Tests(unittest.TestCase):
         self.assertEqual(seen,['gemini-example'])
         self.assertEqual(cfg['model'],'translator')
 
+    def test_sources_and_environment_status_never_reveal_secrets(self):
+        cfg=self.config(apiKey='LOCAL_SECRET',apiKeyEnv='CUSTOM_TRANSLATION_KEY',jevConfigSource='env')
+        with patch.dict(os.environ, {'CUSTOM_TRANSLATION_KEY':'ENV_SECRET','TYPESAFE_API_KEY':'JEV_SECRET','TYPESAFE_MODEL':'jev-custom','TYPESAFE_POST_URL':'http://localhost:4444/decisions'}):
+            public=m.public_config(cfg)
+            self.assertEqual(public['sources']['apiKey'],'manual')
+            self.assertTrue(public['envStatus']['apiKeyEnv'])
+            self.assertEqual(m.value(cfg,'jevModel','jevModelEnv'),'jev-custom')
+            self.assertEqual(m.value(cfg,'jevUrl','jevUrlEnv'),'http://localhost:4444/decisions')
+            self.assertEqual(public['sources']['jevKey'],'env')
+            for secret in ('LOCAL_SECRET','ENV_SECRET','JEV_SECRET'):self.assertNotIn(secret,json.dumps(public))
+            cfg['llmConfigSource']='env'
+            self.assertEqual(m.public_config(cfg)['sources']['apiKey'],'env')
+        self.assertEqual(m.public_config(cfg)['sources']['apiKey'],'missing')
+
     def test_incomplete_response_rejected(self):
         with self.assertRaises(m.TranslationError): m.chat_text({'choices':[{'message':{'content':'partial'},'finish_reason':'length'}]})
         response=FakeResponse(raw=b'data: {"choices":[{"delta":{"content":"partial"}}]}\n\n',sse=True)
