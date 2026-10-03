@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real Claude-work PTY smoke test. Needs pyte; never calls a real agent model.
+"""Real Claude Code PTY smoke test. Needs pyte; never calls a real agent model.
 
 Run: PYTHONPATH=/path/to/pyte python3 tests/terminal_smoke.py
 Only synthetic test prompts and a local translation endpoint are used.
@@ -83,7 +83,7 @@ class Harness:
                    ANTHROPIC_BASE_URL='http://127.0.0.1:1', ANTHROPIC_API_KEY='fixture-only', ANTHROPIC_AUTH_TOKEN='', DISABLE_TELEMETRY='1')
         env.pop('NO_COLOR', None)
         env['FORCE_COLOR'] = '1'
-        command = ['claude-work','--setting-sources','','--settings','{"enabledPlugins":{},"remoteControlAtStartup":false}',
+        command = [os.environ.get('CLAUDE_BIN', 'claude'),'--setting-sources','','--settings','{"enabledPlugins":{},"remoteControlAtStartup":false}',
                    '--plugin-dir',str(fixture),'--plugin-dir',str(PLUGIN),'--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--tools','']
         self.process = subprocess.Popen(command,stdin=slave,stdout=slave,stderr=slave,cwd=PLUGIN,env=env)
         os.close(slave)

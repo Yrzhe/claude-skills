@@ -17,10 +17,10 @@ Claude Code 双向翻译 mod。输入按「Agent 接收」语言自动翻译；�
 需要 Claude Code 2.1.287+（在 2.1.288 验证）、Python 3 和 macOS/Linux。右侧停靠面板需要 Claude 的全屏渲染模式；必要时退出后重新启动：
 
 ```sh
-CLAUDE_CODE_NO_FLICKER=1 claude-work --continue
+CLAUDE_CODE_NO_FLICKER=1 claude --continue
 ```
 
-`claude-work` 是账号启动命令示例，也可换成 `claude`。窄窗口或非全屏布局可能由 Claude 将面板放到输入框上方。面板的高度、停靠位置由 Claude 管理。与 `reply-view` 可以同时使用。
+窄窗口或非全屏布局可能由 Claude 将面板放到输入框上方。面板的高度、停靠位置由 Claude 管理。与 `reply-view` 可以同时使用。
 
 ## 使用
 
@@ -109,19 +109,21 @@ Translate into {target_language}. Preserve the original intent and tone. Use con
 ## 开发与验证
 
 ```sh
-claude-work plugin validate .claude-plugin/plugin.json
-claude-work plugin test .
+claude plugin validate .claude-plugin/plugin.json
+claude plugin test .
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 tsc -p .
 ```
 
 Claude 首次加载 mod 时会生成本机版本对应的类型声明与 `tsconfig.json`，它们不随包发布。
 
-`tests/terminal_smoke.py` 用真实 `claude-work` PTY、本地模拟翻译服务和替代 Agent 响应验证 Markdown 样式、长文滚动与固定页头、消息原文、设置以及失败行为；不调用真实 Agent 模型。需要测试环境安装 `pyte`，例如：
+`tests/terminal_smoke.py` 用真实 Claude Code PTY、本地模拟翻译服务和替代 Agent 响应验证 Markdown 样式、长文滚动与固定页头、消息原文、设置以及失败行为；不调用真实 Agent 模型。需要测试环境安装 `pyte`，例如：
 
 ```sh
 uv run --with pyte python tests/terminal_smoke.py
 ```
+
+测试脚本默认调用 `claude`，可通过 `CLAUDE_BIN` 环境变量指定其他启动命令。
 
 Gemini 官方提供 [OpenAI 兼容接口](https://ai.google.dev/gemini-api/docs/openai)。第三方网关是否支持该接口格式，需要实际验证；插件不会自动改用其他模型或服务商。
 

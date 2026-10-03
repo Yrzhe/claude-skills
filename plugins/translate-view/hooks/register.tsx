@@ -274,7 +274,7 @@ export const register: Register = on => {
         {field('baseUrlEnv', 'URL 变量名', 'OPENAI_BASE_URL')}
         {field('apiKeyEnv', 'Key 变量名', 'OPENAI_API_KEY')}
         {field('modelEnv', '模型变量名', 'OPENAI_MODEL')}
-        <Text dimColor>填写变量名，不带 $；变量需要在启动 Claude-work 前导出。修改 shell 环境后需重启 Claude。</Text>
+        <Text dimColor>填写变量名，不带 $；变量需要在启动 Claude 前导出。修改 shell 环境后需重启 Claude。</Text>
         <Text dimColor>只读环境变量模式不会读取本机其他文件寻找密钥，也不会删除已保存的手填配置。</Text>
       </Box>}
       {tab === 'jev' && <Box flexDirection="column">
