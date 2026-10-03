@@ -113,7 +113,7 @@ export const register: Register = on => {
       await pump($)
       if (interactive && page === 'settings' && settingsStart) {
         const result = await $.ui.scroll({ in: PANE, to: 'start' }).catch(() => ({ deny: 'pane unavailable' }))
-        if (!result.deny) settingsStart = false
+        if (!result.deny) { settingsStart = false; redraw($) }
       }
       if (interactive && page !== 'settings' && needsFollow && follow) {
         const result = await $.ui.scroll({ in: PANE, to: 'end' }).catch(() => ({ deny: 'pane unavailable' }))
@@ -211,13 +211,15 @@ export const register: Register = on => {
     }
     return next(e)
   })
-  on('ui.scroll', { component: 'Pane' }, ($, e, next) => {
-    if (e.requestId !== PANE || page === 'settings') return next(e)
-    if (e.origin.kind === 'person') {
+  on('ui.scroll', { component: 'Pane' }, async ($, e, next) => {
+    if (e.requestId !== PANE) return next(e)
+    if (page !== 'settings' && e.origin.kind === 'person') {
       follow = e.offset >= Math.max(0, e.contentRows - e.bodyRows)
       needsFollow = follow
     }
-    return next(e)
+    const result = await next(e)
+    redraw($)
+    return result
   })
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE || e.surface !== 'terminal') return next(e)
@@ -225,26 +227,30 @@ export const register: Register = on => {
     if (!cfg) return <Text>{notice || '正在读取设置…'}</Text>
     const settings = () => { draft = { ...cfg }; page = 'settings'; tab = 'language'; settingsStart = true; notice = ''; redraw($) }
     const set = (key: string, value: unknown) => { draft[key] = value }
-    const field = (key: string, label: string, placeholder = '') => <Input key={`input-${key}`} label={label} value={String(draft[key] ?? '')} placeholder={placeholder} onInput={value => set(key, value)} onSubmit={value => set(key, value)} />
+    const field = (key: string, label: string, placeholder = '') => <Box flexDirection="column"><Text dimColor>{label + ':'}</Text><Input key={`input-${key}`} label="" value={String(draft[key] ?? '')} placeholder={placeholder} onInput={value => set(key, value)} onSubmit={value => set(key, value)} /></Box>
     const sections = [
       { value: 'language', label: '语言检测' }, { value: 'llm', label: '模型接口' },
       { value: 'env', label: '环境变量' }, { value: 'jev', label: 'Jev 接口' }, { value: 'prompt', label: '翻译 Prompt' },
     ]
-    const settingsHeader = <Box key="settings-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={4} flexDirection="column" backgroundColor="background">
-      <Box flexDirection="row" justifyContent="space-between" width={Math.max(1, e.props.bodyColumns - 4)}>
+    const narrowSettings = e.props.bodyColumns < 42
+    const navColumns = narrowSettings ? 1 : 3
+    const groups = Array.from({ length: Math.ceil(sections.length / navColumns) }, (_, index) => sections.slice(index * navColumns, (index + 1) * navColumns))
+    const settingsRows = (narrowSettings ? 2 : 1) + groups.length + 1
+    const settingsHeader = <Box key="settings-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={settingsRows} flexDirection="column" backgroundColor="background">
+      <Box flexDirection={narrowSettings ? 'column' : 'row'} justifyContent="space-between" width={Math.max(1, e.props.bodyColumns - 4)}>
         <Text bold>翻译设置</Text>
         <Box flexDirection="row" columnGap={1}>
           <Button key="cancel-settings" label="取消" onPress={() => { draft = {}; page = ''; notice = ''; needsFollow = true; redraw($) }} />
           <Button key="save-settings" label="保存" onPress={() => save($, draft)} />
         </Box>
       </Box>
-      {[sections.slice(0, 3), sections.slice(3)].map((group, index) => <Box key={`settings-nav-${index}`} flexDirection="row" columnGap={1} height={1}>
+      {groups.map((group, index) => <Box key={`settings-nav-${index}`} flexDirection="row" columnGap={1} height={1}>
         {group.map(section => <Button key={`tab-${section.value}`} label={(tab === section.value ? '● ' : '') + section.label} onPress={() => { tab = section.value; settingsStart = true; notice = ''; redraw($) }} />)}
       </Box>)}
       <Text dimColor wrap="truncate">{'当前检测：' + ({ script: '本地脚本', llm: 'LLM', jev: 'Jev' }[cfg.detection] || cfg.detection) + ' · 模型：' + (cfg.effectiveModel || cfg.model || '未配置')}</Text>
     </Box>
     if (page === 'settings') return <Box key="settings" flexDirection="column" width={e.props.bodyColumns} minHeight={e.props.scroll.bodyRows}>
-      <Box key="settings-body" flexDirection="column" paddingTop={4}>
+      <Box key="settings-body" flexDirection="column" paddingTop={settingsRows}>
       {notice && <Text>{notice}</Text>}
       {tab === 'language' && <Box flexDirection="column">
         <Select key="enabled" label="自动翻译" value={draft.enabled ? 'on' : 'off'} options={[{ value: 'on', label: '开启' }, { value: 'off', label: '关闭' }]} onSelect={value => { set('enabled', value === 'on'); redraw($) }} />
@@ -258,7 +264,7 @@ export const register: Register = on => {
         <Text dimColor>发送前译文不会另占一行；右侧译文保留左侧原回复。</Text>
       </Box>}
       {tab === 'llm' && <Box flexDirection="column">
-        <Text dimColor>这里配置翻译用的模型，不是 Claude 主模型。接口需兼容 Chat Completions，Gemini 可使用兼容接口。</Text>
+        <Text dimColor>翻译接口 · Chat Completions</Text>
         <Select key="llmConfigSource" label="配置来源" value={String(draft.llmConfigSource || 'manual')} options={[{ value: 'manual', label: '填写配置（留空读环境变量）' }, { value: 'env', label: '只读环境变量' }]} onSelect={value => { set('llmConfigSource', value); redraw($) }} />
         {field('baseUrl', 'Base URL', 'https://provider.example/v1')}
         {field('postUrl', 'POST URL', '可留空')}

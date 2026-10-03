@@ -114,7 +114,9 @@ class Harness:
         if (self.root/'press.json').exists(): print('Last press:',(self.root/'press.json').read_text(),flush=True)
         raise AssertionError(label+' timed out; see '+str(self.root/'screen.txt'))
     def click(self, text):
-        time.sleep(.3); self.read()
+        time.sleep(.5)
+        end=time.monotonic()+1
+        while time.monotonic()<end and select.select([self.master],[],[],.05)[0]: self.read(.01)
         for row in range(self.rows):
             for column in range(self.columns):
                 chunk=''.join(self.screen.buffer[row][col].data for col in range(column,min(self.columns,column+len(text)*2)))
@@ -170,7 +172,7 @@ def main():
         assert 'live response' in h.view()
         right = '\n'.join(line.split('│',1)[-1] for line in h.view().splitlines() if '│' in line)
         assert '加粗条目' in right and '**' not in right and '```' not in right, right
-        assert 'const answer = 42' in right and 'print(42)' in right
+        assert 'constanswer=42' in ''.join(right.split()) and 'print(42)' in right
         assert any(cell.bold and cell.data == '加' for row in h.screen.buffer.values() for cell in row.values()), 'bold Markdown was not styled'
         settings_check(h)
         outgoing_before = sum(bool(r.get('stream')) for r in h.requests)

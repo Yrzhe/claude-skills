@@ -282,4 +282,7 @@ test('settings expose detector, environment fields and reset to the language ove
   expect((await ui.find({ key: 'tab-language' }))?.props.label).toBe('● 语言检测')
   await ui.redraw({ ...PANE.props, scroll: { offset: 17, bodyRows: 12 } })
   expect((await ui.find({ key: 'settings-header' }))?.props.top).toBe(17)
+  await ui.redraw({ ...PANE.props, bodyColumns: 22, scroll: { offset: 0, bodyRows: 23 } })
+  expect((await ui.find({ key: 'settings-header' }))?.props.height).toBe(8)
+  expect((await ui.findAll({ type: 'Button' })).filter(item => String(item.props.key || '').startsWith('tab-')).length).toBe(5)
 })
