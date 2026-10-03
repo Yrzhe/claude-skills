@@ -2,6 +2,25 @@
 
 本文档规范了向本仓库添加新 Skill 插件的标准流程。**所有贡献者（包括 AI Agent）必须严格遵循此结构。**
 
+## Mod plugins
+
+The skill layout below applies to plugins whose component is a Skill. A Claude Code **mod** registers its runtime through `hooks/hooks.json` and uses the official hooks-module layout. For example:
+
+```text
+plugins/reply-view/
+├── .claude-plugin/plugin.json
+├── hooks/
+│   ├── hooks.json
+│   └── register.tsx
+├── types/index.d.ts
+├── scripts/
+├── tests/
+├── README.md
+└── LICENSE
+```
+
+Register the mod in the same root marketplace, preserve upstream licenses, and validate its actual plugin manifest with `claude-work plugin validate plugins/<name>/.claude-plugin/plugin.json`. Run `claude-work plugin test plugins/<name>` for its mod tests. Hooks, type declarations, and supporting scripts belong at the plugin root, as the mod API expects. Ignore generated `.claude-plugin/types/`, `tsconfig.json`, and caches.
+
 ## 目录结构规范
 
 每个插件必须遵循以下目录结构：

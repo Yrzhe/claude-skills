@@ -351,6 +351,27 @@
         "agent-context",
         "vision"
       ]
+    },
+    {
+      "name": "reply-view",
+      "description": "Preview pasted images and media from the last Claude reply, open links and localhost, and copy the whole reply.",
+      "version": "0.2.0",
+      "author": {
+        "name": "yrzhe",
+        "url": "https://x.com/yrzhe_top"
+      },
+      "repository": "https://github.com/Yrzhe/claude-skills",
+      "license": "MIT",
+      "source": "./plugins/reply-view",
+      "tags": [
+        "images",
+        "video",
+        "preview",
+        "clipboard",
+        "localhost",
+        "mod",
+        "claude-code"
+      ]
     }
   ]
 }

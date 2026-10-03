@@ -1,0 +1,8 @@
+# Written by Claude Code each time it loads the mod
+.claude-plugin/types/
+tsconfig.json
+.claude/
+.DS_Store
+
+__pycache__/
+*.pyc

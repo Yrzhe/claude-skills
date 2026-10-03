@@ -39,6 +39,17 @@ Copy-Item -Recurse plugins\intelligent-web-scraper\skills\intelligent-web-scrape
 
 ## Available Plugins
 
+### reply-view
+
+Preview pasted images and the images/videos linked in Claude's last reply above the terminal prompt. Open websites, localhost URLs, or media with a button; copy all visible assistant text from the last turn with one click.
+
+```text
+/plugin install reply-view@yrzhe-skills
+/reload-plugins
+```
+
+Requires Claude Code 2.1.287+, Python 3, and a kitty-graphics terminal for thumbnails. FFmpeg enables video posters; videos open in your default player. [Setup, data access, and development guide](plugins/reply-view/README.md).
+
 ### intelligent-web-scraper
 
 Self-learning intelligent web scraper agent that automatically analyzes page structure, handles pagination, anti-blocking, and discovers article series. No user configuration needed - AI decides everything.

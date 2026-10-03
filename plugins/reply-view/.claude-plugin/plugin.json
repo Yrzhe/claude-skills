@@ -1,0 +1,22 @@
+{
+  "name": "reply-view",
+  "description": "Preview pasted images and media from the last Claude reply, open links and localhost, and copy the whole reply.",
+  "version": "0.2.0",
+  "author": {
+    "name": "yrzhe",
+    "url": "https://x.com/yrzhe_top"
+  },
+  "homepage": "https://github.com/Yrzhe/claude-skills/tree/main/plugins/reply-view",
+  "repository": "https://github.com/Yrzhe/claude-skills",
+  "license": "MIT",
+  "keywords": [
+    "images",
+    "video",
+    "preview",
+    "clipboard",
+    "localhost",
+    "mod",
+    "claude-code"
+  ],
+  "types": "./types/index.d.ts"
+}
