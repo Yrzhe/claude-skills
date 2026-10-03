@@ -355,7 +355,7 @@
     {
       "name": "reply-view",
       "description": "Preview pasted images and media from the last Claude reply, open links and localhost, and copy the whole reply.",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "author": {
         "name": "yrzhe",
         "url": "https://x.com/yrzhe_top"

@@ -44,6 +44,12 @@ test('a row of tiles shrinks to fit the band so it never scrolls', () => {
   ])
 })
 
+test('extremely wide images cannot overflow a narrow terminal even at one row', () => {
+  const wide = { width: 10000, height: 10 }
+  expect(fitRow([wide], 6, 16)).toEqual([{ columns: 14, rows: 1 }])
+  expect(fitRow([wide, wide], 6, 30)).toEqual([{ columns: 12, rows: 1 }, { columns: 12, rows: 1 }])
+})
+
 const BAND = {
   plugin: 'reply-view',
   component: 'AbovePrompt',

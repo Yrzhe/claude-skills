@@ -55,5 +55,6 @@ export function fitRow(sizes: readonly (Size | null)[], maxRows: number, bodyCol
     const width = cells.reduce((sum, c) => sum + c.columns + TILE_CHROME_COLUMNS, 0) + GAP * (cells.length - 1)
     if (width <= bodyColumns) return cells
   }
-  return sizes.map(size => fitCells(size, 1))
+  const available = Math.max(1, Math.floor((bodyColumns - GAP * (sizes.length - 1)) / Math.max(1, sizes.length)) - TILE_CHROME_COLUMNS)
+  return sizes.map(size => ({ ...fitCells(size, 1), columns: Math.min(fitCells(size, 1).columns, available) }))
 }
