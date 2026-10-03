@@ -18,7 +18,6 @@ const reply = atom({ plugin: 'reply-view', key: 'reply' } as const, null as Repl
 const hovered = atom({ plugin: 'reply-view', key: 'hovered' } as const, null as string | null)
 let generation = 0
 let scrollOffset = 0
-let collapsed = false
 let nativeImages = false
 let terminalLinks = true
 let wanted: StripItem[] = []
@@ -52,7 +51,7 @@ async function action($: EngineInterface, request: object, success: string) {
 }
 
 // The render hook records only the visible window. A timer performs one job at
-// a time outside rendering; scrolling or collapsing stops offscreen downloads.
+// a time outside rendering; scrolling stops offscreen downloads.
 function startPreviewTimer($: EngineInterface) {
   if (previewTimerStarted) return
   previewTimerStarted = true
@@ -60,7 +59,7 @@ function startPreviewTimer($: EngineInterface) {
 }
 
 async function prepareVisible($: EngineInterface) {
-  if (previewBusy || collapsed || wanted.length === 0) return
+  if (previewBusy || wanted.length === 0) return
   const token = generation
   const current = await read($, reply)
   const item = wanted.find(candidate => candidate.target && !nativeSources.has(candidate.target) &&
@@ -277,7 +276,7 @@ export const register: Register = on => {
 
   on('ui.scroll', { component: 'AbovePrompt' }, async ($, e, next) => {
     const box = stripBounds
-    if (!box || collapsed || e.requestId !== box.requestId || e.origin.kind !== 'person' || !e.pointer ||
+    if (!box || e.requestId !== box.requestId || e.origin.kind !== 'person' || !e.pointer ||
       e.pointer.row < 1 || e.pointer.row >= box.rows || e.pointer.column < 0 || e.pointer.column >= box.width || box.maxOffset === 0) return next(e)
     scrollOffset = Math.max(0, Math.min(box.maxOffset, scrollOffset + Math.sign(e.by)))
     wanted = []
@@ -299,7 +298,7 @@ export const register: Register = on => {
     const { Box, Image, Client, Markdown, Text, Button } = $.ui.resolve(e)
     const layout = stripLayout(all.length, width, e.props.maxRows, scrollOffset)
     const visible = all.slice(layout.start, layout.start + layout.visibleCount)
-    const expanded = !collapsed && layout.rows >= 2 && all.length > 0
+    const expanded = layout.rows >= 2 && all.length > 0
     const canHoverImage = nativeImages && e.viewport?.isFullscreen === true
     wanted = expanded && canHoverImage ? visible.filter(item => item.kind !== 'link') : []
     const hoverItem = expanded && canHoverImage ? visible.find(item => item.key === hoveredId && item.target && item.kind !== 'link') : undefined
@@ -327,8 +326,7 @@ export const register: Register = on => {
             {layout.maxOffset > 0 && <Button key="scroll-right" plain label=">" dimColor={layout.start === layout.maxOffset} onPress={() => move(layout.start + 1)} />}
           </Box>
           <Box key="strip-right" flexDirection="row" columnGap={1}>
-            {all.length > 0 && <Button key="toggle-strip" plain label={collapsed ? 'Show' : 'Hide'} onPress={async () => { collapsed = !collapsed; wanted = []; await update($, hovered, () => null); $.ui.invalidate('ui.render') }} />}
-            {previous && <Button key="copy-reply" plain label={width >= 60 ? 'Copy reply' : 'Copy'} onPress={async press => {
+            {previous && <Button key="copy-reply" plain label="Copy-reply" onPress={async press => {
               try {
                 const result = await $.ui.copy({ text: previous.text, surface: press.surface })
                 $.ui.toast(result.isCopied ? 'Reply copied' : `Could not copy: ${result.reason}`)

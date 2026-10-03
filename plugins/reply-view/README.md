@@ -27,11 +27,11 @@ Disable the original `image-view` plugin if you installed it: Reply View include
 
 ## What appears
 
-The default strip is **two rows**: a fixed toolbar and one horizontal row of compact actions, such as **Open image #2**, **Play video demo.mp4**, and **Open localhost:3000**. **Start** stays on the far left, **Copy reply** on the far right. Move with **< / >** or the mouse wheel over the strip; **Hide** leaves just the toolbar. Item count never adds rows.
+The default strip is **two rows**: a fixed toolbar and one horizontal row of compact actions, such as **Open image #2**, **Play video demo.mp4**, and **Open localhost:3000**. **Start** stays on the far left, **Copy-reply** on the far right. Move with **< / >** or the mouse wheel over the strip. Item count never adds rows.
 
 - **Pasted images:** an action for each `[Image #n]` tag in the current draft. Sending the draft or removing a tag removes that action.
 - **Last-reply media and links:** the most recent main-agent final answer supplies the images, videos, websites and local files. Click once to open the original target.
-- **Copy reply:** all visible main-agent text from the preceding turn, with Markdown and newlines intact. User prompts, thinking, tool output and other agents are excluded.
+- **Copy-reply:** all visible main-agent text from the preceding turn, with Markdown and newlines intact. User prompts, thinking, tool output and other agents are excluded.
 - **Hover images in supported terminals:** with an enabled image terminal and Claude's fullscreen renderer, move onto an image action to temporarily expand a large native image above the toolbar. Moving away collapses it. Video links show a still frame. There is no separate thumbnail tile or duplicate Open row.
 
 **Maestri:** its terminal contains kitty graphics support, but Claude 2.1.288 does not automatically enable this path for it. Restart Claude with the following session-only flags (use your usual account wrapper):
@@ -83,7 +83,7 @@ Media detection uses the destination extension, a filename label, or Markdown im
 
 The mod reads the current prompt, the session transcript for restoration, and the files it previews. It never calls an AI model or uploads your files or replies.
 
-On supported fullscreen image terminals, reply previews fetch referenced HTTP(S) media automatically **when their actions are visible in the expanded strip**, including localhost media. Offscreen items wait until you scroll to them. Other terminals do not download media automatically. A conversion already in progress may finish after scrolling or collapsing. Requests go directly from your computer to that URL, with no cookies or authentication headers. Query parameters in the original URL are preserved. Ordinary web links are opened only when you click **Open**. Downloads are limited to 64 MiB and bounded by timeouts; video pages or larger downloads fall back to an Open action.
+On supported fullscreen image terminals, reply previews fetch referenced HTTP(S) media automatically **when their actions are visible in the expanded strip**, including localhost media. Offscreen items wait until you scroll to them. Other terminals do not download media automatically. A conversion already in progress may finish after scrolling. Requests go directly from your computer to that URL, with no cookies or authentication headers. Query parameters in the original URL are preserved. Ordinary web links are opened only when you click **Open**. Downloads are limited to 64 MiB and bounded by timeouts; video pages or larger downloads fall back to an Open action.
 
 A Python helper runs FFmpeg (or `sips`) without a shell. It writes PNG thumbnails to the OS temporary directory under `claude-image-view-<uid>`, removes temporary download files after conversion, and prunes its own thumbnails older than seven days when another preview is prepared. Original files are never changed. Opening uses `open` on macOS or `xdg-open` on Linux. Copy uses Claude Code's native `ui.copy` API. No dependencies are installed automatically.
 
