@@ -230,6 +230,18 @@ export const register: Register = on => {
     const field = (key: string, label: string, placeholder = '') => <Box flexDirection="column"><Text dimColor>{label + ':'}</Text><Input key={`input-${key}`} label="" value={String(draft[key] ?? '')} placeholder={placeholder} onInput={value => set(key, value)} onSubmit={value => set(key, value)} /></Box>
     const envNames: Record<string, string> = { baseUrlEnv: 'OPENAI_BASE_URL', apiKeyEnv: 'OPENAI_API_KEY', modelEnv: 'OPENAI_MODEL', jevUrlEnv: 'TYPESAFE_POST_URL', jevKeyEnv: 'TYPESAFE_API_KEY', jevModelEnv: 'TYPESAFE_MODEL' }
     const sourceName = (value?: string) => value === 'manual' ? '本机填写' : value === 'env' ? '环境变量' : '未配置'
+    const keySummary = (key: 'apiKey' | 'jevKey', env: 'apiKeyEnv' | 'jevKeyEnv') => {
+      const source = cfg!.sources?.[key]
+      const info = cfg!.keyInfo?.[key]
+      const location = source === 'manual' ? `本机配置 · ${key} 字段` : source === 'env' ? `环境变量 · ${cfg![env]}` : '未配置密钥'
+      return <Box key={`key-summary-${key}`} flexDirection="column">
+        <Text>{'当前生效密钥：' + (info?.active || '无') + ' · ' + location}</Text>
+        {source === 'manual' && <Text dimColor>{cfg!.configPath || '~/.config/claude-translate/config.json'}</Text>}
+        {source === 'manual' && <Text dimColor>{`已保存的本机密钥优先；${cfg![env] || '环境变量'} 当前未用于此密钥。`}</Text>}
+        {source !== 'manual' && info?.saved && <Text dimColor>{'本机另存：' + info.saved + '（当前未使用）'}</Text>}
+        <Text dimColor>显示已保存配置的生效结果；修改后点「保存」更新。仅显示密钥末四位，短密钥完全隐藏。</Text>
+      </Box>
+    }
     const sourcePicker = (key: string) => <Select key={key} label="配置来源" value={String(draft[key] || 'manual')} options={[{ value: 'manual', label: '本机填写优先' }, { value: 'env', label: '读取环境变量' }]} onSelect={value => { set(key, value); settingsStart = true; redraw($) }} />
     const environmentFields = (provider: 'llm' | 'jev') => <Box flexDirection="column">
       {(provider === 'llm' ? [['baseUrlEnv', '地址变量名'], ['apiKeyEnv', '密钥变量名'], ['modelEnv', '模型变量名']] : [['jevUrlEnv', 'Jev 地址变量名'], ['jevKeyEnv', 'Jev 密钥变量名'], ['jevModelEnv', 'Jev 模型变量名']]).map(([key, label]) => <Box key={`binding-${key}`} flexDirection="column">
@@ -276,14 +288,14 @@ export const register: Register = on => {
         <Text dimColor>这些值保存在本机，不在插件代码中；新安装不预填你的接口和模型。</Text>
         {sourcePicker('llmConfigSource')}
         <Text>{'当前生效：' + (cfg.effectiveModel || '未配置') + ' · ' + sourceName(cfg.sources?.model)}</Text>
+        {keySummary('apiKey', 'apiKeyEnv')}
         {draft.llmConfigSource === 'env' ? environmentFields('llm') : <Box flexDirection="column">
           {field('baseUrl', '接口 Base URL', 'https://provider.example/v1')}
           {field('model', '翻译模型名', '填写你的服务商提供的型号')}
-          <Text dimColor>{'密钥来源：' + sourceName(cfg.sources?.apiKey) + (cfg.hasApiKey ? '（已保存，不回显）' : '')}</Text>
-          {field('apiKey', '新的 API Key', cfg.hasApiKey ? '留空保留已保存密钥' : '填入密钥')}
+          {field('apiKey', '新的 API Key', cfg.hasApiKey ? '留空不更换本机已保存的密钥' : '填入密钥')}
           <Button key="clear-api-key" plain label="清除已保存密钥" onPress={() => { set('clearApiKey', true); set('apiKey', ''); notice = '保存后清除密钥'; redraw($) }} />
           {field('postUrl', '完整 POST URL（可选）', '填写时替代 Base URL')}
-          <Text dimColor>手填项留空时才读取绑定变量。新输入的密钥会显示；保存后不回显。</Text>
+          <Text dimColor>本机没有保存密钥时才读取绑定变量。输入框留空不会清除已存密钥。新输入的密钥会显示；保存后仅显示末四位。</Text>
         </Box>}
       </Box>}
       {tab === 'env' && <Box flexDirection="column">
@@ -302,11 +314,11 @@ export const register: Register = on => {
         <Text>{draft.detection === 'jev' ? '当前启用 Jev 检测。' : '当前未启用；在「语言检测」中选 Jev 后才会调用。'}</Text>
         {sourcePicker('jevConfigSource')}
         <Text dimColor>{'当前模型来源：' + sourceName(cfg.sources?.jevModel)}</Text>
+        {keySummary('jevKey', 'jevKeyEnv')}
         {draft.jevConfigSource === 'env' ? environmentFields('jev') : <Box flexDirection="column">
           {field('jevUrl', 'Jev POST URL', 'https://api.typesafe.ai/v1/systemone')}
           {field('jevModel', 'Jev 模型名', 'jev-latest（官方示例）')}
-          <Text dimColor>{'密钥来源：' + sourceName(cfg.sources?.jevKey) + (cfg.hasJevKey ? '（已保存，不回显）' : '')}</Text>
-          {field('jevKey', '新的 Jev API Key', cfg.hasJevKey ? '留空保留已保存密钥' : '填入密钥')}
+          {field('jevKey', '新的 Jev API Key', cfg.hasJevKey ? '留空不更换本机已保存的密钥' : '填入密钥')}
           <Button key="clear-jev-key" plain label="清除已保存 Jev 密钥" onPress={() => { set('clearJevKey', true); set('jevKey', ''); notice = '保存后清除密钥'; redraw($) }} />
           <Text dimColor>默认地址和 jev-latest 是官方公开示例；你的网关配置只保存在本机。环境变量请在「环境变量」页绑定。</Text>
         </Box>}

@@ -115,6 +115,32 @@ class Tests(unittest.TestCase):
             self.assertEqual(m.public_config(cfg)['sources']['apiKey'],'env')
         self.assertEqual(m.public_config(cfg)['sources']['apiKey'],'missing')
 
+    def test_masked_key_identifies_effective_key_and_separate_saved_key(self):
+        cfg=self.config(apiKey='local-secret-A123',jevKey='local-jev-J456')
+        with patch.dict(os.environ, {'OPENAI_API_KEY':'environment-secret-E789','TYPESAFE_API_KEY':'environment-jev-Z012'}):
+            pub=m.public_config(cfg)
+            self.assertEqual(pub['keyInfo']['apiKey'],dict(active='****A123',saved='****A123'))
+            self.assertEqual(pub['configPath'],str(m.config_path()))
+            cfg.update(llmConfigSource='env',jevConfigSource='env')
+            pub=m.public_config(cfg)
+            self.assertEqual(pub['keyInfo']['apiKey'],dict(active='****E789',saved='****A123'))
+            self.assertEqual(pub['keyInfo']['jevKey'],dict(active='****Z012',saved='****J456'))
+            for secret in ('local-secret-A123','local-jev-J456','environment-secret-E789','environment-jev-Z012'):
+                self.assertNotIn(secret,json.dumps(pub))
+            m.save_config(cfg)
+            pub=m.save_config({'apiKey':'','jevKey':''})
+            self.assertEqual(pub['keyInfo']['apiKey']['saved'],'****A123')
+            pub=m.save_config({'clearApiKey':True,'llmConfigSource':'manual'})
+            self.assertEqual(pub['keyInfo']['apiKey'],dict(active='****E789',saved=''))
+        pub=m.public_config(cfg)
+        self.assertEqual(pub['keyInfo']['apiKey'],dict(active='',saved='****A123'))
+        self.assertEqual(pub['sources']['apiKey'],'missing')
+
+    def test_short_or_control_character_keys_are_fully_masked(self):
+        for key in ('abc','12345678901','long-secret-\x1b[0m'):
+            self.assertEqual(m.masked_key(key),'****')
+        self.assertEqual(m.masked_key('  '),'')
+
     def test_incomplete_response_rejected(self):
         with self.assertRaises(m.TranslationError): m.chat_text({'choices':[{'message':{'content':'partial'},'finish_reason':'length'}]})
         response=FakeResponse(raw=b'data: {"choices":[{"delta":{"content":"partial"}}]}\n\n',sse=True)

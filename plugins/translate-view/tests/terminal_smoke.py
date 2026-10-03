@@ -58,7 +58,7 @@ class Harness:
         self.server = Server(('127.0.0.1',0), Handler)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         config = root/'config.json'
-        config.write_text(json.dumps({'enabled':True,'baseUrl':f'http://127.0.0.1:{self.server.server_port}/v1','model':'fixture','apiKeyEnv':'','baseUrlEnv':'','modelEnv':''}))
+        config.write_text(json.dumps({'enabled':True,'baseUrl':f'http://127.0.0.1:{self.server.server_port}/v1','model':'fixture','apiKey':'fixture-secret-A123','jevKey':'fixture-secret-J456','apiKeyEnv':'','baseUrlEnv':'','modelEnv':''}))
         fixture = root/'fixture'; (fixture/'.claude-plugin').mkdir(parents=True); (fixture/'hooks').mkdir()
         (fixture/'.claude-plugin/plugin.json').write_text('{"name":"translate-fixture","version":"0.0.1"}')
         (fixture/'hooks/hooks.json').write_text('{"modules":["./register.ts"]}')
@@ -153,8 +153,11 @@ def settings_check(h):
     h.wait(lambda:'检测模型:' in h.view(),'LLM detection exposes an independent model field')
     for section, fields in [('模型接口',['接口 Base URL:', '翻译模型名:', '新的 API Key:', '完整 POST URL（可选）:']), ('环境变量',['地址变量名:', '密钥变量名:', '模型变量名:']), ('Jev 接口',['Jev POST URL:', 'Jev 模型名:', '新的 Jev API Key:']), ('翻译 Prompt',['发送前:', '回复:'])]:
         h.click(section)
-        h.wait(lambda:fields[0] in h.view(), 'settings fields reachable: '+section)
-        for field in fields[1:]:
+        if '--settings-wide' in sys.argv and section in ('模型接口','Jev 接口'):
+            suffix='****A123' if section=='模型接口' else '****J456'
+            h.wait(lambda:suffix in h.view() and '本机配置' in h.view(), 'masked key source visible: '+section)
+            assert 'fixture-secret' not in h.view(), 'raw saved key exposed'
+        for field in fields:
             end=time.monotonic()+5
             while field not in h.view() and time.monotonic()<end:
                 h.send(f'\x1b[<65;{h.columns-5};{h.rows-9}M'); h.read(.08)

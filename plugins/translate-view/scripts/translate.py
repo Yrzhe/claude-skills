@@ -72,10 +72,16 @@ def validate_config(cfg):
     for k in ('baseUrl','postUrl','jevUrl'):
         if cfg[k]: validate_url(cfg[k])
 
+def masked_key(secret):
+    secret = secret.strip()
+    if not secret: return ''
+    # Short or unusual keys stay fully masked, including terminal control codes.
+    return '****' + secret[-4:] if len(secret) >= 12 and re.fullmatch(r'[A-Za-z0-9_-]{4}', secret[-4:]) else '****'
+
 def public_config(cfg):
     result = {k:v for k,v in cfg.items() if k not in ('apiKey','jevKey')}
     result.update(hasApiKey=bool(cfg['apiKey']), hasJevKey=bool(cfg['jevKey']))
-    # Values of environment variables, especially secrets, never leave this helper.
+    # Raw credentials never leave this helper; only masked identifiers reach the UI.
     result['effectiveModel'] = value(cfg,'model','modelEnv')
     result['ready'] = bool(result['effectiveModel'] and ((cfg['postUrl'] if cfg['llmConfigSource']=='manual' else '') or value(cfg,'baseUrl','baseUrlEnv')))
     bindings = [('baseUrl','baseUrlEnv'),('apiKey','apiKeyEnv'),('model','modelEnv'),('jevUrl','jevUrlEnv'),('jevKey','jevKeyEnv'),('jevModel','jevModelEnv')]
@@ -83,6 +89,9 @@ def public_config(cfg):
     result['sources'] = {literal: config_source(cfg,literal,env) for literal,env in bindings}
     if cfg['llmConfigSource']=='manual' and cfg['postUrl'].strip(): result['sources']['baseUrl']='manual'
     result['effectiveJevModel'] = value(cfg,'jevModel','jevModelEnv')
+    result['configPath'] = str(config_path())
+    result['keyInfo'] = {key: dict(active=masked_key(value(cfg,key,env)), saved=masked_key(cfg[key]))
+                         for key,env in [('apiKey','apiKeyEnv'),('jevKey','jevKeyEnv')]}
     return result
 
 def save_config(patch):

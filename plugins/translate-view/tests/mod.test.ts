@@ -297,6 +297,31 @@ test('settings expose detector, environment fields and reset to the language ove
   expect((await ui.findAll({ type: 'Button' })).filter(item => String(item.props.key || '').startsWith('tab-')).length).toBe(5)
 })
 
+test('key summary distinguishes active local and environment keys from unused saved keys', async ($, on) => {
+  setup(on, { ...CONFIG, apiKeyEnv: 'CUSTOM_KEY', ...{
+    sources: { apiKey: 'manual', jevKey: 'env' },
+    configPath: '/private/example/config.json',
+    keyInfo: { apiKey: { active: '****A123', saved: '****A123' }, jevKey: { active: '****B456', saved: '****C789' } },
+  } })
+  await $.session.start(start)
+  const ui = await $.ui.mount(PANE)
+  await ui.press({ key: 'settings-button' })
+  await ui.press({ key: 'tab-llm' })
+  let text = JSON.stringify(await ui.find({ key: 'key-summary-apiKey' }))
+  expect(text).toContain('****A123')
+  expect(text).toContain('本机配置 · apiKey 字段')
+  expect(text).toContain('/private/example/config.json')
+  expect(text).toContain('CUSTOM_KEY 当前未用于此密钥')
+  await ui.select({ key: 'llmConfigSource', value: 'env' })
+  // A draft source change must not mislabel the still-active saved configuration.
+  expect(JSON.stringify(await ui.find({ key: 'key-summary-apiKey' }))).toContain('本机配置 · apiKey 字段')
+  await ui.press({ key: 'tab-jev' })
+  text = JSON.stringify(await ui.find({ key: 'key-summary-jevKey' }))
+  expect(text).toContain('****B456')
+  expect(text).toContain('环境变量 · TYPESAFE_API_KEY')
+  expect(text).toContain('本机另存：****C789（当前未使用）')
+})
+
 test('wide settings fit all five tabs on one row while narrow panes retain all tabs', () => {
   const sections = ['语言检测','模型接口','环境变量','Jev 接口','翻译 Prompt'].map(label => ({ label }))
   expect(settingsGroups(sections, 90)).toEqual([sections])

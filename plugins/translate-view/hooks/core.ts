@@ -1,4 +1,5 @@
 export type Config = {
+  configPath?: string; keyInfo?: Record<string, { active: string; saved: string }>;
   sources?: Record<string, string>; envStatus?: Record<string, boolean>; effectiveJevModel?: string;
   jevConfigSource?: string; jevUrlEnv?: string; jevModelEnv?: string;
   llmConfigSource?: string; detectionModel?: string; effectiveModel?: string;
