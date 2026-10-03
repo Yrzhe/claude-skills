@@ -32,7 +32,9 @@ Disable the original `image-view` plugin if you installed it: Reply View include
 - **Links:** an **Open** button for each website or local file link, including `localhost:3000`, `127.0.0.1`, IPv6 loopback, and Markdown links. No modifier-click is needed.
 - **Copy reply:** copies all visible assistant text from the most recently ended turn, in order, with Markdown and newlines preserved. It excludes user prompts, thinking, tool output, and other agents' turns. Media and links are extracted from the final answer only.
 
-Multiple items paginate with **Next**. In short terminals, media uses compact Open/Next controls. An extremely small band may have room only for the copy button; enlarge the terminal to see the other controls. Missing files and failed downloads keep an openable placeholder. Copy failures show a toast.
+The strip has a fixed toolbar and **one horizontal row**, at most six terminal rows high, even with 1,000 items. **Start** stays at the far left and **Copy reply** stays at the far right. Use **< / >** to move one item left or right, or move the mouse wheel over the cards to scroll them sideways. At most four cards are drawn at once, depending on terminal width. **Hide** collapses the strip to its single toolbar row.
+
+Only visible media is prepared. Scrolling brings the next item into view without adding rows; hidden items are not downloaded. A conversion already in progress may finish after you scroll or collapse. Very short bands keep the toolbar; enlarge the terminal to see the cards. Failed media keeps an Open action; a pasted image whose cached file is missing is marked unavailable. Copy failures show a toast.
 
 Previous replies are restored from the session transcript when the mod loads or a session resumes. `/clear` clears the old preview. Plain-text replies still get the copy button. An interrupted turn retains whatever visible response text Claude reports; a turn with no visible response clears the reply area.
 
@@ -41,7 +43,7 @@ Previous replies are restored from the session transcript when the mod loads or 
 - Claude Code **2.1.287+**; validated on **2.1.288**.
 - macOS or Linux, with **Python 3** for reply-media preparation and Open actions.
 - **FFmpeg** for video posters and broad image-format support. Without it, macOS uses `sips` for supported images; Linux can still preview PNG files.
-- A terminal supporting the **kitty graphics protocol**, such as Ghostty or kitty, for actual thumbnails. Other terminals show image labels; Open and Copy controls still work.
+- Ghostty and kitty use native image thumbnails. Other terminals use **low-resolution color-block previews** when FFmpeg is installed, so a pasted image is still recognizable without the kitty graphics protocol. Without FFmpeg, these terminals show **Open to view**; Open and Copy still work.
 
 For example, with Homebrew:
 
@@ -65,7 +67,7 @@ localhost:4321/preview
 file:///absolute/path/my%20cover.png
 ```
 
-Relative paths resolve against the session working directory. Use a Markdown destination in angle brackets or a backtick-wrapped path when a filename contains spaces. File references with `:line` or `#Lline` anchors open the file. Supported image extensions are PNG, JPEG, WebP, GIF, AVIF, BMP, TIFF, HEIC, and SVG; actual decoding depends on your converter build. Videos include MP4, M4V, MOV, WebM, MKV, AVI, and OGV. GIF/video previews use one frame.
+Slash commands such as `/plugin` and repository names such as `Yrzhe/claude-skills` are not links. Non-media local files must exist before an Open button is shown. Relative paths resolve against the session working directory. Use a Markdown destination in angle brackets or a backtick-wrapped path when a filename contains spaces. File references with `:line` or `#Lline` anchors open the file. Supported image extensions are PNG, JPEG, WebP, GIF, AVIF, BMP, TIFF, HEIC, and SVG; actual decoding depends on your converter build. Videos include MP4, M4V, MOV, WebM, MKV, AVI, and OGV. GIF/video previews use one frame.
 
 Media detection uses the destination extension, a filename label, or Markdown image syntax. An extensionless ordinary link is shown as a link. Video-sharing pages and authenticated downloads are not scraped. A file path must exist on the machine running Claude Code; files inside another host/container are not downloaded automatically.
 
@@ -73,7 +75,7 @@ Media detection uses the destination extension, a filename label, or Markdown im
 
 The mod reads the current prompt, the session transcript for restoration, and the files it previews. It never calls an AI model or uploads your files or replies.
 
-Reply previews fetch referenced HTTP(S) media automatically, including localhost media. Requests go directly from your computer to that URL, with no cookies or authentication headers. Query parameters in the original URL are preserved. Ordinary web links are opened only when you click **Open**. Downloads are limited to 64 MiB and bounded by timeouts; video pages or larger downloads fall back to an Open action.
+Reply previews fetch referenced HTTP(S) media automatically **when visible in the expanded strip**, including localhost media. Offscreen items wait until you scroll to them. Requests go directly from your computer to that URL, with no cookies or authentication headers. Query parameters in the original URL are preserved. Ordinary web links are opened only when you click **Open**. Downloads are limited to 64 MiB and bounded by timeouts; video pages or larger downloads fall back to an Open action.
 
 A Python helper runs FFmpeg (or `sips`) without a shell. It writes PNG thumbnails to the OS temporary directory under `claude-image-view-<uid>`, removes temporary download files after conversion, and prunes its own thumbnails older than seven days when another preview is prepared. Original files are never changed. Opening uses `open` on macOS or `xdg-open` on Linux. Copy uses Claude Code's native `ui.copy` API. No dependencies are installed automatically.
 
@@ -91,7 +93,7 @@ tsc -p .
 
 Claude writes its version-specific TypeScript declarations and `tsconfig.json` when it loads the mod. Type-check after that first load. `claude` works in place of `claude-work`.
 
-The mod tests exercise parsing, session state, UI element validation, copy/open callbacks, pagination, and failure cases without model calls. The Python suite converts real local and HTTP-served images/videos; it mocks desktop opening so tests do not launch applications. Terminal painting and physical mouse clicks require a manual check in your own terminal.
+The mod tests exercise parsing, session state, UI element validation, copy/open callbacks, horizontal scrolling with 1,000 items, visible-only loading, native and color-block previews, and failure cases without model calls. The Python suite converts real local and HTTP-served images/videos; it mocks desktop opening so tests do not launch applications. Terminal painting and physical mouse clicks require a manual check in your own terminal.
 
 ## Attribution
 

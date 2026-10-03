@@ -2,10 +2,12 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { PastedImage } from '../types'
-import { fitRow, imageNumbers, pngSize } from './layout'
+import { fitCells, imageNumbers, pngSize } from './layout'
+import { pixelCells, stripItems, stripLayout } from './strip'
+import type { StripItem } from './strip'
 import type { Size } from './layout'
 import { lastReply, makeReply } from './reply'
-import type { Preview, Reply } from '../types'
+import type { Preview, Reply, PixelPreview } from '../types'
 
 // Pasting an image raises no prompt.edit (the tag only shows up on the next keystroke),
 // so the draft is polled instead.
@@ -14,15 +16,20 @@ const POLL_MS = 200
 const images = atom({ plugin: 'reply-view', key: 'images' } as const, [] as PastedImage[])
 const reply = atom({ plugin: 'reply-view', key: 'reply' } as const, null as Reply | null)
 let generation = 0
-let mediaPage = 0
-let linkPage = 0
+const pixels = atom({ plugin: 'reply-view', key: 'pixels' } as const, {} as Record<string, PixelPreview>)
+let scrollOffset = 0
+let collapsed = false
+let nativeImages = false
+let wanted: StripItem[] = []
+let previewTimerStarted = false
+let stripBounds: { requestId: string; rows: number; width: number; maxOffset: number } | undefined
 let activeTurn = ''
 let steps = new Map<number, string>()
 let sessionKey = ''
 let interactive = true
 let previewBusy = false
 
-async function helper($: EngineInterface, request: object): Promise<{ path?: string; size?: Size; error?: string }> {
+async function helper($: EngineInterface, request: object): Promise<{ path?: string; size?: Size; error?: string; pixels?: string; pixelError?: string }> {
   const root = $.plugin.root
   const result = await $.process.run(['python3', `${root}/scripts/media.py`], {
     stdin: JSON.stringify(request), timeoutMs: 40000,
@@ -42,41 +49,62 @@ async function action($: EngineInterface, request: object, success: string) {
   }
 }
 
-// One bounded conversion at a time, outside turn completion and render hooks.
-function queuePreview($: EngineInterface, token: number, index = 0, delay = 1) {
-  $.clock.after(delay, async () => {
-    if (token !== generation) return
-    if (previewBusy) { queuePreview($, token, index, 100); return }
-    const current = await read($, reply)
-    const media = current?.media[index]
-    if (!media) return
-    previewBusy = true
-    let result: Partial<Preview>
-    try {
-      const data = await helper($, { action: 'preview', target: media.target, kind: media.kind, cacheKey: `${sessionKey}:${token}` })
-      if (!data.path || !data.size) throw new Error('No preview available')
-      result = { path: data.path, size: data.size, status: 'ready' }
-    } catch (error) {
-      result = { status: 'unavailable', error: error instanceof Error ? error.message : 'No preview available' }
-    } finally {
-      previewBusy = false
-    }
-    if (token !== generation) return
-    await update($, reply, value => value && ({ ...value, media: value.media.map((item, i) => i === index ? { ...item, ...result } : item) }))
-    if (token === generation) queuePreview($, token, index + 1)
+// The render hook records only the visible window. A timer performs one job at
+// a time outside rendering; scrolling or collapsing stops offscreen downloads.
+function startPreviewTimer($: EngineInterface) {
+  if (previewTimerStarted) return
+  previewTimerStarted = true
+  $.clock.every(100, () => prepareVisible($))
+}
+
+async function prepareVisible($: EngineInterface) {
+  if (previewBusy || collapsed || wanted.length === 0) return
+  const token = generation
+  const current = await read($, reply)
+  const savedPixels = await read($, pixels)
+  const item = wanted.find(candidate => {
+    if (!candidate.target || candidate.kind === 'link') return false
+    if (candidate.kind === 'paste') return !nativeImages && !savedPixels[candidate.target]
+    return current?.media.some(media => media.target === candidate.target && media.status === 'pending')
   })
+  if (!item?.target || token !== generation || previewBusy) return
+  previewBusy = true
+  try {
+    if (item.kind === 'paste') {
+      let result: PixelPreview
+      try {
+        const data = await helper($, { action: 'pixels', target: item.target })
+        result = { pixels: data.pixels, error: data.pixelError || (!data.pixels ? 'Preview unavailable' : undefined) }
+      } catch { result = { error: 'Preview unavailable' } }
+      if (token === generation) await update($, pixels, value => ({ ...value, [item.target!]: result }))
+    } else {
+      let result: Partial<Preview>
+      try {
+        const data = await helper($, { action: 'preview', target: item.target, kind: item.kind, withPixels: !nativeImages, cacheKey: `${sessionKey}:${token}` })
+        if (!data.path || !data.size) throw new Error('No preview available')
+        result = { path: data.path, size: data.size, pixels: data.pixels, error: data.pixelError, status: 'ready' }
+      } catch (error) {
+        result = { status: 'unavailable', error: error instanceof Error ? error.message : 'No preview available' }
+      }
+      if (token === generation) await update($, reply, value => value && ({ ...value, media: value.media.map(media => media.target === item.target ? { ...media, ...result } : media) }))
+    }
+  } finally { previewBusy = false }
 }
 
 async function setReply($: EngineInterface, text: string, answer: string) {
   const token = ++generation
-  mediaPage = 0
-  linkPage = 0
+  scrollOffset = 0
+  wanted = []
   const cwd = await $.session.cwd()
   const id = await $.session.id()
   if (token !== generation) return
   sessionKey = id
-  await update($, reply, () => makeReply(text, answer, cwd))
-  queuePreview($, token)
+  const value = makeReply(text, answer, cwd)
+  const existing = await Promise.all(value.links.map(async link => link.kind !== 'link' || /^https?:/.test(link.target) || await $.fs.exists(link.target).catch(() => false)))
+  value.links = value.links.filter((_, index) => existing[index])
+  if (token !== generation) return
+  await update($, reply, () => value)
+  startPreviewTimer($)
 }
 
 async function restore($: EngineInterface) {
@@ -162,13 +190,20 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     interactive = e.isInteractive && e.surface === 'terminal'
     if (!interactive) return next(e)
+    const program = (await $.env.get('TERM_PROGRAM').catch(() => '') ?? '').toLowerCase()
+    const term = (await $.env.get('TERM').catch(() => '') ?? '').toLowerCase()
+    nativeImages = program === 'ghostty' || program === 'kitty' || term === 'xterm-kitty'
     await restore($)
+    startPreviewTimer($)
     $.clock.every(POLL_MS, () => check($))
     return next(e)
   })
 
   on('session.end', async ($, e, next) => {
     generation++
+    wanted = []
+    stripBounds = undefined
+    scrollOffset = 0
     activeTurn = ''
     steps.clear()
     found = undefined
@@ -176,6 +211,7 @@ export const register: Register = on => {
     sizes.clear()
     await update($, reply, () => null)
     await update($, images, () => [])
+    await update($, pixels, () => ({}))
     return next(e)
   })
 
@@ -210,87 +246,76 @@ export const register: Register = on => {
     return next(e)
   })
 
+  on('ui.scroll', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const box = stripBounds
+    if (!box || collapsed || e.requestId !== box.requestId || e.origin.kind !== 'person' || !e.pointer ||
+      e.pointer.row < 1 || e.pointer.row >= box.rows || e.pointer.column < 0 || e.pointer.column >= box.width || box.maxOffset === 0) return next(e)
+    scrollOffset = Math.max(0, Math.min(box.maxOffset, scrollOffset + Math.sign(e.by)))
+    wanted = []
+    $.ui.invalidate('ui.render')
+    return {}
+  })
+
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.surface !== 'terminal' || e.props.hasSurvey) return next(e)
+    if (e.surface !== 'terminal' || e.props.hasSurvey) { wanted = []; return next(e) }
     const pasted = await read($, images)
     const previous = await read($, reply)
-    if (pasted.length === 0 && !previous) return next(e)
-
-    const { Box, Image, Text, Button } = $.ui.resolve(e)
-    const width = Math.max(1, e.props.bodyColumns)
-    const maxRows = Math.max(0, e.props.maxRows)
+    const pixelPreviews = await read($, pixels)
     const below = await next(e)
-    if (maxRows < 1 || width < 16) return below
-    const all = [
-      ...pasted.map(image => ({ ...image, label: `Paste #${image.n}`, target: image.path, status: image.path ? 'ready' : 'unavailable', error: 'no preview' })),
-      ...(previous?.media ?? []).map((media, i) => ({ ...media, n: i, label: `${media.kind === 'video' ? 'Video' : 'Image'}: ${media.label}` })),
-    ]
-    const links = previous?.links.filter(link => link.kind === 'link') ?? []
-    const toolbarRows = previous ? 1 : 0
-    const linkRows = Math.min(3, links.length, Math.max(0, maxRows - toolbarRows - (all.length ? 2 : 0) - 1))
-    const linkPages = linkRows ? Math.ceil(links.length / linkRows) : 0
-    const currentLinkPage = Math.min(linkPage, Math.max(0, linkPages - 1))
-    const fullPageSize = Math.max(1, Math.min(6, Math.floor((width + 1) / 15)))
-    const mediaNavRows = all.length > fullPageSize ? 1 : 0
-    const tileBudget = maxRows - toolbarRows - mediaNavRows - (linkRows ? linkRows + 1 : 0)
-    const showTiles = all.length > 0 && tileBudget >= 4
-    const pageSize = showTiles ? fullPageSize : 1
-    const mediaPages = Math.ceil(all.length / pageSize)
-    const currentMediaPage = Math.min(mediaPage, Math.max(0, mediaPages - 1))
-    const list = all.slice(currentMediaPage * pageSize, (currentMediaPage + 1) * pageSize)
-    const cells = fitRow(list.map(image => image.size), tileBudget, width)
-    const redraw = () => $.ui.invalidate('ui.render')
+    const width = Math.floor(e.props.bodyColumns)
+    const all = stripItems(pasted, previous)
+    if ((!previous && all.length === 0) || width < 20 || e.props.maxRows < 1) {
+      wanted = []; stripBounds = undefined; return below
+    }
+    const { Box, Image, Raster, Text, Button } = $.ui.resolve(e)
+    const layout = stripLayout(all.length, width, e.props.maxRows, scrollOffset)
+    const visible = all.slice(layout.start, layout.start + layout.visibleCount)
+    const expanded = !collapsed && layout.rows >= 3 && all.length > 0
+    wanted = expanded && layout.pictureRows > 0 ? visible.filter(item => item.kind !== 'link') : []
+    stripBounds = { requestId: e.requestId, rows: expanded ? layout.rows : 1, width, maxOffset: layout.maxOffset }
+    const move = (offset: number) => {
+      scrollOffset = Math.max(0, Math.min(layout.maxOffset, offset))
+      wanted = []
+      $.ui.invalidate('ui.render')
+    }
     return (
-      <Box flexDirection="column">
-        {previous && <Box flexDirection="row" columnGap={1}>
-          {width >= 40 && <Text dimColor>Last reply</Text>}
-          <Button key="copy-reply" label="Copy reply" onPress={async press => {
-            try {
-              const result = await $.ui.copy({ text: previous.text, surface: press.surface })
-              $.ui.toast(result.isCopied ? 'Reply copied' : `Could not copy: ${result.reason}`)
-            } catch { $.ui.toast('Could not copy reply') }
-          }} />
-        </Box>}
-        {showTiles && mediaPages > 1 && <Box flexDirection="row" columnGap={1}>
-          <Text dimColor>{currentMediaPage + 1}/{mediaPages}</Text>
-          <Button key="media-next" label="Next" onPress={() => { mediaPage = (currentMediaPage + 1) % mediaPages; redraw() }} />
-        </Box>}
-        {showTiles && <Box flexDirection="row" columnGap={1}>
-          {list.map((image, i) => {
-            const { columns, rows } = cells[i] ?? { columns: 4, rows: 1 }
-            return (
-              <Box key={`tile-${i}`} flexDirection="column" alignItems="center" width={columns + 2} borderStyle="round" borderDimColor>
-                {image.path === null ? (
-                  <Box width={columns} height={rows} alignItems="center" justifyContent="center">
-                    <Text dimColor wrap="truncate">{image.status === 'pending' ? 'Loading...' : 'no preview'}</Text>
-                  </Box>
-                ) : (
-                  <Image
-                    key={`image-${i}`}
-                    source={{ file: image.path, format: 'png' }}
-                    columns={columns}
-                    rows={rows}
-                    alt={image.label}
-                  />
-                )}
-                {image.target ? <Button key={`open-media-${i}`} plain label={image.label.slice(0, columns)} onPress={() => action($, { action: 'open', target: image.target }, 'Opened')} /> : <Text dimColor>#{image.n}</Text>}
-              </Box>
-            )
+      <Box key="reply-strip" flexDirection="column">
+        <Box key="strip-toolbar" flexDirection="row" justifyContent="space-between" height={1} width={Math.max(1, width - 4)}>
+          <Box key="strip-left" flexDirection="row" columnGap={1}>
+            <Button key="scroll-home" plain label={width >= 60 ? 'Start' : '|<'} dimColor={layout.start === 0} onPress={() => move(0)} />
+            {layout.maxOffset > 0 && <Button key="scroll-left" plain label="<" dimColor={layout.start === 0} onPress={() => move(layout.start - 1)} />}
+            {all.length > 0 && width >= 50 && <Text dimColor>{layout.start + 1}-{Math.min(all.length, layout.start + layout.visibleCount)}/{all.length}</Text>}
+            {layout.maxOffset > 0 && <Button key="scroll-right" plain label=">" dimColor={layout.start === layout.maxOffset} onPress={() => move(layout.start + 1)} />}
+          </Box>
+          <Box key="strip-right" flexDirection="row" columnGap={1}>
+            {all.length > 0 && <Button key="toggle-strip" plain label={collapsed ? 'Show' : 'Hide'} onPress={() => { collapsed = !collapsed; wanted = []; $.ui.invalidate('ui.render') }} />}
+            {previous && <Button key="copy-reply" plain label={width >= 60 ? 'Copy reply' : 'Copy'} onPress={async press => {
+              try {
+                const result = await $.ui.copy({ text: previous.text, surface: press.surface })
+                $.ui.toast(result.isCopied ? 'Reply copied' : `Could not copy: ${result.reason}`)
+              } catch { $.ui.toast('Could not copy reply') }
+            }} />}
+          </Box>
+        </Box>
+        {expanded && <Box key="strip-window" flexDirection="row" columnGap={2} height={layout.rows - 1} width={width}>
+          {visible.map(item => {
+            const pixel = item.kind === 'paste' && item.target ? pixelPreviews[item.target] : undefined
+            const samples = item.pixels || pixel?.pixels
+            const fit = fitCells(item.size, Math.max(1, layout.pictureRows))
+            const columns = Math.min(fit.columns, layout.cardWidth)
+            const rows = Math.max(1, Math.min(fit.rows, Math.round(fit.rows * columns / fit.columns)))
+            const placeholder = item.kind === 'link' ? item.target! : item.status === 'unavailable' ? 'Preview unavailable' : !nativeImages && !samples && (pixel?.error || item.status === 'ready' && item.kind !== 'paste') ? 'Open to view' : 'Loading preview'
+            return <Box key={`card-${item.key}`} flexDirection="column" width={layout.cardWidth} height={layout.rows - 1}>
+              <Text dimColor wrap="truncate">{item.kind === 'paste' ? item.label : `${item.kind === 'link' ? 'Link' : item.kind === 'video' ? 'Video' : 'Image'}: ${item.label}`}</Text>
+              {layout.pictureRows > 0 && <Box width={layout.cardWidth} height={layout.pictureRows} justifyContent="center" alignItems="center">
+                {item.kind !== 'link' && nativeImages && item.path ? <Image key={`image-${item.key}`} source={{ file: item.path, format: 'png' }} columns={columns} rows={rows} alt="Open to view" /> :
+                 item.kind !== 'link' && samples ? <Raster key={`pixels-${item.key}`} columns={layout.cardWidth} rows={layout.pictureRows} cells={pixelCells(samples, item.size, layout.cardWidth, layout.pictureRows)} /> :
+                 <Text dimColor wrap="truncate">{placeholder}</Text>}
+              </Box>}
+              {item.target ? <Button key={`open-${item.key}`} plain label={item.kind === 'link' ? 'Open link' : item.kind === 'video' ? 'Play video' : 'Open image'} onPress={() => action($, { action: 'open', target: item.target }, 'Opened')} /> : <Text dimColor>File unavailable</Text>}
+            </Box>
           })}
         </Box>}
-        {!showTiles && all.length > 0 && maxRows > toolbarRows && <Box flexDirection="row" columnGap={1}>
-          {width >= 32 && <Text dimColor>{currentMediaPage + 1}/{all.length} media</Text>}
-          {list[0]?.target && <Button key="open-compact-media" label="Open" onPress={() => action($, { action: 'open', target: list[0]!.target }, 'Opened')} />}
-          {all.length > 1 && <Button key="compact-next" label="Next" onPress={() => { mediaPage = (currentMediaPage + 1) % mediaPages; redraw() }} />}
-        </Box>}
-        {linkRows > 0 && <Box flexDirection="row" columnGap={1}>
-          <Text dimColor>Links</Text>
-          {linkPages > 1 && <Button key="links-next" label="Next" onPress={() => { linkPage = (currentLinkPage + 1) % linkPages; redraw() }} />}
-        </Box>}
-        {links.slice(currentLinkPage * linkRows, currentLinkPage * linkRows + linkRows).map((link, i) => <Box key={`link-${i}`} flexDirection="row" columnGap={1}>
-          <Button key={`open-link-${i}`} label="Open" onPress={() => action($, { action: 'open', target: link.target }, 'Opened')} />
-          <Text dimColor wrap="truncate">{link.target}</Text>
-        </Box>)}
         {below}
       </Box>
     )

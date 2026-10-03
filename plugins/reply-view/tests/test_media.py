@@ -1,4 +1,5 @@
 """Real conversion/download checks; desktop actions are captured, never launched."""
+import base64
 import functools
 import http.server
 import importlib.util
@@ -54,6 +55,18 @@ class MediaTests(unittest.TestCase):
                 self.assertTrue(Path(result['path']).is_file())
                 self.assertEqual(result['size']['width'] * 9, result['size']['height'] * 16)
                 self.assertEqual(media.png_size(Path(result['path'])), result['size'])
+
+    def test_color_fallback_contains_real_rgb_pixels_and_survives_missing_ffmpeg(self):
+        result = media.preview(str(self.picture), 'pixels', with_pixels=True)
+        rgb = base64.b64decode(result['pixels'])
+        self.assertEqual(len(rgb), 64 * 32 * 3)
+        self.assertGreater(len(set(rgb)), 10)
+        self.assertEqual(media.pixel_preview(Path(result['path']))['pixels'], result['pixels'])
+        with patch.object(media.shutil, 'which', return_value=None):
+            self.assertIn('pixelError', media.pixel_preview(self.picture))
+        with patch.object(media.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=b'bad', stderr=b'')):
+            with self.assertRaisesRegex(ValueError, 'Invalid preview pixels'):
+                media.pixel_preview(self.picture)
 
     def test_real_http_image_and_video_downloads_and_query_strings(self):
         port = self.server.server_address[1]

@@ -27,9 +27,12 @@ export function normalizeTarget(raw: string, cwd: string): string | null {
   } else if (/^[a-z][a-z\d+.-]*:/i.test(value)) return null
   // Claude's file citations may have :line or #Lline suffixes.
   value = value.replace(/(?::\d+(?::\d+)?|#L\d+(?:-L?\d+)?)$/, '')
+  // Slash commands are not root-level file references. Repository slugs and
+  // package names are not relative files unless they carry a file extension.
+  if (/^\/[a-z][\w-]*(?:\s|$)/i.test(value)) return null
   if (value.startsWith('~/')) return value
   if (value.startsWith('/')) return value
-  if (value.startsWith('./') || value.startsWith('../') || /^[\w.-]+\/.+/.test(value)) {
+  if (value.startsWith('./') || value.startsWith('../') || (/^[\w.-]+\/.+/.test(value) && /\.[a-z\d]{1,10}$/i.test(value))) {
     try { return decodeURIComponent(new URL(value, `file://${cwd.replace(/\/$/, '')}/`).pathname) }
     catch { return null }
   }

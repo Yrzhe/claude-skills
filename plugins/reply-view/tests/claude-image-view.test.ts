@@ -64,7 +64,7 @@ test('a pasted image shows without another keystroke and clears when the draft d
   let draft = 'see [Image #1] [Image #2]'
   on('session.start', () => ({ cwd: '/work' }))
   on('prompt.read', () => ({ value: { text: draft, cursor: draft.length } }))
-  on('env.get', () => ({ value: '/tmp/claude-501' }))
+  on('env.get', ($, e) => ({ value: e.name === 'TERM_PROGRAM' ? 'ghostty' : '/tmp/claude-501' }))
   on('session.id', () => ({ value: 'sess-1' }))
   // Another project's folder and a stray file sit beside the one holding this session.
   const entry = { size: 0, mtimeMs: 0, isLink: false }
@@ -84,9 +84,9 @@ test('a pasted image shows without another keystroke and clears when the draft d
 
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   const image = await ui.find({ type: 'Image' })
-  expect(image?.props).toMatchObject({ source: { file: `${dir}/1.png`, format: 'png' }, columns: 24, rows: 6 })
+  expect(image?.props).toMatchObject({ source: { file: `${dir}/1.png`, format: 'png' }, columns: 12, rows: 3 })
   // #2 has no cached file, so it gets a placeholder tile instead of a broken Image.
-  expect(await ui.find({ type: 'Text', text: 'no preview' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Preview unavailable' })).toBeDefined()
   await ui.unmount()
 
   // Sending the prompt empties the box.
@@ -95,4 +95,33 @@ test('a pasted image shows without another keystroke and clears when the draft d
   const after = await $.ui.mount({ ...BAND, surface: 'terminal' })
   expect(await after.find({ type: 'Image' })).toBeUndefined()
   expect(await after.find({ type: 'Text', text: 'engine band' })).toBeDefined()
+})
+
+
+test('ordinary terminals show actual pasted-image colors using Raster without kitty graphics', async ($, on) => {
+  const clock = mock.clock(on)
+  const dir = '/tmp/claude-501/-work/sess/images'
+  const samples = btoa(String.fromCharCode(...new Uint8Array(64 * 32 * 3).fill(127)))
+  const requests: unknown[] = []
+  on('session.start', () => ({ cwd: '/work' }))
+  on('session.messages', () => ({ value: [] }))
+  on('session.id', () => ({ value: 'sess' }))
+  on('prompt.read', () => ({ value: { text: '[Image #1]', cursor: 10 } }))
+  on('env.get', ($, e) => ({ value: e.name === 'CLAUDE_CODE_TMPDIR' ? '/tmp/claude-501' : 'unknown-terminal' }))
+  on('fs.list', () => ({ value: [{ name: '-work', kind: 'dir', size: 0, mtimeMs: 0, isLink: false }] }))
+  on('fs.exists', ($, e) => ({ value: e.path === dir || e.path === `${dir}/1.png` }))
+  on('fs.read', () => ({ value: { base64: pngHead(800, 400) } }))
+  on('process.run', ($, e) => {
+    requests.push(JSON.parse(e.init?.stdin!))
+    return { value: { exitCode: 0, isStdoutTruncated: false, isStderrTruncated: false, stderr: '', stdout: JSON.stringify({ pixels: samples }) } }
+  })
+  on('ui.render', () => ({ type: 'Text', props: {}, children: [] }))
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await clock.advance(200)
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  await clock.advance(100)
+  expect(requests).toEqual([{ action: 'pixels', target: `${dir}/1.png` }])
+  expect(await ui.find({ type: 'Image' })).toBeUndefined()
+  expect((await ui.find({ key: 'pixels-paste-1' }))?.props).toMatchObject({ columns: 28, rows: 3 })
+  expect(await ui.find({ key: 'open-paste-1' })).toBeDefined()
 })

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Bounded local thumbnail preparation and user-triggered OS actions. No shell."""
 import hashlib
+import base64
 import json
 import os
 from pathlib import Path
@@ -23,9 +24,9 @@ def run(argv, **kwargs):
     return result
 
 
-def local_path(target):
+def local_path(target, require_file=True):
     path = Path(target).expanduser().resolve()
-    if not path.is_file():
+    if not (path.is_file() if require_file else path.exists()):
         raise ValueError("File not found")
     return path
 
@@ -74,7 +75,19 @@ def png_size(path):
     return {'width': width, 'height': height}
 
 
-def preview(target, cache_key, kind='image'):
+def pixel_preview(path):
+    ffmpeg = shutil.which('ffmpeg')
+    if not ffmpeg:
+        return {'pixelError': 'Install ffmpeg for color previews'}
+    result = run([ffmpeg, '-v', 'error', '-nostdin', '-protocol_whitelist', 'file,pipe',
+                  '-i', str(path), '-frames:v', '1', '-vf', 'scale=64:32',
+                  '-pix_fmt', 'rgb24', '-threads', '1', '-f', 'rawvideo', 'pipe:1'])
+    if len(result.stdout) != 64 * 32 * 3:
+        raise ValueError('Invalid preview pixels')
+    return {'pixels': base64.b64encode(result.stdout).decode('ascii')}
+
+
+def preview(target, cache_key, kind='image', with_pixels=False):
     remote = target.startswith(('http://', 'https://'))
     source = None if remote else local_path(target)
     # Session/turn scope prevents a stale URL or overwritten file from retaining its old picture.
@@ -94,7 +107,7 @@ def preview(target, cache_key, kind='image'):
         except FileNotFoundError:
             pass
     if output.exists():
-        return {'path': str(output), 'size': png_size(output)}
+        return {'path': str(output), 'size': png_size(output), **(pixel_preview(output) if with_pixels else {})}
     with tempfile.TemporaryDirectory(prefix='prepare-', dir=cache) as work:
         work = Path(work)
         if remote:
@@ -118,14 +131,14 @@ def preview(target, cache_key, kind='image'):
             shutil.copyfile(source, converted)
         size = png_size(converted)
         os.replace(converted, output)
-    return {'path': str(output), 'size': size}
+    return {'path': str(output), 'size': size, **(pixel_preview(output) if with_pixels else {})}
 
 
 def open_target(target):
     if target.startswith(('http://', 'https://')):
         target = web_url(target)
     else:
-        target = str(local_path(target))
+        target = str(local_path(target, require_file=False))
     command = ['open', target] if sys.platform == 'darwin' else ['xdg-open', target]
     run(command)
 
@@ -135,7 +148,9 @@ def main():
         request = json.load(sys.stdin)
         action = request['action']
         if action == 'preview':
-            result = preview(request['target'], request.get('cacheKey', ''), request.get('kind', 'image'))
+            result = preview(request['target'], request.get('cacheKey', ''), request.get('kind', 'image'), request.get('withPixels', False))
+        elif action == 'pixels':
+            result = pixel_preview(local_path(request['target']))
         elif action == 'open':
             open_target(request['target'])
             result = {'ok': True}

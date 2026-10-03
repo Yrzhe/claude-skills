@@ -50,7 +50,7 @@ test('reply media and pasted images coexist; copy and open buttons invoke exact 
   on('session.cwd', () => ({ value: '/work' }))
   on('session.id', () => ({ value: 'sess-1' }))
   on('prompt.read', () => ({ value: { text: draft, cursor: draft.length } }))
-  on('env.get', () => ({ value: '/tmp/claude-test' }))
+  on('env.get', ($, e) => ({ value: e.name === 'TERM_PROGRAM' ? 'ghostty' : '/tmp/claude-test' }))
   on('fs.list', () => ({ value: [] }))
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['engine band'] }))
   on('turn.complete', ($, e) => ({ text: e.answer }))
@@ -64,22 +64,22 @@ test('reply media and pasted images coexist; copy and open buttons invoke exact 
   await clock.advance(200)
   const answer = 'Done: [movie](./demo.mp4) [site](http://localhost:3000/)'
   await $.turn.complete(completed(answer))
-  await clock.advance(10)
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
-  expect(await ui.find({ type: 'Text', text: '#1' })).toBeDefined()
+  await clock.advance(100)
+  expect(await ui.find({ type: 'Text', text: 'Pasted #1' })).toBeDefined()
   expect((await ui.find({ type: 'Image' }))?.props).toMatchObject({ source: { file: '/tmp/preview.png', format: 'png' } })
   await ui.press({ key: 'copy-reply' })
-  await ui.press({ key: 'open-link-0' })
-  await ui.press({ key: 'open-media-1' })
+  await ui.press({ key: 'open-reply-1' })
+  await ui.press({ key: 'open-reply-0' })
   expect(requests).toEqual([
-    { action: 'preview', target: '/work/demo.mp4', kind: 'video', cacheKey: 'sess-1:1' },
+    { action: 'preview', target: '/work/demo.mp4', kind: 'video', withPixels: false, cacheKey: 'sess-1:1' },
     { action: 'copy', text: answer },
     { action: 'open', target: 'http://localhost:3000/' },
     { action: 'open', target: '/work/demo.mp4' },
   ])
   draft = ''
   await clock.advance(200)
-  expect(await ui.find({ type: 'Text', text: '#1' })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: 'Pasted #1' })).toBeUndefined()
   expect(await ui.find({ key: 'copy-reply' })).toBeDefined()
   await $.turn.complete({ ...completed('subagent text'), agentId: 'child' })
   await ui.press({ key: 'copy-reply' })
@@ -116,7 +116,7 @@ test('copy includes every visible step once, while links come from the final ans
   expect(await ui.find({ type: 'Text', text: 'http://localhost:3000/' })).toBeDefined()
 })
 
-test('short bands keep localhost reachable and compact media pagination reaches every item', async ($, on) => {
+test('short bands keep localhost reachable and horizontal scrolling reaches every item', async ($, on) => {
   mock.clock(on)
   const opened: string[] = []
   on('session.cwd', () => ({ value: '/work' }))
@@ -131,11 +131,12 @@ test('short bands keep localhost reachable and compact media pagination reaches 
   await $.turn.complete(completed('/tmp/a.png /tmp/b.mp4 http://localhost:8080/'))
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, maxRows: 5, bodyColumns: 40 } })
   expect(await ui.find({ type: 'Image' })).toBeUndefined()
-  await ui.press({ key: 'open-link-0' })
-  await ui.press({ key: 'open-compact-media' })
-  await ui.press({ key: 'compact-next' })
-  await ui.press({ key: 'open-compact-media' })
-  expect(opened).toEqual(['http://localhost:8080/', '/tmp/a.png', '/tmp/b.mp4'])
+  await ui.press({ key: 'open-reply-0' })
+  await ui.press({ key: 'scroll-right' })
+  await ui.press({ key: 'open-reply-1' })
+  await ui.press({ key: 'scroll-right' })
+  await ui.press({ key: 'open-reply-2' })
+  expect(opened).toEqual(['/tmp/a.png', '/tmp/b.mp4', 'http://localhost:8080/'])
 })
 
 test('failed previews retain open actions; a newer reply or clear discards pending work', async ($, on) => {
@@ -147,10 +148,10 @@ test('failed previews retain open actions; a newer reply or clear discards pendi
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['engine band'] }))
   on('process.run', () => ({ value: { exitCode: 1, isStdoutTruncated: false, isStderrTruncated: false, stderr: '', stdout: '{"error":"File not found"}' } }))
   await $.turn.complete(completed('/tmp/missing.mp4'))
-  await clock.advance(10)
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
-  expect(await ui.find({ type: 'Text', text: 'no preview' })).toBeDefined()
-  expect(await ui.find({ key: 'open-media-0' })).toBeDefined()
+  await clock.advance(100)
+  expect(await ui.find({ type: 'Text', text: 'Preview unavailable' })).toBeDefined()
+  expect(await ui.find({ key: 'open-reply-0' })).toBeDefined()
   await $.turn.complete(completed('/tmp/queued.png', 't2'))
   await $.session.end({ reason: 'clear', sessionId: 'sess', resume: { id: 'sess' } })
   await clock.advance(10)
@@ -190,18 +191,19 @@ test('a conversion finishing after clear cannot repopulate the preview', async (
     return { value: { exitCode: 0, stdout: '{"path":"/tmp/old.png","size":{"width":10,"height":10}}', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
   await $.turn.complete(completed('/tmp/old.png'))
-  const pending = clock.advance(1)
+  const mounted = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const pending = clock.advance(100)
   await clock.settle()
   await $.session.end({ reason: 'clear', sessionId: 'sess', resume: { id: 'sess' } })
   expect(release).toBeDefined()
   release!()
   await pending
-  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const ui = mounted
   expect(await ui.find({ key: 'copy-reply' })).toBeUndefined()
   expect(await ui.find({ type: 'Image' })).toBeUndefined()
 })
 
-test('many links and media remain reachable after paging', async ($, on) => {
+test('links and media share one horizontal window', async ($, on) => {
   mock.clock(on)
   const opened: string[] = []
   on('session.cwd', () => ({ value: '/work' }))
@@ -215,9 +217,75 @@ test('many links and media remain reachable after paging', async ($, on) => {
   })
   await $.turn.complete(completed('/tmp/1.png /tmp/2.png /tmp/3.png http://localhost:3001/ http://localhost:3002/ http://localhost:3003/ http://localhost:3004/'))
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 30 } })
-  await ui.press({ key: 'media-next' })
-  await ui.press({ key: 'open-media-0' })
-  await ui.press({ key: 'links-next' })
-  await ui.press({ key: 'open-link-0' })
+  for (let i = 0; i < 2; i++) await ui.press({ key: 'scroll-right' })
+  await ui.press({ key: 'open-reply-2' })
+  for (let i = 0; i < 4; i++) await ui.press({ key: 'scroll-right' })
+  await ui.press({ key: 'open-reply-6' })
   expect(opened).toEqual(['/tmp/3.png', 'http://localhost:3004/'])
+})
+
+
+test('slash commands and repository names never become Open links', () => {
+  for (const target of ['/plugin', '/plugin install reply-view@yrzhe-skills', 'Yrzhe/claude-skills', '@scope/package']) {
+    expect(normalizeTarget(target, '/work')).toBeNull()
+  }
+  expect(extractLinks('`/plugin` `/plugin install reply-view@yrzhe-skills` `Yrzhe/claude-skills` [site](http://localhost:3000)', '/work').map(x => x.target)).toEqual(['http://localhost:3000/'])
+})
+
+test('1000 items keep one row; only visible media loads; Start and Copy stay outside scrolling', async ($, on) => {
+  const clock = mock.clock(on)
+  const requests: string[] = []
+  let copied = ''
+  on('session.cwd', () => ({ value: '/work' }))
+  on('session.id', () => ({ value: 'sess' }))
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+  on('ui.copy', ($, e) => { copied = e.text; return { value: { isCopied: true } } })
+  on('ui.toast', () => ({ value: undefined }))
+  on('ui.render', () => ({ type: 'Text', props: {}, children: [] }))
+  on('process.run', ($, e) => {
+    requests.push(JSON.parse(e.init?.stdin!).target)
+    return { value: { exitCode: 1, isStdoutTruncated: false, isStderrTruncated: false, stdout: '{"error":"missing"}', stderr: '' } }
+  })
+  const answer = Array.from({ length: 1000 }, (_, i) => `/tmp/${i}.png`).join(' ')
+  await $.turn.complete(completed(answer))
+  await clock.advance(1000)
+  expect(requests).toEqual([])
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  expect((await ui.find({ key: 'strip-window' }))?.props).toMatchObject({ flexDirection: 'row', height: 5 })
+  expect((await ui.findAll({ type: 'Button' })).filter(x => String(x.props.key).startsWith('open-')).length).toBe(4)
+  expect((await ui.find({ key: 'strip-toolbar' }))?.props).toMatchObject({ flexDirection: 'row', justifyContent: 'space-between', width: 116, height: 1 })
+  const left = await ui.find({ key: 'strip-left' })
+  const right = await ui.find({ key: 'strip-right' })
+  expect(left?.children?.[0]).toMatchObject({ props: { key: 'scroll-home' } })
+  expect(right?.children?.at(-1)).toMatchObject({ props: { key: 'copy-reply' } })
+  await clock.advance(1000)
+  expect(requests).toEqual(['/tmp/0.png', '/tmp/1.png', '/tmp/2.png', '/tmp/3.png'])
+  await ui.press({ key: 'scroll-right' })
+  expect(await ui.find({ key: 'open-reply-0' })).toBeUndefined()
+  expect(await ui.find({ key: 'open-reply-4' })).toBeDefined()
+  await clock.advance(100)
+  expect(requests.at(-1)).toBe('/tmp/4.png')
+  await ui.press({ key: 'copy-reply' })
+  expect(copied).toBe(answer)
+  await ui.press({ key: 'scroll-home' })
+  expect(await ui.find({ key: 'open-reply-0' })).toBeDefined()
+  await ui.press({ key: 'toggle-strip' })
+  expect(await ui.find({ key: 'strip-window' })).toBeUndefined()
+  expect(await ui.find({ key: 'copy-reply' })).toBeDefined()
+  await clock.advance(1000)
+  expect(requests.length).toBe(5)
+})
+
+test('missing non-media paths are filtered while existing files and websites remain', async ($, on) => {
+  mock.clock(on)
+  on('session.cwd', () => ({ value: '/work' }))
+  on('session.id', () => ({ value: 'sess' }))
+  on('fs.exists', ($, e) => ({ value: e.path === '/work/README.md' }))
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+  on('ui.render', () => ({ type: 'Text', props: {}, children: [] }))
+  await $.turn.complete(completed('`/work/missing` `./README.md` http://localhost:3000'))
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  expect(await ui.find({ type: 'Text', text: '/work/missing' })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: '/work/README.md' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'http://localhost:3000/' })).toBeDefined()
 })
