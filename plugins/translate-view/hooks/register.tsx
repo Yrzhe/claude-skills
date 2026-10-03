@@ -15,6 +15,7 @@ let generation = 0
 let busy = false
 let follow = true
 let needsFollow = true
+let settingsStart = false
 let currentStream: HookStream<ProcessSpawnChunk, ProcessSpawnResult> | undefined
 const displayOriginals = atom({ plugin: 'translate-view', key: 'originals' } as const, {} as Record<string, string>)
 let originals = new Map<string, { original: string }[]>()
@@ -50,7 +51,7 @@ async function load($: EngineInterface) {
 }
 async function open($: EngineInterface, settings = false) {
   if (!cfg) await load($)
-  if (settings || !cfg?.enabled) { page = 'settings'; draft = { ...cfg }; tab = 'language' }
+  if (settings || !cfg?.enabled) { page = 'settings'; draft = { ...cfg }; tab = 'language'; settingsStart = true }
   await $.ui.open({ id: PANE, title: 'Translation', columns: 52, rows: 24 })
   needsFollow = true
   redraw($)
@@ -110,6 +111,10 @@ export const register: Register = on => {
     if (interactive && cfg) await open($)
     $.clock.every(250, async () => {
       await pump($)
+      if (interactive && page === 'settings' && settingsStart) {
+        const result = await $.ui.scroll({ in: PANE, to: 'start' }).catch(() => ({ deny: 'pane unavailable' }))
+        if (!result.deny) settingsStart = false
+      }
       if (interactive && page !== 'settings' && needsFollow && follow) {
         const result = await $.ui.scroll({ in: PANE, to: 'end' }).catch(() => ({ deny: 'pane unavailable' }))
         if (!result.deny) needsFollow = false
@@ -218,20 +223,28 @@ export const register: Register = on => {
     if (e.requestId !== PANE || e.surface !== 'terminal') return next(e)
     const { Box, Text, Button, Input, Select, Markdown } = $.ui.resolve(e)
     if (!cfg) return <Text>{notice || '正在读取设置…'}</Text>
-    const settings = () => { draft = { ...cfg }; page = 'settings'; notice = ''; redraw($) }
+    const settings = () => { draft = { ...cfg }; page = 'settings'; tab = 'language'; settingsStart = true; notice = ''; redraw($) }
     const set = (key: string, value: unknown) => { draft[key] = value }
     const field = (key: string, label: string, placeholder = '') => <Input key={`input-${key}`} label={label} value={String(draft[key] ?? '')} placeholder={placeholder} onInput={value => set(key, value)} onSubmit={value => set(key, value)} />
-    if (page === 'settings') return <Box key="settings" flexDirection="column" width={e.props.bodyColumns}>
+    const sections = [
+      { value: 'language', label: '语言检测' }, { value: 'llm', label: '模型接口' },
+      { value: 'env', label: '环境变量' }, { value: 'jev', label: 'Jev 接口' }, { value: 'prompt', label: '翻译 Prompt' },
+    ]
+    const settingsHeader = <Box key="settings-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={4} flexDirection="column" backgroundColor="background">
       <Box flexDirection="row" justifyContent="space-between" width={Math.max(1, e.props.bodyColumns - 4)}>
         <Text bold>翻译设置</Text>
         <Box flexDirection="row" columnGap={1}>
-          <Button key="cancel-settings" plain label="取消" onPress={() => { draft = {}; page = ''; notice = ''; needsFollow = true; redraw($) }} />
-          <Button key="save-settings" plain label="保存" onPress={() => save($, draft)} />
+          <Button key="cancel-settings" label="取消" onPress={() => { draft = {}; page = ''; notice = ''; needsFollow = true; redraw($) }} />
+          <Button key="save-settings" label="保存" onPress={() => save($, draft)} />
         </Box>
       </Box>
-      <Box flexDirection="row" columnGap={1}>
-        {['language', 'llm', 'jev', 'prompt'].map((value, index) => <Button key={`tab-${value}`} plain label={['语言', 'LLM', 'Jev', 'Prompt'][index]!} onPress={() => { tab = value; redraw($) }} />)}
-      </Box>
+      {[sections.slice(0, 3), sections.slice(3)].map((group, index) => <Box key={`settings-nav-${index}`} flexDirection="row" columnGap={1} height={1}>
+        {group.map(section => <Button key={`tab-${section.value}`} label={(tab === section.value ? '● ' : '') + section.label} onPress={() => { tab = section.value; settingsStart = true; notice = ''; redraw($) }} />)}
+      </Box>)}
+      <Text dimColor wrap="truncate">{'当前检测：' + ({ script: '本地脚本', llm: 'LLM', jev: 'Jev' }[cfg.detection] || cfg.detection) + ' · 模型：' + (cfg.effectiveModel || cfg.model || '未配置')}</Text>
+    </Box>
+    if (page === 'settings') return <Box key="settings" flexDirection="column" width={e.props.bodyColumns} minHeight={e.props.scroll.bodyRows}>
+      <Box key="settings-body" flexDirection="column" paddingTop={4}>
       {notice && <Text>{notice}</Text>}
       {tab === 'language' && <Box flexDirection="column">
         <Select key="enabled" label="自动翻译" value={draft.enabled ? 'on' : 'off'} options={[{ value: 'on', label: '开启' }, { value: 'off', label: '关闭' }]} onSelect={value => { set('enabled', value === 'on'); redraw($) }} />
@@ -239,25 +252,33 @@ export const register: Register = on => {
         <Select key="outgoingLanguage" label="我的阅读" value={String(draft.outgoingLanguage)} options={languageOptions(String(draft.outgoingLanguage))} onSelect={value => { set('outgoingLanguage', value); redraw($) }} />
         {field('incomingLanguage', '自定义接收代码', 'en / zh / ja')}
         {field('outgoingLanguage', '自定义阅读代码', 'en / zh / ja')}
-        <Select key="detection" label="语言检测" value={String(draft.detection)} options={[{ value: 'script', label: '本地脚本' }, { value: 'llm', label: '通用 LLM' }, { value: 'jev', label: 'Jev' }]} onSelect={value => { set('detection', value); redraw($) }} />
-        <Text dimColor>脚本不联网；混合语言或不确定时交给翻译模型。LLM 检测复用翻译接口。Jev 在独立页配置。</Text>
+        <Select key="detection" label="语言检测" value={String(draft.detection)} options={[{ value: 'script', label: '本地脚本' }, { value: 'llm', label: 'LLM（如 Gemini）' }, { value: 'jev', label: 'Jev' }]} onSelect={value => { set('detection', value); redraw($) }} />
+        {draft.detection === 'llm' && field('detectionModel', '检测模型', '留空复用翻译模型；也可填写 Gemini 型号')}
+        <Text dimColor>脚本在本机判断，无检测接口等待。LLM 检测使用「模型接口」的地址和密钥，检测模型可以单独填写；Jev 有独立接口。</Text>
         <Text dimColor>发送前译文不会另占一行；右侧译文保留左侧原回复。</Text>
       </Box>}
       {tab === 'llm' && <Box flexDirection="column">
-        <Text dimColor>兼容 Chat Completions 的接口。完整 POST URL 优先于 Base URL。</Text>
+        <Text dimColor>这里配置翻译用的模型，不是 Claude 主模型。接口需兼容 Chat Completions，Gemini 可使用兼容接口。</Text>
+        <Select key="llmConfigSource" label="配置来源" value={String(draft.llmConfigSource || 'manual')} options={[{ value: 'manual', label: '填写配置（留空读环境变量）' }, { value: 'env', label: '只读环境变量' }]} onSelect={value => { set('llmConfigSource', value); redraw($) }} />
         {field('baseUrl', 'Base URL', 'https://provider.example/v1')}
         {field('postUrl', 'POST URL', '可留空')}
         {field('model', '模型名')}
         {field('apiKey', '新 API Key', cfg.hasApiKey ? '已保存，留空保留' : '可留空，用环境变量')}
         <Text dimColor>新输入的密钥会显示；保存后不再回显。</Text>
-        {field('baseUrlEnv', 'URL 环境变量')}
-        {field('apiKeyEnv', 'Key 环境变量')}
-        {field('modelEnv', '模型环境变量')}
         <Button key="clear-api-key" plain label="清除已保存密钥" onPress={() => { set('clearApiKey', true); set('apiKey', ''); notice = '保存后清除密钥'; redraw($) }} />
-        <Text dimColor>直接填写的值优先。Base URL 应包含 /v1 等前缀；插件仅追加 /chat/completions。</Text>
+        <Text dimColor>「只读环境变量」会忽略本页填写的值，但不会删除它们。到「环境变量」分类设置变量名。完整 POST URL 优先于 Base URL。</Text>
+      </Box>}
+      {tab === 'env' && <Box flexDirection="column">
+        <Text bold>LLM 环境变量</Text>
+        <Select key="envConfigSource" label="配置来源" value={String(draft.llmConfigSource || 'manual')} options={[{ value: 'manual', label: '填写配置（留空读环境变量）' }, { value: 'env', label: '只读环境变量' }]} onSelect={value => { set('llmConfigSource', value); redraw($) }} />
+        {field('baseUrlEnv', 'URL 变量名', 'OPENAI_BASE_URL')}
+        {field('apiKeyEnv', 'Key 变量名', 'OPENAI_API_KEY')}
+        {field('modelEnv', '模型变量名', 'OPENAI_MODEL')}
+        <Text dimColor>填写变量名，不带 $；变量需要在启动 Claude-work 前导出。修改 shell 环境后需重启 Claude。</Text>
+        <Text dimColor>只读环境变量模式不会读取本机其他文件寻找密钥，也不会删除已保存的手填配置。</Text>
       </Box>}
       {tab === 'jev' && <Box flexDirection="column">
-        <Text dimColor>Jev 仅判断语言；实际翻译仍使用 LLM 页中的模型。</Text>
+        <Text dimColor>Jev 仅判断语言；实际翻译仍使用 「模型接口」中的模型。</Text>
         {field('jevUrl', 'POST URL')}
         {field('jevModel', '模型名')}
         {field('jevKey', '新 API Key', cfg.hasJevKey ? '已保存，留空保留' : '可留空，用环境变量')}
@@ -270,6 +291,8 @@ export const register: Register = on => {
         {field('outgoingPrompt', '回复')}
         <Text dimColor>代码与链接占位符必须保留；不要在 Prompt 中填写密钥。</Text>
       </Box>}
+      </Box>
+      {settingsHeader}
     </Box>
     const translating = !!job && (job.cursor < job.source.length || !job.done) && cfg.enabled
     const text = job ? job.pieces.join('') + job.pending : ''

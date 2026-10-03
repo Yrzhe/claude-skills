@@ -16,6 +16,7 @@ import tempfile
 import termios
 import threading
 import time
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import pyte
@@ -25,8 +26,9 @@ ANSWER = '# Overview\n\nThis is a **live response**. The original reply remains 
 LONG_ANSWER = '\n\n'.join(f'- **Item {i:03d}**: A detailed explanation in English.' for i in range(80))
 
 class Harness:
-    def __init__(self, root):
+    def __init__(self, root, columns=160, rows=40):
         self.root = root
+        self.columns, self.rows = columns, rows
         self.requests = []
         owner = self
         class Handler(BaseHTTPRequestHandler):
@@ -76,7 +78,7 @@ class Harness:
 }
 ''')
         self.master, slave = pty.openpty()
-        fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHHH',40,160,0,0))
+        fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHHH',rows,columns,0,0))
         env = dict(os.environ, TERM='xterm-256color', CLAUDE_CODE_NO_FLICKER='1', TRANSLATE_VIEW_CONFIG=str(config),
                    ANTHROPIC_BASE_URL='http://127.0.0.1:1', ANTHROPIC_API_KEY='fixture-only', ANTHROPIC_AUTH_TOKEN='', DISABLE_TELEMETRY='1')
         env.pop('NO_COLOR', None)
@@ -85,7 +87,7 @@ class Harness:
                    '--plugin-dir',str(fixture),'--plugin-dir',str(PLUGIN),'--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--tools','']
         self.process = subprocess.Popen(command,stdin=slave,stdout=slave,stderr=slave,cwd=PLUGIN,env=env)
         os.close(slave)
-        self.screen = pyte.Screen(160,40); self.stream = pyte.Stream(self.screen)
+        self.screen = pyte.Screen(columns,rows); self.stream = pyte.Stream(self.screen)
         self.decoder = codecs.getincrementaldecoder('utf8')('replace')
         self.log = (root/'terminal.bin').open('wb')
     def send(self, text): os.write(self.master,text.encode())
@@ -113,9 +115,9 @@ class Harness:
         raise AssertionError(label+' timed out; see '+str(self.root/'screen.txt'))
     def click(self, text):
         time.sleep(.3); self.read()
-        for row in range(40):
-            for column in range(160):
-                chunk=''.join(self.screen.buffer[row][col].data for col in range(column,min(160,column+len(text)*2)))
+        for row in range(self.rows):
+            for column in range(self.columns):
+                chunk=''.join(self.screen.buffer[row][col].data for col in range(column,min(self.columns,column+len(text)*2)))
                 if chunk.startswith(text):
                     print('Click',text,'at',column+1,row+1,flush=True); self.send(f'\x1b[<0;{column+1};{row+1}M'); time.sleep(.08); self.send(f'\x1b[<0;{column+1};{row+1}m'); return
         raise AssertionError('No clickable '+text)
@@ -131,12 +133,32 @@ class Harness:
         self.log.close();os.close(self.master)
         self.server.shutdown();self.server.server_close()
 
+def settings_check(h):
+    h.click('设置')
+    h.wait(lambda:'模型接口' in h.view() and '语言检测:' in h.view(),'settings opens language detection overview')
+    h.click('语言检测:')
+    h.send('\x1b[B\r')
+    h.wait(lambda:'检测模型:' in h.view(),'LLM detection exposes an independent model field')
+    for section, fields in [('模型接口',['Base URL:', 'POST URL:', '模型名:', '新 API Key:']), ('环境变量',['URL 变量名:', 'Key 变量名:', '模型变量名:']), ('Jev 接口',['POST URL:', '模型名:', '新 API Key:']), ('翻译 Prompt',['发送前:', '回复:'])]:
+        h.click(section)
+        h.wait(lambda:all(field in h.view() for field in fields), 'settings fields reachable: '+section)
+    h.click('取消')
+    h.wait(lambda:'Translation' in h.view() and '翻译设置' not in h.view(),'closing settings restores translation pane')
+    h.click('设置')
+    h.wait(lambda:'语言检测:' in h.view(),'reopening settings resets to language overview')
+    h.click('取消')
+    h.wait(lambda:'Translation' in h.view() and '翻译设置' not in h.view(),'return to reply')
+
 def main():
     root=Path(tempfile.mkdtemp(prefix='translate-view-smoke-'))
     print('Artifacts:',root,flush=True)
-    h=Harness(root)
+    narrow = '--settings-only' in sys.argv
+    h=Harness(root,120 if narrow else 160,28 if narrow else 40)
     try:
         h.wait(lambda:'等待 Agent 回复' in h.view(),'full-height translation dock')
+        if narrow:
+            settings_check(h)
+            print('Narrow terminal settings smoke completed.',flush=True); return
         first='请解释第一个功能。';second='请说明第二个功能。'
         h.send(first+'\r')
         h.wait(lambda:'这是译文。' in h.view() and first in h.view(),'first translated reply with original prompt')
@@ -150,12 +172,7 @@ def main():
         assert '加粗条目' in right and '**' not in right and '```' not in right, right
         assert 'const answer = 42' in right and 'print(42)' in right
         assert any(cell.bold and cell.data == '加' for row in h.screen.buffer.values() for cell in row.values()), 'bold Markdown was not styled'
-        h.click('设置')
-        h.wait(lambda:'翻译设置' in h.view(),'settings button opens settings')
-        h.click('Prompt')
-        h.wait(lambda:'发送前:' in h.view() and '回复:' in h.view(),'independent custom prompts')
-        h.click('取消')
-        h.wait(lambda:'Translation' in h.view() and '翻译设置' not in h.view(),'closing settings restores translation pane')
+        settings_check(h)
         outgoing_before = sum(bool(r.get('stream')) for r in h.requests)
         h.send('请给我长文。\r')
         h.wait(lambda:'项目 079' in h.view() and '翻译中' not in h.view(),'long Markdown follows the last paragraph',timeout=55)

@@ -1,4 +1,5 @@
 export type Config = {
+  llmConfigSource?: string; detectionModel?: string; effectiveModel?: string;
   enabled: boolean; incomingLanguage: string; outgoingLanguage: string; detection: string;
   baseUrl: string; postUrl: string; model: string; baseUrlEnv: string; apiKeyEnv: string; modelEnv: string;
   jevUrl: string; jevKeyEnv: string; jevModel: string; incomingPrompt: string; outgoingPrompt: string;

@@ -80,6 +80,27 @@ class Tests(unittest.TestCase):
         cfg=self.config(detection='llm')
         with patch.object(m,'request',return_value=FakeResponse({'choices':[{'message':{'content':'en'}}]})):
             self.assertEqual(m.detect(cfg,'Hello there'),'en')
+    def test_environment_only_mode_ignores_literals_without_deleting_them(self):
+        cfg=self.config(apiKey='PRIVATE',postUrl='http://localhost:4321/override',llmConfigSource='env')
+        with patch.dict(os.environ, {'OPENAI_BASE_URL':'http://localhost:8765/v1','OPENAI_API_KEY':'ENV_SECRET','OPENAI_MODEL':'env-model'}):
+            self.assertEqual(m.endpoint(cfg),'http://localhost:8765/v1/chat/completions')
+            self.assertEqual(m.value(cfg,'apiKey','apiKeyEnv'),'ENV_SECRET')
+            public=m.public_config(cfg)
+            self.assertEqual(public['effectiveModel'],'env-model')
+            self.assertNotIn('ENV_SECRET',json.dumps(public))
+            self.assertNotIn('PRIVATE',json.dumps(public))
+            self.assertEqual(cfg['apiKey'],'PRIVATE')
+        self.assertFalse(m.public_config(cfg)['ready'])
+
+    def test_detector_can_use_a_different_compatible_model(self):
+        cfg=self.config(detection='llm',detectionModel='gemini-example')
+        seen=[]
+        def request(url,key,body):
+            seen.append(body['model']);return FakeResponse({'choices':[{'message':{'content':'en'}}]})
+        with patch.object(m,'request',request):self.assertEqual(m.detect(cfg,'Hello there'),'en')
+        self.assertEqual(seen,['gemini-example'])
+        self.assertEqual(cfg['model'],'translator')
+
     def test_incomplete_response_rejected(self):
         with self.assertRaises(m.TranslationError): m.chat_text({'choices':[{'message':{'content':'partial'},'finish_reason':'length'}]})
         response=FakeResponse(raw=b'data: {"choices":[{"delta":{"content":"partial"}}]}\n\n',sse=True)

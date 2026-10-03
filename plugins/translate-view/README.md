@@ -46,17 +46,17 @@ CLAUDE_CODE_NO_FLICKER=1 claude-work --continue
 
 ## 设置
 
-首次安装默认关闭。填好接口，在「语言」页开启自动翻译并保存。
+首次安装默认关闭。设置顶部固定显示五个分类：「语言检测 / 模型接口 / 环境变量 / Jev 接口 / 翻译 Prompt」。打开设置会回到语言检测首页，并显示当前生效的检测方式和翻译模型。填好接口后开启自动翻译并保存。
 
 ### 语言与检测
 
 - **本地脚本**：不发送检测请求。根据文字与常用词判断，适合简单中英文；混合语言、繁简体、短句与部分语种可能判断不准。不确定时仍会交给翻译模型。
-- **通用 LLM**：使用 LLM 页的接口和模型先判断语言，再按需翻译。
-- **Jev**：使用独立的 TypeSafe System One 接口判断语言，实际翻译仍由 LLM 页的模型完成。支持兼容该请求/响应格式的网关。低置信度判断按不确定处理。
+- **LLM（如 Gemini）**：使用「模型接口」页的地址和密钥先判断语言，再按需翻译。「检测模型」可单独填写型号，留空复用翻译模型。选择 Gemini 时需要提供支持该型号的 Chat Completions 兼容接口；不能仅凭服务商列出的模型名判断协议兼容性。
+- **Jev**：使用独立的 TypeSafe System One 接口判断语言，实际翻译仍由 「模型接口」页的模型完成。支持兼容该请求/响应格式的网关。低置信度判断按不确定处理。
 
 可选常见语言，也可在「自定义接收/阅读代码」填写 `en`、`zh`、`ja` 等语言代码。
 
-### LLM
+### 模型接口与环境变量
 
 使用兼容 **Chat Completions** 的接口：
 
@@ -64,7 +64,7 @@ CLAUDE_CODE_NO_FLICKER=1 claude-work --continue
 - `POST URL`：完整地址，填写时优先于 Base URL。
 - 模型名：填写该服务实际支持 Chat Completions 的模型/别名。能列出模型不代表其支持该协议。
 - API Key：使用 `Authorization: Bearer ...`。本地无认证接口可留空，并清空 Key 环境变量。
-- 环境变量：可分别填写 URL、Key、模型的变量名。默认 `OPENAI_BASE_URL`、`OPENAI_API_KEY`、`OPENAI_MODEL`。**直接填写的值优先**；填的是变量名，不是 `$变量名`。
+- 环境变量：可分别填写 URL、Key、模型的变量名。默认 `OPENAI_BASE_URL`、`OPENAI_API_KEY`、`OPENAI_MODEL`。在「环境变量」分类填写变量名，不带 `$`。默认「填写配置」模式下手填值优先、留空读环境变量；选择「只读环境变量」后，LLM 的 Base URL、Key、模型全部从环境读取，手填值和 POST URL 被忽略但不会被删除。环境变量需要在启动 Claude 前导出，修改 shell 环境后要重启 Claude。Jev 仍使用自己的独立接口设置。
 
 非流式响应读取 `choices[0].message.content`；流式响应读取 `choices[0].delta.content`。返回普通 JSON 的服务也可使用，但译文在该批完成后显示。不支持直接使用 Anthropic Messages、Gemini 原生接口或 Responses API 的 URL。
 
@@ -74,7 +74,7 @@ CLAUDE_CODE_NO_FLICKER=1 claude-work --continue
 
 ### 自定义 Prompt
 
-「Prompt」页可分别编辑发送前翻译、回复翻译的系统提示词。支持：
+「翻译 Prompt」页可分别编辑发送前翻译、回复翻译的系统提示词。支持：
 
 - `{target_language}`：当前方向的目标语言。
 - `{source_language}`：检测出的源语言。
@@ -122,5 +122,7 @@ Claude 首次加载 mod 时会生成本机版本对应的类型声明与 `tsconf
 ```sh
 uv run --with pyte python tests/terminal_smoke.py
 ```
+
+Gemini 官方提供 [OpenAI 兼容接口](https://ai.google.dev/gemini-api/docs/openai)。第三方网关是否支持该接口格式，需要实际验证；插件不会自动改用其他模型或服务商。
 
 参考：[Claude mod UI](https://code.claude.com/docs/en/plugins/mods/interface)、[TypeSafe Jev API](https://docs.typesafe.ai/api)。MIT License。

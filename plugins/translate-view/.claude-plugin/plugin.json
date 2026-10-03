@@ -1,6 +1,6 @@
 {
   "name": "translate-view",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Translate outgoing prompts and stream reply translations into a side pane with configurable LLM and Jev detection.",
   "author": {
     "name": "yrzhe",
