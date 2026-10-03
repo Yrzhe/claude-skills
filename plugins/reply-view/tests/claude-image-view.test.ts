@@ -54,17 +54,17 @@ const BAND = {
   plugin: 'reply-view',
   component: 'AbovePrompt',
   requestId: 'above-prompt',
-  viewport: { columns: 120, rows: 40 },
+  viewport: { columns: 120, rows: 40, isFullscreen: true },
   props: { hasSurvey: false, isWorking: false, maxRows: 20, bodyColumns: 120, scroll: { offset: 0, bodyRows: 20 }, view: {} },
 } as const
 
-test('a pasted image shows without another keystroke and clears when the draft does', async ($, on) => {
+test('Maestri opt-in reveals inline PNG on hover, hides on leave, and clears with the draft', async ($, on) => {
   const clock = mock.clock(on)
   const dir = '/tmp/claude-501/-work/sess-1/images'
   let draft = 'see [Image #1] [Image #2]'
   on('session.start', () => ({ cwd: '/work' }))
   on('prompt.read', () => ({ value: { text: draft, cursor: draft.length } }))
-  on('env.get', ($, e) => ({ value: e.name === 'TERM_PROGRAM' ? 'ghostty' : '/tmp/claude-501' }))
+  on('env.get', ($, e) => ({ value: e.name === 'TERM_PROGRAM' ? 'Maestri' : e.name === 'CLAUDE_CODE_FORCE_TERMINAL_IMAGES' ? '1' : '/tmp/claude-501' }))
   on('session.id', () => ({ value: 'sess-1' }))
   // Another project's folder and a stray file sit beside the one holding this session.
   const entry = { size: 0, mtimeMs: 0, isLink: false }
@@ -83,10 +83,16 @@ test('a pasted image shows without another keystroke and clears when the draft d
   await clock.advance(200)
 
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  expect(await ui.find({ type: 'Image' })).toBeUndefined()
+  await clock.advance(100)
+  await ui.resize({ in: 'hover-paste-1', columns: 28, rows: 1 })
+  await ui.pointer({ in: 'hover-paste-1', type: 'enter', x: 1, y: 0 })
   const image = await ui.find({ type: 'Image' })
-  expect(image?.props).toMatchObject({ source: { file: `${dir}/1.png`, format: 'png' }, columns: 12, rows: 3 })
+  expect(image?.props).toMatchObject({ source: { png: pngHead(800, 400) }, columns: 72, rows: 18 })
   // #2 has no cached file, so it gets a placeholder tile instead of a broken Image.
-  expect(await ui.find({ type: 'Text', text: 'Preview unavailable' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Image unavailable' })).toBeDefined()
+  await ui.pointer({ in: 'hover-paste-1', type: 'leave', x: 1, y: 0 })
+  expect(await ui.find({ type: 'Image' })).toBeUndefined()
   await ui.unmount()
 
   // Sending the prompt empties the box.
@@ -98,10 +104,9 @@ test('a pasted image shows without another keystroke and clears when the draft d
 })
 
 
-test('ordinary terminals show actual pasted-image colors using Raster without kitty graphics', async ($, on) => {
+test('ordinary terminals keep a compact image action without low-resolution blocks or conversion', async ($, on) => {
   const clock = mock.clock(on)
   const dir = '/tmp/claude-501/-work/sess/images'
-  const samples = btoa(String.fromCharCode(...new Uint8Array(64 * 32 * 3).fill(127)))
   const requests: unknown[] = []
   on('session.start', () => ({ cwd: '/work' }))
   on('session.messages', () => ({ value: [] }))
@@ -113,15 +118,16 @@ test('ordinary terminals show actual pasted-image colors using Raster without ki
   on('fs.read', () => ({ value: { base64: pngHead(800, 400) } }))
   on('process.run', ($, e) => {
     requests.push(JSON.parse(e.init?.stdin!))
-    return { value: { exitCode: 0, isStdoutTruncated: false, isStderrTruncated: false, stderr: '', stdout: JSON.stringify({ pixels: samples }) } }
+    return { value: { exitCode: 0, isStdoutTruncated: false, isStderrTruncated: false, stderr: '', stdout: '{}' } }
   })
   on('ui.render', () => ({ type: 'Text', props: {}, children: [] }))
   await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
   await clock.advance(200)
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   await clock.advance(100)
-  expect(requests).toEqual([{ action: 'pixels', target: `${dir}/1.png` }])
+  expect(requests).toEqual([])
   expect(await ui.find({ type: 'Image' })).toBeUndefined()
-  expect((await ui.find({ key: 'pixels-paste-1' }))?.props).toMatchObject({ columns: 28, rows: 3 })
+  expect(await ui.find({ type: 'Raster' })).toBeUndefined()
+  expect((await ui.find({ key: 'open-paste-1' }))?.props).toMatchObject({ label: 'Open image #1' })
   expect(await ui.find({ key: 'open-paste-1' })).toBeDefined()
 })

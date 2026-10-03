@@ -1,9 +1,11 @@
 """Real conversion/download checks; desktop actions are captured, never launched."""
-import base64
 import functools
 import http.server
 import importlib.util
 import json
+import os
+import struct
+import zlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -56,17 +58,17 @@ class MediaTests(unittest.TestCase):
                 self.assertEqual(result['size']['width'] * 9, result['size']['height'] * 16)
                 self.assertEqual(media.png_size(Path(result['path'])), result['size'])
 
-    def test_color_fallback_contains_real_rgb_pixels_and_survives_missing_ffmpeg(self):
-        result = media.preview(str(self.picture), 'pixels', with_pixels=True)
-        rgb = base64.b64decode(result['pixels'])
-        self.assertEqual(len(rgb), 64 * 32 * 3)
-        self.assertGreater(len(set(rgb)), 10)
-        self.assertEqual(media.pixel_preview(Path(result['path']))['pixels'], result['pixels'])
-        with patch.object(media.shutil, 'which', return_value=None):
-            self.assertIn('pixelError', media.pixel_preview(self.picture))
-        with patch.object(media.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, stdout=b'bad', stderr=b'')):
-            with self.assertRaisesRegex(ValueError, 'Invalid preview pixels'):
-                media.pixel_preview(self.picture)
+    def test_noisy_rgba_is_bounded_for_inline_png_transport(self):
+        width, height = 1280, 800
+        def chunk(name, data):
+            return struct.pack('>I', len(data)) + name + data + struct.pack('>I', zlib.crc32(name + data))
+        raw = b''.join(b'\x00' + os.urandom(width * 4) for _ in range(height))
+        picture = self.root / 'large-noisy.png'
+        picture.write_bytes(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw)) + chunk(b'IEND', b''))
+        self.assertGreater(picture.stat().st_size, 2_000_000)
+        result = media.preview(str(picture), 'large-inline')
+        self.assertLessEqual(Path(result['path']).stat().st_size, 2_000_000)
+        self.assertEqual(result['size']['width'] * 5, result['size']['height'] * 8)
 
     def test_real_http_image_and_video_downloads_and_query_strings(self):
         port = self.server.server_address[1]

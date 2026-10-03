@@ -1,12 +1,29 @@
-import { expect, mock, test } from 'claude-code/testing'
+import { expect, mock, test, type Mounted } from 'claude-code/testing'
 import { extractLinks, lastReply, normalizeTarget } from '../hooks/reply'
 
 const BAND = {
   plugin: 'reply-view', component: 'AbovePrompt', requestId: 'above-prompt',
-  viewport: { columns: 120, rows: 40 },
+  viewport: { columns: 120, rows: 40, isFullscreen: true },
   props: { hasSurvey: false, isWorking: false, maxRows: 20, bodyColumns: 120, scroll: { offset: 0, bodyRows: 20 }, view: {} },
 } as const
 const completed = (answer: string, turnId = 'turn-1') => ({ answer, turnId, durationMs: 100, isAborted: false, reason: 'answer' as const })
+
+async function pressOpen(ui: Mounted<'terminal', 'AbovePrompt'>, key: string) {
+  const client = `hover-${key.slice(5)}`
+  if (await ui.find({ key: client })) {
+    await ui.resize({ in: client, columns: 28, rows: 1 })
+    await ui.pointer({ in: client, type: 'down', x: 1, y: 0, button: 'left' })
+    await ui.pointer({ in: client, type: 'up', x: 1, y: 0, button: 'left' })
+    return
+  }
+  const node = await ui.find({ key })
+  const href = String(node?.props.text).match(/\]\((.*)\)$/)?.[1]
+  expect(href).toBeDefined()
+  await ui.press({ key, link: { href: href! } })
+}
+async function linkTargets(ui: Mounted<'terminal', 'AbovePrompt'>) {
+  return (await ui.findAll({ type: 'Markdown' })).map(node => String(node.props.text).match(/\]\((.*)\)$/)?.[1])
+}
 
 test('extracts ordered media, paths with spaces, signed URLs and localhost without duplicates', () => {
   const links = extractLinks('图片 [封面](</tmp/my cover.png>)，视频 `./out/demo.mp4`。\n[Site](http://localhost:3000/a) and http://localhost:3000/a\nhttps://example.com/a.jpg?token=x&n=1。\nlocalhost:4321/test。', '/work')
@@ -52,6 +69,7 @@ test('reply media and pasted images coexist; copy and open buttons invoke exact 
   on('prompt.read', () => ({ value: { text: draft, cursor: draft.length } }))
   on('env.get', ($, e) => ({ value: e.name === 'TERM_PROGRAM' ? 'ghostty' : '/tmp/claude-test' }))
   on('fs.list', () => ({ value: [] }))
+  on('fs.read', () => ({ value: { base64: 'iVBORw0KGgoAAAANSUhEUgAAAoAAAAFoAAAAAAAAAAAA' } }))
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['engine band'] }))
   on('turn.complete', ($, e) => ({ text: e.answer }))
   on('process.run', ($, e) => {
@@ -66,20 +84,23 @@ test('reply media and pasted images coexist; copy and open buttons invoke exact 
   await $.turn.complete(completed(answer))
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   await clock.advance(100)
-  expect(await ui.find({ type: 'Text', text: 'Pasted #1' })).toBeDefined()
-  expect((await ui.find({ type: 'Image' }))?.props).toMatchObject({ source: { file: '/tmp/preview.png', format: 'png' } })
+  expect(await ui.find({ type: 'Text', text: 'Image unavailable' })).toBeDefined()
+  expect(await ui.find({ type: 'Image' })).toBeUndefined()
+  await ui.resize({ in: 'hover-reply-0', columns: 28, rows: 1 })
+  await ui.pointer({ in: 'hover-reply-0', type: 'enter', x: 1, y: 0 })
+  expect((await ui.find({ type: 'Image' }))?.props).toMatchObject({ source: { png: 'iVBORw0KGgoAAAANSUhEUgAAAoAAAAFoAAAAAAAAAAAA' } })
   await ui.press({ key: 'copy-reply' })
-  await ui.press({ key: 'open-reply-1' })
-  await ui.press({ key: 'open-reply-0' })
+  await pressOpen(ui, 'open-reply-1')
+  await pressOpen(ui, 'open-reply-0')
   expect(requests).toEqual([
-    { action: 'preview', target: '/work/demo.mp4', kind: 'video', withPixels: false, cacheKey: 'sess-1:1' },
+    { action: 'preview', target: '/work/demo.mp4', kind: 'video', cacheKey: 'sess-1:1' },
     { action: 'copy', text: answer },
     { action: 'open', target: 'http://localhost:3000/' },
     { action: 'open', target: '/work/demo.mp4' },
   ])
   draft = ''
   await clock.advance(200)
-  expect(await ui.find({ type: 'Text', text: 'Pasted #1' })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: 'Image unavailable' })).toBeUndefined()
   expect(await ui.find({ key: 'copy-reply' })).toBeDefined()
   await $.turn.complete({ ...completed('subagent text'), agentId: 'child' })
   await ui.press({ key: 'copy-reply' })
@@ -112,8 +133,8 @@ test('copy includes every visible step once, while links come from the final ans
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   await ui.press({ key: 'copy-reply' })
   expect(copied).toBe('Checking http://old.test/\n\nDone http://localhost:3000/')
-  expect(await ui.find({ type: 'Text', text: 'http://old.test/' })).toBeUndefined()
-  expect(await ui.find({ type: 'Text', text: 'http://localhost:3000/' })).toBeDefined()
+  expect((await linkTargets(ui)).includes('http://old.test/')).toBe(false)
+  expect((await linkTargets(ui)).includes('http://localhost:3000/')).toBe(true)
 })
 
 test('short bands keep localhost reachable and horizontal scrolling reaches every item', async ($, on) => {
@@ -131,11 +152,11 @@ test('short bands keep localhost reachable and horizontal scrolling reaches ever
   await $.turn.complete(completed('/tmp/a.png /tmp/b.mp4 http://localhost:8080/'))
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, maxRows: 5, bodyColumns: 40 } })
   expect(await ui.find({ type: 'Image' })).toBeUndefined()
-  await ui.press({ key: 'open-reply-0' })
+  await pressOpen(ui, 'open-reply-0')
   await ui.press({ key: 'scroll-right' })
-  await ui.press({ key: 'open-reply-1' })
+  await pressOpen(ui, 'open-reply-1')
   await ui.press({ key: 'scroll-right' })
-  await ui.press({ key: 'open-reply-2' })
+  await pressOpen(ui, 'open-reply-2')
   expect(opened).toEqual(['/tmp/a.png', '/tmp/b.mp4', 'http://localhost:8080/'])
 })
 
@@ -147,11 +168,16 @@ test('failed previews retain open actions; a newer reply or clear discards pendi
   on('session.end', () => ({ sessionId: 'sess' }))
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['engine band'] }))
   on('process.run', () => ({ value: { exitCode: 1, isStdoutTruncated: false, isStderrTruncated: false, stderr: '', stdout: '{"error":"File not found"}' } }))
+  on('prompt.read', () => ({ value: { text: '', cursor: 0 } }))
+  on('session.start', () => ({ cwd: '/work' }))
+  on('session.messages', () => ({ value: [] }))
+  on('env.get', () => ({ value: 'ghostty' }))
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
   await $.turn.complete(completed('/tmp/missing.mp4'))
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   await clock.advance(100)
-  expect(await ui.find({ type: 'Text', text: 'Preview unavailable' })).toBeDefined()
-  expect(await ui.find({ key: 'open-reply-0' })).toBeDefined()
+  expect(await ui.find({ type: 'Image' })).toBeUndefined()
+  expect(await ui.find({ key: 'hover-reply-0' })).toBeDefined()
   await $.turn.complete(completed('/tmp/queued.png', 't2'))
   await $.session.end({ reason: 'clear', sessionId: 'sess', resume: { id: 'sess' } })
   await clock.advance(10)
@@ -190,6 +216,11 @@ test('a conversion finishing after clear cannot repopulate the preview', async (
     await new Promise<void>(resolve => { release = resolve })
     return { value: { exitCode: 0, stdout: '{"path":"/tmp/old.png","size":{"width":10,"height":10}}', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
+  on('prompt.read', () => ({ value: { text: '', cursor: 0 } }))
+  on('session.start', () => ({ cwd: '/work' }))
+  on('session.messages', () => ({ value: [] }))
+  on('env.get', () => ({ value: 'ghostty' }))
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
   await $.turn.complete(completed('/tmp/old.png'))
   const mounted = await $.ui.mount({ ...BAND, surface: 'terminal' })
   const pending = clock.advance(100)
@@ -218,9 +249,9 @@ test('links and media share one horizontal window', async ($, on) => {
   await $.turn.complete(completed('/tmp/1.png /tmp/2.png /tmp/3.png http://localhost:3001/ http://localhost:3002/ http://localhost:3003/ http://localhost:3004/'))
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal', props: { ...BAND.props, bodyColumns: 30 } })
   for (let i = 0; i < 2; i++) await ui.press({ key: 'scroll-right' })
-  await ui.press({ key: 'open-reply-2' })
+  await pressOpen(ui, 'open-reply-2')
   for (let i = 0; i < 4; i++) await ui.press({ key: 'scroll-right' })
-  await ui.press({ key: 'open-reply-6' })
+  await pressOpen(ui, 'open-reply-6')
   expect(opened).toEqual(['/tmp/3.png', 'http://localhost:3004/'])
 })
 
@@ -247,12 +278,17 @@ test('1000 items keep one row; only visible media loads; Start and Copy stay out
     return { value: { exitCode: 1, isStdoutTruncated: false, isStderrTruncated: false, stdout: '{"error":"missing"}', stderr: '' } }
   })
   const answer = Array.from({ length: 1000 }, (_, i) => `/tmp/${i}.png`).join(' ')
+  on('prompt.read', () => ({ value: { text: '', cursor: 0 } }))
+  on('session.start', () => ({ cwd: '/work' }))
+  on('session.messages', () => ({ value: [] }))
+  on('env.get', () => ({ value: 'ghostty' }))
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
   await $.turn.complete(completed(answer))
   await clock.advance(1000)
   expect(requests).toEqual([])
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
-  expect((await ui.find({ key: 'strip-window' }))?.props).toMatchObject({ flexDirection: 'row', height: 5 })
-  expect((await ui.findAll({ type: 'Button' })).filter(x => String(x.props.key).startsWith('open-')).length).toBe(4)
+  expect((await ui.find({ key: 'strip-window' }))?.props).toMatchObject({ flexDirection: 'row', height: 1 })
+  expect((await ui.findAll({ type: 'Client' })).length).toBe(4)
   expect((await ui.find({ key: 'strip-toolbar' }))?.props).toMatchObject({ flexDirection: 'row', justifyContent: 'space-between', width: 116, height: 1 })
   const left = await ui.find({ key: 'strip-left' })
   const right = await ui.find({ key: 'strip-right' })
@@ -261,14 +297,14 @@ test('1000 items keep one row; only visible media loads; Start and Copy stay out
   await clock.advance(1000)
   expect(requests).toEqual(['/tmp/0.png', '/tmp/1.png', '/tmp/2.png', '/tmp/3.png'])
   await ui.press({ key: 'scroll-right' })
-  expect(await ui.find({ key: 'open-reply-0' })).toBeUndefined()
-  expect(await ui.find({ key: 'open-reply-4' })).toBeDefined()
+  expect(await ui.find({ key: 'hover-reply-0' })).toBeUndefined()
+  expect(await ui.find({ key: 'hover-reply-4' })).toBeDefined()
   await clock.advance(100)
   expect(requests.at(-1)).toBe('/tmp/4.png')
   await ui.press({ key: 'copy-reply' })
   expect(copied).toBe(answer)
   await ui.press({ key: 'scroll-home' })
-  expect(await ui.find({ key: 'open-reply-0' })).toBeDefined()
+  expect(await ui.find({ key: 'hover-reply-0' })).toBeDefined()
   await ui.press({ key: 'toggle-strip' })
   expect(await ui.find({ key: 'strip-window' })).toBeUndefined()
   expect(await ui.find({ key: 'copy-reply' })).toBeDefined()
@@ -285,7 +321,7 @@ test('missing non-media paths are filtered while existing files and websites rem
   on('ui.render', () => ({ type: 'Text', props: {}, children: [] }))
   await $.turn.complete(completed('`/work/missing` `./README.md` http://localhost:3000'))
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
-  expect(await ui.find({ type: 'Text', text: '/work/missing' })).toBeUndefined()
-  expect(await ui.find({ type: 'Text', text: '/work/README.md' })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: 'http://localhost:3000/' })).toBeDefined()
+  expect((await linkTargets(ui)).includes('file:///work/missing')).toBe(false)
+  expect((await linkTargets(ui)).includes('file:///work/README.md')).toBe(true)
+  expect((await linkTargets(ui)).includes('http://localhost:3000/')).toBe(true)
 })

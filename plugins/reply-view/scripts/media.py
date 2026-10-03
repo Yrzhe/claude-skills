@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Bounded local thumbnail preparation and user-triggered OS actions. No shell."""
 import hashlib
-import base64
 import json
 import os
 from pathlib import Path
@@ -75,24 +74,12 @@ def png_size(path):
     return {'width': width, 'height': height}
 
 
-def pixel_preview(path):
-    ffmpeg = shutil.which('ffmpeg')
-    if not ffmpeg:
-        return {'pixelError': 'Install ffmpeg for color previews'}
-    result = run([ffmpeg, '-v', 'error', '-nostdin', '-protocol_whitelist', 'file,pipe',
-                  '-i', str(path), '-frames:v', '1', '-vf', 'scale=64:32',
-                  '-pix_fmt', 'rgb24', '-threads', '1', '-f', 'rawvideo', 'pipe:1'])
-    if len(result.stdout) != 64 * 32 * 3:
-        raise ValueError('Invalid preview pixels')
-    return {'pixels': base64.b64encode(result.stdout).decode('ascii')}
-
-
-def preview(target, cache_key, kind='image', with_pixels=False):
+def preview(target, cache_key, kind='image'):
     remote = target.startswith(('http://', 'https://'))
     source = None if remote else local_path(target)
     # Session/turn scope prevents a stale URL or overwritten file from retaining its old picture.
     stamp = cache_key if remote else f'{source.stat().st_mtime_ns}:{source.stat().st_size}'
-    digest = hashlib.sha256(f'{target}:{stamp}'.encode()).hexdigest()
+    digest = hashlib.sha256(f'inline-v2:{target}:{stamp}'.encode()).hexdigest()
     cache = Path(tempfile.gettempdir()) / f'claude-image-view-{os.getuid()}'
     cache.mkdir(mode=0o700, exist_ok=True)
     if cache.is_symlink() or cache.stat().st_uid != os.getuid():
@@ -107,7 +94,7 @@ def preview(target, cache_key, kind='image', with_pixels=False):
         except FileNotFoundError:
             pass
     if output.exists():
-        return {'path': str(output), 'size': png_size(output), **(pixel_preview(output) if with_pixels else {})}
+        return {'path': str(output), 'size': png_size(output)}
     with tempfile.TemporaryDirectory(prefix='prepare-', dir=cache) as work:
         work = Path(work)
         if remote:
@@ -118,20 +105,35 @@ def preview(target, cache_key, kind='image', with_pixels=False):
         if ffmpeg:
             run([ffmpeg, '-v', 'error', '-nostdin', '-y', '-protocol_whitelist', 'file,pipe',
                  '-i', str(source), '-frames:v', '1', '-vf',
-                 'scale=640:400:force_original_aspect_ratio=decrease', '-threads', '1', str(converted)])
+                 'scale=1280:800:force_original_aspect_ratio=decrease', '-threads', '1', str(converted)])
         elif kind == 'video':
             raise ValueError('Install ffmpeg for video previews')
         elif sys.platform == 'darwin' and shutil.which('sips'):
-            run(['sips', '-s', 'format', 'png', '-Z', '640', str(source), '--out', str(converted)])
+            run(['sips', '-s', 'format', 'png', '-Z', '1280', str(source), '--out', str(converted)])
         else:
             # PNGs still work without a converter.
             png_size(source)
             if source.stat().st_size > MAX_BYTES:
                 raise ValueError("Media exceeds 64 MiB")
             shutil.copyfile(source, converted)
+        # Claude's inline PNG transport accepts at most 2 MiB. Keep a margin
+        # for base64 boundaries; reduce unusually noisy/transparent images.
+        if converted.stat().st_size > 2_000_000:
+            smaller = work / 'inline.png'
+            if ffmpeg:
+                run([ffmpeg, '-v', 'error', '-nostdin', '-y', '-i', str(converted),
+                     '-vf', 'scale=1000:480:force_original_aspect_ratio=decrease',
+                     '-frames:v', '1', '-threads', '1', str(smaller)])
+            elif sys.platform == 'darwin' and shutil.which('sips'):
+                run(['sips', '-Z', '640', str(converted), '--out', str(smaller)])
+            else:
+                raise ValueError('Install ffmpeg for large image previews')
+            os.replace(smaller, converted)
+            if converted.stat().st_size > 2_000_000:
+                raise ValueError('Image exceeds preview transport limit')
         size = png_size(converted)
         os.replace(converted, output)
-    return {'path': str(output), 'size': size, **(pixel_preview(output) if with_pixels else {})}
+    return {'path': str(output), 'size': size}
 
 
 def open_target(target):
@@ -148,9 +150,7 @@ def main():
         request = json.load(sys.stdin)
         action = request['action']
         if action == 'preview':
-            result = preview(request['target'], request.get('cacheKey', ''), request.get('kind', 'image'), request.get('withPixels', False))
-        elif action == 'pixels':
-            result = pixel_preview(local_path(request['target']))
+            result = preview(request['target'], request.get('cacheKey', ''), request.get('kind', 'image'))
         elif action == 'open':
             open_target(request['target'])
             result = {'ok': True}

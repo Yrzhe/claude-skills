@@ -8,7 +8,7 @@ export type PastedImage = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'reply-view': { images: PastedImage[]; reply: Reply | null; pixels: Record<string, PixelPreview> }
+    'reply-view': { images: PastedImage[]; reply: Reply | null; hovered: string | null }
   }
 }
 export type ReplyLink = { target: string; label: string; kind: 'image' | 'video' | 'link' }
@@ -17,7 +17,5 @@ export type Preview = ReplyLink & {
   size: { width: number; height: number } | null
   status: 'pending' | 'ready' | 'unavailable'
   error?: string
-  pixels?: string
 }
 export type Reply = { text: string; links: ReplyLink[]; media: Preview[] }
-export type PixelPreview = { pixels?: string; error?: string }
