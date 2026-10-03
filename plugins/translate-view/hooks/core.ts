@@ -33,25 +33,30 @@ export function wrapLines(text: string, columns: number): string[] {
   }
   return lines
 }
-// Commit complete paragraphs/sentences, never half a fenced code block. The last
-// incomplete phrase waits for more tokens; the final turn flushes it in full.
+// Batch the backlog, rather than issuing detection + translation per paragraph.
+// Live batches end at a complete line/sentence outside a fence; a finished
+// ordinary reply is translated in one streaming request.
 export function nextSegment(source: string, cursor: number, done: boolean): string | undefined {
   const tail = source.slice(cursor)
   if (!tail) return undefined
+  const limit = done ? 12000 : 1600
+  if (done && tail.length <= limit) return tail
   let fence = '', candidate = 0, index = 0
   for (const line of tail.match(/[^\n]*\n|[^\n]+$/g) ?? []) {
-    const match = /^\s*(`{3,}|~{3,})/.exec(line)
+    if (index + line.length > limit && candidate >= 160) break
+    const match = /^ {0,3}(`{3,}|~{3,})/.exec(line)
     if (match) {
       if (!fence) fence = match[1]!
-      else if (match[1]![0] === fence[0] && match[1]!.length >= fence.length) fence = ''
+      else if (match[1]![0] === fence[0] && match[1]!.length >= fence.length && !line.trim().slice(match[1]!.length).trim()) fence = ''
     }
     index += line.length
-    if (!fence && line.endsWith('\n') && (!line.trim() || index >= 160)) { candidate = index; break }
+    if (!fence && line.endsWith('\n')) candidate = index
+    if (index >= limit && candidate >= 160) break
   }
-  if (candidate) return tail.slice(0, candidate)
+  if (candidate >= 160) return tail.slice(0, candidate)
   if (done) return tail
-  if (!fence && tail.length >= 100) {
-    const sentence = /^([\s\S]{60,}?[.!?。！？](?:\s+|(?=[\u3400-\u9fff])))/.exec(tail)
+  if (!fence && tail.length >= 160) {
+    const sentence = /^([\s\S]{160,}[.!?。！？](?:\s+|(?=[\u3400-\u9fff])))/.exec(tail.slice(0, limit))
     if (sentence) return sentence[1]
   }
   return undefined
@@ -59,4 +64,35 @@ export function nextSegment(source: string, cursor: number, done: boolean): stri
 
 export function isControlPrompt(text: string): boolean {
   return /^\s*\/[A-Za-z][\w:-]*(?:\s|$)/.test(text) || /^\s*!(?!\[)/.test(text)
+}
+
+// Native Markdown leaves accept at most 10,000 characters. Keep ordinary
+// paragraphs, lists and fenced blocks intact. Oversized blocks fall back to
+// bounded Text leaves so a long reply cannot invalidate the whole pane.
+export function markdownParts(source: string): { text: string; plain: boolean }[] {
+  const text = cleanText(source)
+  const blocks: string[] = []
+  let block = '', fence = ''
+  for (const line of text.match(/[^\n]*\n|[^\n]+$/g) ?? []) {
+    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1]
+    if (marker) {
+      if (!fence) fence = marker
+      else if (marker[0] === fence[0] && marker.length >= fence.length && !line.trim().slice(marker.length).trim()) fence = ''
+    }
+    block += line
+    if (!fence && !line.trim()) { blocks.push(block); block = '' }
+  }
+  if (block) blocks.push(block)
+  const parts: { text: string; plain: boolean }[] = []
+  for (const value of blocks) {
+    const previous = parts[parts.length - 1]
+    if (previous && !previous.plain && previous.text.length + value.length <= 9000) previous.text += value
+    else if (value.length <= 9000) parts.push({ text: value, plain: false })
+    else for (let index = 0; index < value.length;) {
+      let end = Math.min(index + 9000, value.length)
+      if (end < value.length && /[\uD800-\uDBFF]/.test(value[end - 1]!)) end--
+      parts.push({ text: value.slice(index, end), plain: true }); index = end
+    }
+  }
+  return parts
 }

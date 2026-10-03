@@ -1,6 +1,6 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, HookStream, ProcessSpawnChunk, ProcessSpawnResult, Register } from 'claude-code'
-import { isControlPrompt, languageOptions, nextSegment, wrapLines } from './core'
+import { isControlPrompt, languageOptions, nextSegment, markdownParts } from './core'
 import type { Config } from './core'
 
 const PANE = 'translate-view'
@@ -13,10 +13,8 @@ let interactive = false
 let activeTurn = ''
 let generation = 0
 let busy = false
-let offset = 0
 let follow = true
-let viewRows = 1
-let linesCount = 1
+let needsFollow = true
 let currentStream: HookStream<ProcessSpawnChunk, ProcessSpawnResult> | undefined
 const displayOriginals = atom({ plugin: 'translate-view', key: 'originals' } as const, {} as Record<string, string>)
 let originals = new Map<string, { original: string }[]>()
@@ -30,7 +28,7 @@ function reset(source = '', done = false) {
   currentStream = undefined
   if (stream) { void stream.result.catch(() => {}); void stream.return({ code: null, signal: 'SIGTERM' }).catch(() => {}) }
   job = { source, cursor: 0, done, pieces: [], pending: '', error: '', skipped: true }
-  offset = 0; follow = true
+  follow = true; needsFollow = true
 }
 async function recover($: EngineInterface, text: string) {
   const current = await $.prompt.read().catch(() => null)
@@ -54,6 +52,7 @@ async function open($: EngineInterface, settings = false) {
   if (!cfg) await load($)
   if (settings || !cfg?.enabled) { page = 'settings'; draft = { ...cfg }; tab = 'language' }
   await $.ui.open({ id: PANE, title: 'Translation', columns: 52, rows: 24 })
+  needsFollow = true
   redraw($)
 }
 async function save($: EngineInterface, patch: Record<string, unknown>, close = true) {
@@ -109,13 +108,19 @@ export const register: Register = on => {
     await $.command.register({ name: 'translate', description: 'Open translation pane or settings', argumentHint: '[settings|on|off]', immediate: true })
     try { await load($) } catch (e) { notice = e instanceof Error ? e.message : '配置读取失败。' }
     if (interactive && cfg) await open($)
-    $.clock.every(250, () => pump($))
+    $.clock.every(250, async () => {
+      await pump($)
+      if (interactive && page !== 'settings' && needsFollow && follow) {
+        const result = await $.ui.scroll({ in: PANE, to: 'end' }).catch(() => ({ deny: 'pane unavailable' }))
+        if (!result.deny) needsFollow = false
+      }
+    })
     return next(e)
   })
   on('command.run', { command: 'translate' }, async ($, e) => {
     if (e.args.trim() === 'off' || e.args.trim() === 'on') await save($, { enabled: e.args.trim() === 'on' })
     await open($, e.args.trim() === 'settings')
-    return { text: '' }
+    return { text: cfg?.enabled ? `翻译已开启 · Agent 接收 ${cfg.incomingLanguage} · 我的阅读 ${cfg.outgoingLanguage}` : '翻译已关闭；可在设置中开启。' }
   })
   on('session.end', ($, e, next) => { reset(); originals.clear(); return next(e) })
   on('classic.SessionStart', { source: 'clear' }, async ($, e, next) => { reset(); originals.clear(); failedPrompts = []; await update($, displayOriginals, () => ({})); redraw($); return next(e) })
@@ -203,14 +208,15 @@ export const register: Register = on => {
   })
   on('ui.scroll', { component: 'Pane' }, ($, e, next) => {
     if (e.requestId !== PANE || page === 'settings') return next(e)
-    offset = Math.max(0, Math.min(Math.max(0, linesCount - viewRows), offset + e.by))
-    follow = offset >= linesCount - viewRows
-    redraw($)
-    return {}
+    if (e.origin.kind === 'person') {
+      follow = e.offset >= Math.max(0, e.contentRows - e.bodyRows)
+      needsFollow = follow
+    }
+    return next(e)
   })
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE || e.surface !== 'terminal') return next(e)
-    const { Box, Text, Button, Input, Select } = $.ui.resolve(e)
+    const { Box, Text, Button, Input, Select, Markdown } = $.ui.resolve(e)
     if (!cfg) return <Text>{notice || '正在读取设置…'}</Text>
     const settings = () => { draft = { ...cfg }; page = 'settings'; notice = ''; redraw($) }
     const set = (key: string, value: unknown) => { draft[key] = value }
@@ -219,7 +225,7 @@ export const register: Register = on => {
       <Box flexDirection="row" justifyContent="space-between" width={Math.max(1, e.props.bodyColumns - 4)}>
         <Text bold>翻译设置</Text>
         <Box flexDirection="row" columnGap={1}>
-          <Button key="cancel-settings" plain label="取消" onPress={() => { draft = {}; page = ''; notice = ''; redraw($) }} />
+          <Button key="cancel-settings" plain label="取消" onPress={() => { draft = {}; page = ''; notice = ''; needsFollow = true; redraw($) }} />
           <Button key="save-settings" plain label="保存" onPress={() => save($, draft)} />
         </Box>
       </Box>
@@ -267,29 +273,33 @@ export const register: Register = on => {
     </Box>
     const translating = !!job && (job.cursor < job.source.length || !job.done) && cfg.enabled
     const text = job ? job.pieces.join('') + job.pending : ''
-    const lines = wrapLines(text || (cfg.enabled ? '等待 Agent 回复…' : '翻译已关闭，点击设置配置并开启。'), Math.max(2, e.props.bodyColumns - 2))
-    linesCount = lines.length; viewRows = Math.max(1, e.props.scroll.bodyRows - 5)
-    offset = follow ? Math.max(0, linesCount - viewRows) : Math.min(offset, Math.max(0, linesCount - viewRows))
-    return <Box key="translation-pane" flexDirection="column" width={e.props.bodyColumns}>
-      <Box key="header" flexDirection="row" justifyContent="space-between" height={1} width={Math.max(1, e.props.bodyColumns - 4)}>
-        <Text bold>Translation</Text><Button key="settings-button" plain label="设置" onPress={settings} />
+    const content = text || (cfg.enabled ? '等待 Agent 回复…' : '翻译已关闭，点击设置配置并开启。')
+    // Let Claude measure and scroll its own Markdown. A header placed at the
+    // native offset stays pinned without guessing the rendered line heights.
+    return <Box key="translation-pane" flexDirection="column" width={e.props.bodyColumns} minHeight={e.props.scroll.bodyRows}>
+      <Box key="translation-body" flexDirection="column" paddingTop={4}>
+        {markdownParts(content).map((part, i) => part.plain
+          ? <Text key={`markdown-${i}`}>{part.text}</Text>
+          : <Markdown key={`markdown-${i}`} text={part.text} />)}
+        <Text dimColor>{job?.error || notice || '滚轮翻阅'}</Text>
       </Box>
-      <Select key="agent-language" label="Agent 接收" value={cfg.incomingLanguage} options={languageOptions(cfg.incomingLanguage)} onSelect={value => save($, { incomingLanguage: value })} />
-      <Select key="reader-language" label="我的阅读" value={cfg.outgoingLanguage} options={languageOptions(cfg.outgoingLanguage)} onSelect={value => save($, { outgoingLanguage: value })} />
-      <Box flexDirection="row" justifyContent="space-between" height={1}>
-        <Text dimColor>{job?.error ? '翻译失败' : !cfg.enabled ? '已关闭' : translating ? '翻译中…' : job?.source && job.skipped ? '已是目标语言' : '译文'}</Text>
-        {failedPrompts.length > 0 && <Button key="recover-input" plain label="恢复输入" onPress={async () => {
-          const current = await $.prompt.read()
-          const result = await $.prompt.fill({ text: (current.text ? '\n\n' : '') + failedPrompts.join('\n\n'), mode: 'append' })
-          if (result.isFilled) failedPrompts = []
-          redraw($)
-        }} />}
-        <Button key="retry" plain label={job?.error ? '重试' : '回到底部'} onPress={() => { if (job?.error) reset(job.source, job.done); follow = true; redraw($) }} />
+      <Box key="sticky-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={4} flexDirection="column" backgroundColor="background">
+        <Box key="header" flexDirection="row" justifyContent="space-between" height={1} width={Math.max(1, e.props.bodyColumns - 4)}>
+          <Text bold>Translation</Text><Button key="settings-button" plain label="设置" onPress={settings} />
+        </Box>
+        <Select key="agent-language" label="Agent 接收" value={cfg.incomingLanguage} options={languageOptions(cfg.incomingLanguage)} onSelect={value => save($, { incomingLanguage: value })} />
+        <Select key="reader-language" label="我的阅读" value={cfg.outgoingLanguage} options={languageOptions(cfg.outgoingLanguage)} onSelect={value => save($, { outgoingLanguage: value })} />
+        <Box flexDirection="row" justifyContent="space-between" height={1}>
+          <Text dimColor>{job?.error ? '翻译失败' : !cfg.enabled ? '已关闭' : translating ? '翻译中…' : job?.source && job.skipped ? '已是目标语言' : '译文'}</Text>
+          {failedPrompts.length > 0 && <Button key="recover-input" plain label="恢复输入" onPress={async () => {
+            const current = await $.prompt.read()
+            const result = await $.prompt.fill({ text: (current.text ? '\n\n' : '') + failedPrompts.join('\n\n'), mode: 'append' })
+            if (result.isFilled) failedPrompts = []
+            redraw($)
+          }} />}
+          <Button key="retry" plain label={job?.error ? '重试' : '回到底部'} onPress={() => { if (job?.error) reset(job.source, job.done); follow = true; needsFollow = true; redraw($) }} />
+        </Box>
       </Box>
-      <Box key="translation-body" flexDirection="column" height={viewRows} overflow="hidden">
-        {lines.slice(offset, offset + viewRows).map((line, i) => <Text key={`line-${i}`}>{line || ' '}</Text>)}
-      </Box>
-      <Text dimColor>{job?.error || notice || `${Math.min(offset + 1, linesCount)}–${Math.min(offset + viewRows, linesCount)} / ${linesCount} · 滚轮翻阅`}</Text>
     </Box>
   })
 }

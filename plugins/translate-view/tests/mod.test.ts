@@ -1,6 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
-import { isControlPrompt, nextSegment, wrapLines } from '../hooks/core'
+import { isControlPrompt, nextSegment, wrapLines, markdownParts } from '../hooks/core'
 const CONFIG = {
   enabled: true, incomingLanguage: 'en', outgoingLanguage: 'zh', detection: 'script',
   baseUrl: 'http://localhost:9999/v1', postUrl: '', model: 'test', baseUrlEnv: '', apiKeyEnv: '', modelEnv: '',
@@ -18,6 +18,7 @@ function setup(on: On, config = CONFIG, inspect?: (request: any) => any, compose
   on('session.start', () => ({ cwd: '/work' }))
   on('command.register', () => ({ value: { command: 'translate' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('ui.scroll', () => ({}))
   on('prompt.read', () => ({ value: { text: composer.text, cursor: composer.text.length } }))
   on('prompt.fill', ($, e) => { composer.fills.push(e.text); return { isFilled: true } })
   on('ui.render', ($, e) => ({ type: 'Text', props: {}, children: [e.component === 'UserMessage' ? e.props.text : 'engine'] }))
@@ -35,9 +36,10 @@ const start = { cwd: '/work', surface: 'terminal', isInteractive: true } as cons
 const done = (answer: string, turnId = 't') => ({ answer, turnId, reason: 'answer', isAborted: false, durationMs: 100 }) as const
 
 test('paragraph batching does not split fenced code and flushes final short replies', () => {
-  const source = 'First paragraph.\n\n```py\nprint("x")\n\n'
-  expect(nextSegment(source, 0, false)).toBe('First paragraph.\n\n')
-  expect(nextSegment(source, 18, false)).toBeUndefined()
+  const paragraph = 'First paragraph. '.repeat(12) + '\n\n'
+  const source = paragraph + '```py\nprint("x")\n\n'
+  expect(nextSegment(source, 0, false)).toBe(paragraph)
+  expect(nextSegment(source, paragraph.length, false)).toBeUndefined()
   expect(nextSegment('Done.', 0, true)).toBe('Done.')
 })
 test('CJK wrapping fits a narrow sidebar and strips terminal control sequences', () => {
@@ -116,7 +118,7 @@ test('streamed answer is unchanged and translation arrives in a separate pane', 
   await $.turn.complete(done('Here is the answer.\n\n'))
   await clock.advance(250)
   const ui = await $.ui.mount(PANE)
-  expect(JSON.stringify(await ui.findAll({ type: 'Text' }))).toContain('这是答案。')
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('这是答案。')
   expect(await ui.find({ key: 'settings-button' })).toBeDefined()
 })
 test('long translations scroll while header and target languages stay visible', async ($, on) => {
@@ -130,9 +132,11 @@ test('long translations scroll while header and target languages stay visible', 
   await $.turn.complete(done('Long answer.'))
   await clock.advance(250)
   const ui = await $.ui.mount(PANE)
-  expect(JSON.stringify(await ui.findAll({ type: 'Text' }))).toContain('line-99')
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('line-99')
   await $.ui.scroll({ component: 'Pane', requestId: 'translate-view', offset: 0, by: -100, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } })
-  expect(JSON.stringify(await ui.findAll({ type: 'Text' }))).toContain('line-0')
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('line-0')
+  await ui.redraw({ ...PANE.props, scroll: { offset: 37, bodyRows: 30 } })
+  expect((await ui.find({ key: 'sticky-header' }))?.props.top).toBe(37)
   expect(await ui.find({ key: 'agent-language' })).toBeDefined()
   expect(await ui.find({ key: 'settings-button' })).toBeDefined()
 })
@@ -180,7 +184,7 @@ test('late output from a superseded turn cannot replace the new translation', as
   await pending
   await clock.advance(250)
   const ui = await $.ui.mount(PANE)
-  const content = JSON.stringify(await ui.findAll({ type: 'Text' }))
+  const content = JSON.stringify(await ui.findAll({ type: 'Markdown' }))
   expect(content).toContain('新译文')
   expect(content.includes('旧译文')).toBe(false)
 })
@@ -201,7 +205,7 @@ test('translation streaming failure exposes retry and preserves the main respons
   expect(original.text).toBe('Original answer.')
   await ui.press({ key: 'retry' })
   await clock.advance(250)
-  expect(JSON.stringify(await ui.findAll({ type: 'Text' }))).toContain('已恢复')
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('已恢复')
 })
 
 // session.append is an engine-pinned event: its terminal persistence is exercised
@@ -234,4 +238,25 @@ test('failed input recovery preserves the next draft and appends only on explici
   expect(composer.fills).toEqual(['\n\n上一条未发送内容'])
   expect(composer.text).toBe('正在写下一条')
   expect(await ui.find({ key: 'recover-input' })).toBeUndefined()
+})
+
+test('Markdown chunks preserve formatting and fence boundaries within native leaf limits', () => {
+  const markdown = '# Title\n\n**Bold** and `code`.\n\n- one\n- two\n\n```py\nprint("x")\n\nprint("y")\n```\n'
+  expect(markdownParts(markdown)).toEqual([{ text: markdown, plain: false }])
+  const long = (markdown + '\n').repeat(200)
+  const chunks = markdownParts(long)
+  expect(chunks.map(part => part.text).join('')).toBe(long)
+  expect(chunks.every(part => part.text.length <= 10000 && !part.plain)).toBe(true)
+  const huge = '```text\n' + 'x'.repeat(24000) + '\n```'
+  expect(markdownParts(huge).map(part => part.text).join('')).toBe(huge)
+  expect(markdownParts(huge).every(part => part.plain && part.text.length <= 10000)).toBe(true)
+})
+
+test('finished replies merge paragraph backlog into one request and live batches keep complete paragraphs', () => {
+  const answer = 'A short paragraph.\n\n'.repeat(80)
+  expect(nextSegment(answer, 0, true)).toBe(answer)
+  const live = nextSegment(answer, 0, false)!
+  expect(live.length > 1000 && live.length <= 1600).toBe(true)
+  expect(answer.startsWith(live)).toBe(true)
+  expect(nextSegment('Short opening.\n\n', 0, false)).toBeUndefined()
 })

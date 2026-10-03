@@ -21,7 +21,8 @@ from pathlib import Path
 import pyte
 
 PLUGIN = Path(__file__).resolve().parents[1]
-ANSWER = 'This is a live response. The original reply remains visible on the left.'
+ANSWER = '# Overview\n\nThis is a **live response**. The original reply remains visible on the left.\n\n- **Bold item**\n- Inline `const answer = 42`\n\n```python\nprint(42)\n```'
+LONG_ANSWER = '\n\n'.join(f'- **Item {i:03d}**: A detailed explanation in English.' for i in range(80))
 
 class Harness:
     def __init__(self, root):
@@ -38,9 +39,12 @@ class Harness:
                 self.send_header('Content-Type', 'text/event-stream' if stream else 'application/json')
                 self.end_headers()
                 if not stream:
-                    self.wfile.write(json.dumps({'choices':[{'message':{'content':'Please explain this feature.'},'finish_reason':'stop'}]}).encode())
+                    self.wfile.write(json.dumps({'choices':[{'message':{'content':'Please show a long reply.' if '长文' in body['messages'][-1]['content'] else 'Please explain this feature.'},'finish_reason':'stop'}]}).encode())
                     return
-                for part in ['这是译文。', '原回复仍在左侧。']:
+                translated = body['messages'][-1]['content']
+                for english, chinese in [('Overview','概览'),('This is a **live response**.','这是**译文**。'),('The original reply remains visible on the left.','原回复仍在左侧。'),('Bold item','加粗条目'),('Inline','内联代码'),('Item','项目'),('A detailed explanation in English.','这是一段详细说明。')]:
+                    translated = translated.replace(english, chinese)
+                for part in [translated[:len(translated)//2], translated[len(translated)//2:]]:
                     self.wfile.write(('data: '+json.dumps({'choices':[{'index':0,'delta':{'content':part}}]},ensure_ascii=False)+'\n\n').encode())
                     self.wfile.flush(); time.sleep(.15)
                 self.wfile.write(b'data: [DONE]\n\n')
@@ -57,13 +61,15 @@ class Harness:
         (fixture/'.claude-plugin/plugin.json').write_text('{"name":"translate-fixture","version":"0.0.1"}')
         (fixture/'hooks/hooks.json').write_text('{"modules":["./register.ts"]}')
         (fixture/'hooks/register.ts').write_text('''export const register = on => {
+  let input = '';
   on('ui.press', async ($,e,next) => { await $.fs.write('''+json.dumps(str(root/'press.json'))+''',JSON.stringify(e)); return next(e); });
   on('turn.start', async ($,e,next) => {
+    input = e.text;
     await $.fs.write('''+json.dumps(str(root/'received.json'))+''', JSON.stringify({text:e.text}));
     return next(e);
   });
   on('turn.step', async function* ($,e) {
-    const answer = '''+json.dumps(ANSWER)+''';
+    const answer = input.includes('long reply') ? '''+json.dumps(LONG_ANSWER)+''' : '''+json.dumps(ANSWER)+''';
     yield {kind:'text',index:0,text:answer};
     return {turnId:e.turnId,index:e.index,answer,toolUses:[],stopReason:'end_turn',usage:null};
   });
@@ -73,6 +79,8 @@ class Harness:
         fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHHH',40,160,0,0))
         env = dict(os.environ, TERM='xterm-256color', CLAUDE_CODE_NO_FLICKER='1', TRANSLATE_VIEW_CONFIG=str(config),
                    ANTHROPIC_BASE_URL='http://127.0.0.1:1', ANTHROPIC_API_KEY='fixture-only', ANTHROPIC_AUTH_TOKEN='', DISABLE_TELEMETRY='1')
+        env.pop('NO_COLOR', None)
+        env['FORCE_COLOR'] = '1'
         command = ['claude-work','--setting-sources','','--settings','{"enabledPlugins":{},"remoteControlAtStartup":false}',
                    '--plugin-dir',str(fixture),'--plugin-dir',str(PLUGIN),'--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--tools','']
         self.process = subprocess.Popen(command,stdin=slave,stdout=slave,stderr=slave,cwd=PLUGIN,env=env)
@@ -137,19 +145,35 @@ def main():
         h.send(second+'\r')
         h.wait(lambda:first in h.view() and second in h.view() and len(h.requests)>=4 and '翻译中' not in h.view() and '这是译文。' in h.view(),'identical translations retain distinct original prompts')
         assert 'Please explain this feature.' not in h.view()
-        assert ANSWER in h.view()
+        assert 'live response' in h.view()
+        right = '\n'.join(line.split('│',1)[-1] for line in h.view().splitlines() if '│' in line)
+        assert '加粗条目' in right and '**' not in right and '```' not in right, right
+        assert 'const answer = 42' in right and 'print(42)' in right
+        assert any(cell.bold and cell.data == '加' for row in h.screen.buffer.values() for cell in row.values()), 'bold Markdown was not styled'
         h.click('设置')
         h.wait(lambda:'翻译设置' in h.view(),'settings button opens settings')
         h.click('Prompt')
         h.wait(lambda:'发送前:' in h.view() and '回复:' in h.view(),'independent custom prompts')
         h.click('取消')
         h.wait(lambda:'Translation' in h.view() and '翻译设置' not in h.view(),'closing settings restores translation pane')
+        outgoing_before = sum(bool(r.get('stream')) for r in h.requests)
+        h.send('请给我长文。\r')
+        h.wait(lambda:'项目 079' in h.view() and '翻译中' not in h.view(),'long Markdown follows the last paragraph',timeout=55)
+        assert sum(bool(r.get('stream')) for r in h.requests) - outgoing_before == 1, 'finished reply was translated paragraph by paragraph'
+        received=json.loads((root/'received.json').read_text())
+        for _ in range(50):
+            h.send('\x1b[<64;140;15M'); h.read(.03)
+        h.wait(lambda:'项目 000' in h.view(),'native Markdown scroll reaches first paragraph')
+        assert 'Translation' in h.screen.display[0] and 'Agent 接收' in h.screen.display[1], 'header scrolled away'
+        h.click('回到底部')
+        h.wait(lambda:'项目 079' in h.view(),'back to bottom restores follow')
         # A real drop must not erase the user's prompt. Make the local provider
         # unreachable, then verify the message remains available in the composer.
         p=root/'config.json';cfg=json.loads(p.read_text());cfg['baseUrl']='http://127.0.0.1:1';p.write_text(json.dumps(cfg))
+        h.send('\x1b'); h.read(.3)  # Return keyboard focus from the pane to the composer.
         failed='这个输入应该保留下来。'
         h.send(failed+'\r')
-        h.wait(lambda:'发送前翻译失败' in h.view(),'failed translation blocks agent submission')
+        h.wait(lambda:'Prompt dropped by a hook:' in h.view() and '连接翻译接口失败' in h.view(),'failed translation blocks agent submission')
         assert failed in h.view(), 'failed prompt was lost'
         assert json.loads((root/'received.json').read_text())==received, 'failure reached agent'
         print('Terminal smoke completed.',flush=True)
