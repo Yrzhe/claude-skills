@@ -1,3 +1,5 @@
+import { responsiveTables } from './tables'
+
 export type Config = {
   configPath?: string; keyInfo?: Record<string, { active: string; saved: string }>;
   sources?: Record<string, string>; envStatus?: Record<string, boolean>; effectiveJevModel?: string;
@@ -73,8 +75,9 @@ export function isControlPrompt(text: string): boolean {
 // Native Markdown leaves accept at most 10,000 characters. Keep ordinary
 // paragraphs, lists and fenced blocks intact. Oversized blocks fall back to
 // bounded Text leaves so a long reply cannot invalidate the whole pane.
-export function markdownParts(source: string): { text: string; plain: boolean }[] {
-  const text = cleanText(source)
+export function markdownParts(source: string, columns?: number): { text: string; plain: boolean }[] {
+  const clean = cleanText(source)
+  const text = columns === undefined ? clean : responsiveTables(clean, columns, value => Array.from(value).reduce((sum, char) => sum + cells(char), 0))
   const blocks: string[] = []
   let block = '', fence = ''
   for (const line of text.match(/[^\n]*\n|[^\n]+$/g) ?? []) {

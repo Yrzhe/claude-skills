@@ -339,7 +339,7 @@ export const register: Register = on => {
     // native offset stays pinned without guessing the rendered line heights.
     return <Box key="translation-pane" flexDirection="column" width={e.props.bodyColumns} minHeight={e.props.scroll.bodyRows}>
       <Box key="translation-body" flexDirection="column" paddingTop={4}>
-        {markdownParts(content).map((part, i) => part.plain
+        {markdownParts(content, e.props.bodyColumns).map((part, i) => part.plain
           ? <Text key={`markdown-${i}`}>{part.text}</Text>
           : <Markdown key={`markdown-${i}`} text={part.text} />)}
         <Text dimColor>{job?.error || notice || '滚轮翻阅'}</Text>

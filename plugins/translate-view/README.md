@@ -14,7 +14,7 @@ Claude Code 双向翻译 mod。输入按「Agent 接收」语言自动翻译；�
 /translate settings
 ```
 
-需要 Claude Code 2.1.287+（在 2.1.288 验证）、Python 3 和 macOS/Linux。右侧停靠面板需要 Claude 的全屏渲染模式；必要时退出后重新启动：
+需要 Claude Code 2.1.287+（在 2.1.291 验证）、Python 3 和 macOS/Linux。右侧停靠面板需要 Claude 的全屏渲染模式；必要时退出后重新启动：
 
 ```sh
 CLAUDE_CODE_NO_FLICKER=1 claude --continue
@@ -24,7 +24,7 @@ CLAUDE_CODE_NO_FLICKER=1 claude --continue
 
 ## 使用
 
-顶部固定显示两个目标语言和「设置」按钮；下方是用 Claude 原生 Markdown 渲染的可滚动译文，支持标题、加粗、列表、链接和代码块。往上滚动时停止自动跟随，点「回到底部」恢复。生成中的译文合并完整句子/段落后分批翻译；Agent 完成后，会把积压内容合并请求，避免逐段重复检测和等待。支持接口的 SSE 流式输出；短回复在完成后翻译。代码块等完整后再处理。检测与翻译服务自身的响应速度仍会影响延迟。
+顶部固定显示两个目标语言和「设置」按钮；下方是用 Claude 原生 Markdown 渲染的可滚动译文，支持标题、加粗、列表、链接和代码块。表格按侧栏实际宽度显示：放得下时保留带边框的表格；放不下时按记录纵向排列「列名: 内容」，记录之间加分隔线。拉宽侧栏后自动恢复表格，不重新调用翻译接口。超长表格在记录之间分段，并保留表头。往上滚动时停止自动跟随，点「回到底部」恢复。生成中的译文合并完整句子/段落后分批翻译；Agent 完成后，会把积压内容合并请求，避免逐段重复检测和等待。支持接口的 SSE 流式输出；短回复在完成后翻译。代码块等完整后再处理。检测与翻译服务自身的响应速度仍会影响延迟。
 
 | 设置 | 示例 | 效果 |
 | --- | --- | --- |
@@ -150,3 +150,5 @@ uv run --with pyte python tests/terminal_smoke.py
 Gemini 官方提供 [OpenAI 兼容接口](https://ai.google.dev/gemini-api/docs/openai)。第三方网关是否支持该接口格式，需要实际验证；插件不会自动改用其他模型或服务商。
 
 参考：[Claude mod UI](https://code.claude.com/docs/en/plugins/mods/interface)、[TypeSafe Jev API](https://docs.typesafe.ai/api)。MIT License。
+
+表格布局专项验证：`python3 tests/terminal_smoke.py --tables`，实际拖动侧栏验证宽表、窄屏记录和恢复表格，使用模拟接口，不调用真实模型。

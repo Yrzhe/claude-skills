@@ -1,6 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 import { isControlPrompt, nextSegment, wrapLines, markdownParts, settingsGroups } from '../hooks/core'
+import { tableCells } from '../hooks/tables'
 const CONFIG = {
   enabled: true, incomingLanguage: 'en', outgoingLanguage: 'zh', detection: 'script',
   baseUrl: 'http://localhost:9999/v1', postUrl: '', model: 'test', baseUrlEnv: '', apiKeyEnv: '', modelEnv: '',
@@ -259,6 +260,66 @@ test('finished replies merge paragraph backlog into one request and live batches
   expect(live.length > 1000 && live.length <= 1600).toBe(true)
   expect(answer.startsWith(live)).toBe(true)
   expect(nextSegment('Short opening.\n\n', 0, false)).toBeUndefined()
+})
+
+test('tables keep their grid when wide and turn into labelled records at pane width', () => {
+  const table = '| 项目 | 速度 | 说明 |\n| --- | :---: | ---: |\n| 本地 | 快 | 无需网络请求 |\n| 模型 | 较慢 | 等待远程检测 |\n'
+  expect(markdownParts(table, 80)).toEqual([{ text: table, plain: false }])
+  const narrow = markdownParts(table, 22).map(part => part.text).join('')
+  expect(narrow).toContain('项目: 本地  \n速度: 快  \n说明: 无需网络请求')
+  expect(narrow).toContain('─'.repeat(22))
+  expect(narrow).toContain('项目: 模型  \n速度: 较慢')
+  expect(narrow).not.toContain('| ---')
+  expect(markdownParts(table, 80)).toEqual([{ text: table, plain: false }])
+  const fullwidth = '| 字段 | 值 |\n| --- | --- |\n| Ａ，Ｂ！ | １２３ |\n'
+  expect(markdownParts(fullwidth, 20).map(part => part.text).join('')).toContain('字段: Ａ，Ｂ！')
+})
+
+test('table display preserves code, escaped pipes, links, empty cells and incomplete streaming headers', () => {
+  const fenced = '```md\n| a | b |\n| --- | --- |\n| x | y |\n```\n'
+  expect(markdownParts(fenced, 8)).toEqual([{ text: fenced, plain: false }])
+  const partial = '| a | b |\n| --'
+  expect(markdownParts(partial, 8)).toEqual([{ text: partial, plain: false }])
+  expect(tableCells('| a\\|b | `x\\|y` |')).toEqual(['a\\|b', '`x\\|y`'])
+  expect(tableCells('a | b\\|')).toEqual(['a', 'b\\|'])
+  const table = '| Name | Link | Empty |\n| --- | --- | --- |\n| `a\\|b` | [docs](https://example.com) | |\n'
+  const text = markdownParts(table, 20).map(part => part.text).join('')
+  expect(text).toContain('Name: `a\\|b`')
+  expect(text).toContain('Link: [docs](https://example.com)')
+  expect(text).toContain('Empty: —')
+  const indented = '    | a | b |\n    | --- | --- |\n    | x | y |\n'
+  expect(markdownParts(indented, 8)).toEqual([{ text: indented, plain: false }])
+})
+
+test('large tables split only between records with headers retained instead of raw Markdown', () => {
+  const heading = '| Name | Value |\n| --- | --- |\n'
+  const rows = Array.from({ length: 900 }, (_, i) => `| row-${i} | value-${i} |\n`)
+  const wide = markdownParts(heading + rows.join(''), 90)
+  expect(wide.length > 1).toBe(true)
+  expect(wide.every(part => !part.plain && part.text.length <= 9000 && part.text.startsWith(heading))).toBe(true)
+  for (const row of rows) expect(wide.map(part => part.text).join('')).toContain(row)
+  const narrow = markdownParts(heading + rows.join(''), 12)
+  expect(narrow.every(part => !part.plain && part.text.length <= 9000)).toBe(true)
+  expect(narrow.map(part => part.text).join('')).toContain('Name: row-899  \nValue: value-899')
+})
+
+test('translation table reflows when the pane is resized without changing the source reply', async ($, on) => {
+  const clock = setup(on)
+  const table = '| Name | Meaning |\n| --- | --- |\n| Example | This is a long description for a narrow pane. |\n'
+  on('process.spawn', async function* () {
+    yield { stream: 'stdout', text: JSON.stringify({ type: 'done', text: table, skipped: false }) + '\n' } as const
+    return { value: { code: 0, signal: null } }
+  })
+  await $.session.start(start)
+  await $.turn.start({ text: 'hello', turnId: 't' })
+  await $.turn.complete(done(table))
+  await clock.advance(250)
+  const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 100 } })
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('| Name | Meaning |')
+  await ui.redraw({ ...PANE.props, bodyColumns: 24 })
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('Name: Example')
+  await ui.redraw({ ...PANE.props, bodyColumns: 100 })
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('| Name | Meaning |')
 })
 
 test('settings expose detector, environment fields and reset to the language overview on reopen', async ($, on) => {

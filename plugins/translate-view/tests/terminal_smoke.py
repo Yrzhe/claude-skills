@@ -24,6 +24,14 @@ import pyte
 PLUGIN = Path(__file__).resolve().parents[1]
 ANSWER = '# Overview\n\nThis is a **live response**. The original reply remains visible on the left.\n\n- **Bold item**\n- Inline `const answer = 42`\n\n```python\nprint(42)\n```'
 LONG_ANSWER = '\n\n'.join(f'- **Item {i:03d}**: A detailed explanation in English.' for i in range(80))
+TABLE_ANSWER = '''# Comparison
+
+| Option | Speed | Description |
+| --- | --- | --- |
+| Local | Fast | Detects language on this computer without making a network request. |
+| LLM | Varies | Uses your configured model to identify the language before translating. |
+
+End of comparison.'''
 
 class Harness:
     def __init__(self, root, columns=160, rows=40):
@@ -45,6 +53,8 @@ class Harness:
                     return
                 translated = body['messages'][-1]['content']
                 for english, chinese in [('Overview','概览'),('This is a **live response**.','这是**译文**。'),('The original reply remains visible on the left.','原回复仍在左侧。'),('Bold item','加粗条目'),('Inline','内联代码'),('Item','项目'),('A detailed explanation in English.','这是一段详细说明。')]:
+                    translated = translated.replace(english, chinese)
+                for english, chinese in [('Comparison','对比'),('Option','项目'),('Speed','速度'),('Description','说明'),('Local','本地脚本'),('Fast','快'),('LLM','模型'),('Varies','不固定'),('Detects language on this computer without making a network request.','在这台电脑上判断语言，不需要发送网络请求。'),('Uses your configured model to identify the language before translating.','使用配置的模型判断语言，再把回复翻译成目标语言。'),('End of comparison.','表格结束。')]:
                     translated = translated.replace(english, chinese)
                 for part in [translated[:len(translated)//2], translated[len(translated)//2:]]:
                     self.wfile.write(('data: '+json.dumps({'choices':[{'index':0,'delta':{'content':part}}]},ensure_ascii=False)+'\n\n').encode())
@@ -97,7 +107,13 @@ class Harness:
         self.stream.feed(self.decoder.decode(raw))
         if b'\x1b[6n' in raw: self.send(f'\x1b[{self.screen.cursor.y+1};{self.screen.cursor.x+1}R')
         if b'\x1b[c' in raw: self.send('\x1b[?1;2c')
-    def view(self): return '\n'.join(self.screen.display)
+    def view(self):
+        # Native redraws can temporarily leave a wide-character continuation
+        # cell without its lead cell; pyte.display crashes on those frames.
+        return '\n'.join(''.join(self.screen.buffer[row][col].data for col in range(self.columns)) for row in range(self.rows))
+    def pane(self):
+        divider = next(col for col in range(self.columns) if self.screen.buffer[0][col].data == '│')
+        return [''.join(self.screen.buffer[row][col].data for col in range(divider+1,self.columns)).rstrip() for row in range(self.rows)]
     def wait(self, condition, label, timeout=25):
         end=time.monotonic()+timeout
         approved_trust = approved_key = False
@@ -147,12 +163,14 @@ def settings_check(h):
     h.click('设置')
     h.wait(lambda:'模型接口' in h.view() and '语言检测:' in h.view(),'settings opens language detection overview')
     if '--settings-wide' in sys.argv:
-        assert all(name in h.screen.display[1] for name in ['语言检测','模型接口','环境变量','Jev 接口','翻译 Prompt']), 'wide tabs are not on one row'
+        assert any(all(name in row for name in ['语言检测','模型接口','环境变量','Jev 接口','翻译 Prompt']) for row in h.view().splitlines()[:4]), 'wide tabs are not on one row'
     h.click('语言检测:')
     h.send('\x1b[B\r')
     h.wait(lambda:'检测模型:' in h.view(),'LLM detection exposes an independent model field')
     for section, fields in [('模型接口',['接口 Base URL:', '翻译模型名:', '新的 API Key:', '完整 POST URL（可选）:']), ('环境变量',['地址变量名:', '密钥变量名:', '模型变量名:']), ('Jev 接口',['Jev POST URL:', 'Jev 模型名:', '新的 Jev API Key:']), ('翻译 Prompt',['发送前:', '回复:'])]:
         h.click(section)
+        title = {'模型接口':'翻译模型', '环境变量':'环境变量绑定', 'Jev 接口':'Jev ·', '翻译 Prompt':'分别设置两个方向'}[section]
+        h.wait(lambda:title in h.view(), 'settings section rendered: '+section)
         if '--settings-wide' in sys.argv and section in ('模型接口','Jev 接口'):
             suffix='****A123' if section=='模型接口' else '****J456'
             h.wait(lambda:suffix in h.view() and '本机配置' in h.view(), 'masked key source visible: '+section)
@@ -169,14 +187,45 @@ def settings_check(h):
     h.click('取消')
     h.wait(lambda:'Translation' in h.view() and '翻译设置' not in h.view(),'return to reply')
 
+def table_check(h):
+    h.resize_pane(110)
+    h.send('请解释表格。\r')
+    h.wait(lambda:'表格结束。' in '\n'.join(h.pane()) and '翻译中' not in h.view(), 'translated table completed')
+    request_count = len(h.requests)
+    for size in (110,40,22,110):
+        h.resize_pane(size)
+        def correct():
+            pane = h.pane()
+            compact=''.join(''.join(pane).split())
+            complete = '表格结束。' in compact and '在这台电脑上判断语言，不需要发送网络请求。' in compact and '使用配置的模型判断语言，再把回复翻译成目标语言。' in compact
+            if size == 110:
+                return any('┌' in row and '┐' in row for row in pane) and any('本地脚本' in row and '快' in row and '网络请求' in row for row in pane)
+            return complete and '项目: 本地脚本' in pane and '速度: 快' in pane and '项目: 模型' in pane and '速度: 不固定' in pane and not any(any(c in row for c in '┌┬└┴') for row in pane)
+        h.wait(correct, f'table layout fits {size}-column pane')
+        pane=h.pane()
+        (h.root/f'table-{size}.txt').write_text('\n'.join(pane))
+        if size != 110:
+            first=pane.index('项目: 本地脚本');second=pane.index('项目: 模型')
+            assert any(row and set(row)=={'─'} for row in pane[first+1:second]), 'records have no separator'
+            compact=''.join(''.join(pane).split())
+            assert '在这台电脑上判断语言，不需要发送网络请求。' in compact, 'first cell was truncated'
+            assert '使用配置的模型判断语言，再把回复翻译成目标语言。' in compact, 'second cell was truncated'
+    assert len(h.requests)==request_count, 'resizing called the translation provider again'
+    print('Table smoke completed.',flush=True)
+
 def main():
+    global ANSWER
+    tables = '--tables' in sys.argv
+    if tables: ANSWER = TABLE_ANSWER
     root=Path(tempfile.mkdtemp(prefix='translate-view-smoke-'))
     print('Artifacts:',root,flush=True)
     narrow = '--settings-only' in sys.argv
     wide = '--settings-wide' in sys.argv
-    h=Harness(root,220 if wide else 120 if narrow else 160,40 if wide else 28 if narrow else 40)
+    h=Harness(root,220 if wide or tables else 120 if narrow else 160,45 if tables else 40 if wide else 28 if narrow else 40)
     try:
         h.wait(lambda:'等待 Agent 回复' in h.view(),'full-height translation dock')
+        if tables:
+            table_check(h);return
         if wide: h.resize_pane()
         elif narrow: h.resize_pane(22)
         if narrow or wide:
@@ -204,13 +253,15 @@ def main():
         for _ in range(50):
             h.send('\x1b[<64;140;15M'); h.read(.03)
         h.wait(lambda:'项目 000' in h.view(),'native Markdown scroll reaches first paragraph')
-        assert 'Translation' in h.screen.display[0] and 'Agent 接收' in h.screen.display[1], 'header scrolled away'
+        assert 'Translation' in '\n'.join(h.view().splitlines()[:3]) and 'Agent 接收' in '\n'.join(h.view().splitlines()[:4]), 'header scrolled away'
         h.click('回到底部')
         h.wait(lambda:'项目 079' in h.view(),'back to bottom restores follow')
         # A real drop must not erase the user's prompt. Make the local provider
         # unreachable, then verify the message remains available in the composer.
         p=root/'config.json';cfg=json.loads(p.read_text());cfg['baseUrl']='http://127.0.0.1:1';p.write_text(json.dumps(cfg))
         h.send('\x1b'); h.read(.3)  # Return keyboard focus from the pane to the composer.
+        composer_row = next(row for row in reversed(range(h.rows)) if h.screen.buffer[row][0].data == '❯') + 1
+        h.send(f'\x1b[<0;3;{composer_row}M\x1b[<0;3;{composer_row}m');h.read(.3)
         failed='这个输入应该保留下来。'
         h.send(failed+'\r')
         h.wait(lambda:'Prompt dropped by a hook:' in h.view() and '连接翻译接口失败' in h.view(),'failed translation blocks agent submission')
