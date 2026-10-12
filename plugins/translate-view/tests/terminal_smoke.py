@@ -213,6 +213,22 @@ def table_check(h):
     assert len(h.requests)==request_count, 'resizing called the translation provider again'
     print('Table smoke completed.',flush=True)
 
+def shared_config_check(h):
+    config=h.root/'config.json'
+    saved=json.loads(config.read_text())
+    saved['enabled']=False;config.write_text(json.dumps(saved))
+    h.send('这条消息不需要翻译。\r')
+    def received(text):
+        p=h.root/'received.json'
+        return p.exists() and json.loads(p.read_text()).get('text')==text
+    h.wait(lambda:received('这条消息不需要翻译。') and 'live response' in h.view(), 'external disable sends original instead of dropping it')
+    assert not h.requests, 'disabled translation called the provider'
+    saved['enabled']=True;config.write_text(json.dumps(saved))
+    h.send('这条消息需要翻译。\r')
+    h.wait(lambda:received('Please explain this feature.') and '这是译文。' in h.view(), 'external enable takes effect without reloading')
+    assert len(h.requests)>=2, 'translation was not re-enabled'
+    print('Shared configuration smoke completed.',flush=True)
+
 def main():
     global ANSWER
     tables = '--tables' in sys.argv
@@ -224,6 +240,8 @@ def main():
     h=Harness(root,220 if wide or tables else 120 if narrow else 160,45 if tables else 40 if wide else 28 if narrow else 40)
     try:
         h.wait(lambda:'等待 Agent 回复' in h.view(),'full-height translation dock')
+        if '--shared-config' in sys.argv:
+            shared_config_check(h);return
         if tables:
             table_check(h);return
         if wide: h.resize_pane()

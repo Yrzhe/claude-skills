@@ -50,7 +50,7 @@ async function load($: EngineInterface) {
   cfg = await helper($, { action: 'load' }) as Config
 }
 async function open($: EngineInterface, settings = false) {
-  if (!cfg) await load($)
+  await load($)
   if (settings || !cfg?.enabled) { page = 'settings'; draft = { ...cfg }; tab = 'language'; settingsStart = true }
   await $.ui.open({ id: PANE, title: 'Translation', columns: 52, rows: 24 })
   needsFollow = true
@@ -94,6 +94,10 @@ async function pump($: EngineInterface) {
     if (token !== generation) return
     const result = await stream.result
     if (result.code !== 0 || !final) throw new Error('翻译流未完成，请重试。')
+    if ((final as { disabled?: boolean }).disabled) {
+      if (cfg) cfg.enabled = false
+      reset(); notice = '翻译已在其他会话关闭'; return
+    }
     target.pieces.push(final.text); target.pending = ''; target.cursor += segment.length
     target.skipped = target.skipped && final.skipped === true
   } catch (e) {
@@ -130,12 +134,17 @@ export const register: Register = on => {
   on('session.end', ($, e, next) => { reset(); originals.clear(); return next(e) })
   on('classic.SessionStart', { source: 'clear' }, async ($, e, next) => { reset(); originals.clear(); failedPrompts = []; await update($, displayOriginals, () => ({})); redraw($); return next(e) })
   on('prompt.submit', async ($, e, next) => {
-    if (!cfg?.enabled || !['composer', 'bridge', 'sdk'].includes(e.origin.kind) || !e.text.trim() || isControlPrompt(e.text)) return next(e)
+    if (!['composer', 'bridge', 'sdk'].includes(e.origin.kind) || !e.text.trim() || isControlPrompt(e.text)) return next(e)
     let pending: { original: string } | undefined
     let pendingKey = ''
     let entered = false
     try {
+      // Every session shares the private config. Read it before deciding whether
+      // to intercept: another window may have enabled or disabled translation.
+      await load($)
+      if (!cfg?.enabled) { reset(); notice = ''; redraw($); return next(e) }
       const translated = await helper($, { action: 'translate', direction: 'incoming', text: e.text })
+      if (translated.disabled) { cfg.enabled = false; reset(); redraw($) }
       if (typeof translated.text !== 'string' || !translated.text.trim()) throw new Error('未收到有效译文。')
       if (translated.text !== e.text) {
         pending = { original: e.text }; pendingKey = translated.text

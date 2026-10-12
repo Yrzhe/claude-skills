@@ -3,6 +3,10 @@ import io
 import json
 import os
 import stat
+import socket
+import ssl
+import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -37,6 +41,25 @@ class Tests(unittest.TestCase):
             cfg['postUrl']='http://127.0.0.1:8000/custom?route=a'
             self.assertEqual(m.endpoint(cfg),cfg['postUrl'])
             cfg['apiKey']='direct';self.assertEqual(m.value(cfg,'apiKey','apiKeyEnv'),'direct')
+    def test_disabled_helper_passes_through_without_calling_provider(self):
+        m.save_config({'enabled':False,'baseUrl':'http://127.0.0.1:1','model':'fake'})
+        for action in ('translate','stream'):
+            result=subprocess.run([sys.executable,str(Path(m.__file__))],input=json.dumps(dict(action=action,direction='incoming',text='保留原文')),capture_output=True,text=True,timeout=5)
+            self.assertEqual(result.returncode,0)
+            self.assertEqual(json.loads(result.stdout),dict(type='done',text='保留原文',skipped=True,disabled=True))
+
+    def test_network_errors_identify_failure_without_exposing_private_details(self):
+        for error,expected in [(TimeoutError('PRIVATE_HOST'),'25 秒'),(socket.gaierror('PRIVATE_HOST'),'DNS'),(ssl.SSLCertVerificationError('PRIVATE_HOST'),'证书'),(ssl.SSLError('PRIVATE_HOST'),'TLS'),(ConnectionRefusedError('PRIVATE_HOST'),'拒绝连接'),(ConnectionResetError('PRIVATE_HOST'),'重置')]:
+            with self.subTest(kind=type(error).__name__):
+                with patch.object(m.urllib.request.OpenerDirector,'open',side_effect=m.urllib.error.URLError(error)):
+                    with self.assertRaises(m.TranslationError) as raised:
+                        m.request('https://example.com/v1','PRIVATE_KEY',{})
+                self.assertIn(expected,str(raised.exception))
+                self.assertNotIn('PRIVATE',str(raised.exception))
+        with patch.object(m,'translate_content',side_effect=TimeoutError('PRIVATE_HOST')):
+            with self.assertRaisesRegex(m.TranslationError,'25 秒'):
+                m.translate(self.config(),'Please translate this message.','outgoing',lambda _:None)
+
     def test_script_ignores_code_and_detects_prose_conservatively(self):
         self.assertEqual(m.script_language('你好，请帮我修改这个文件。\n```py\nprint("hello")\n```'),'zh')
         self.assertEqual(m.script_language('Please fix the code and explain why.'),'en')

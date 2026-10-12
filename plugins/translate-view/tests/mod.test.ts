@@ -36,6 +36,48 @@ function setup(on: On, config = CONFIG, inspect?: (request: any) => any, compose
 const start = { cwd: '/work', surface: 'terminal', isInteractive: true } as const
 const done = (answer: string, turnId = 't') => ({ answer, turnId, reason: 'answer', isAborted: false, durationMs: 100 }) as const
 
+test('another session can disable and re-enable translation without stale prompt interception', async ($, on) => {
+  let enabled = true, translations = 0
+  setup(on, CONFIG, req => {
+    if (req.action === 'load') return { ...CONFIG, enabled }
+    if (req.action === 'translate') translations++
+  })
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  await $.session.start(start)
+  enabled = false
+  expect((await $.prompt.submit({ text: '关闭后直接发送', origin: { kind: 'composer' }, wait: false })).text).toBe('关闭后直接发送')
+  expect(translations).toBe(0)
+  enabled = true
+  expect((await $.prompt.submit({ text: '开启后翻译发送', origin: { kind: 'composer' }, wait: false })).text).toBe('Please fix it.')
+  expect(translations).toBe(1)
+})
+
+test('disabling translation between preflight and helper passes through without dropping the prompt', async ($, on) => {
+  setup(on, CONFIG, req => req.action === 'translate' ? { text: req.text, skipped: true, disabled: true } : undefined)
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  await $.session.start(start)
+  const result = await $.prompt.submit({ text: '保留这条原文', origin: { kind: 'composer' }, wait: false })
+  expect(result.text).toBe('保留这条原文')
+  expect(result.drop).toBeUndefined()
+  const ui = await $.ui.mount(PANE)
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('翻译已关闭')
+})
+
+test('reply translation disabled by another session stops without an error', async ($, on) => {
+  const clock = setup(on)
+  on('process.spawn', async function* () {
+    yield { stream: 'stdout', text: JSON.stringify({ type: 'done', text: 'Original reply.', skipped: true, disabled: true }) + '\n' } as const
+    return { value: { code: 0, signal: null } }
+  })
+  await $.session.start(start)
+  await $.turn.start({ text: 'hello', turnId: 't' })
+  await $.turn.complete(done('Original reply.'))
+  await clock.advance(250)
+  const ui = await $.ui.mount(PANE)
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('翻译已关闭')
+  expect((await ui.find({ key: 'retry' }))?.props.label).toBe('回到底部')
+})
+
 test('paragraph batching does not split fenced code and flushes final short replies', () => {
   const paragraph = 'First paragraph. '.repeat(12) + '\n\n'
   const source = paragraph + '```py\nprint("x")\n\n'

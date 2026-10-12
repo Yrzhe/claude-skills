@@ -4,6 +4,8 @@ import json
 import os
 import re
 import signal
+import socket
+import ssl
 import sys
 import tempfile
 import urllib.error
@@ -144,6 +146,23 @@ def endpoint(cfg):
     if base.endswith('/chat/completions'): return validate_url(base)
     return validate_url(base+'/chat/completions')
 
+def network_error(error):
+    # Do not echo exception messages: they may contain private hosts or URLs.
+    reason = error.reason if isinstance(error, urllib.error.URLError) else error
+    if isinstance(reason, (TimeoutError, socket.timeout)):
+        return TranslationError('连接翻译接口失败或超时：连接或等待响应超过 25 秒。请检查网络或稍后重试。')
+    if isinstance(reason, ssl.SSLCertVerificationError):
+        return TranslationError('翻译接口 TLS 证书验证失败，请检查证书或代理配置。')
+    if isinstance(reason, ssl.SSLError):
+        return TranslationError('翻译接口 TLS 连接失败，请检查网络或代理配置。')
+    if isinstance(reason, socket.gaierror):
+        return TranslationError('无法解析翻译接口域名，请检查 DNS 或代理配置。')
+    if isinstance(reason, ConnectionRefusedError):
+        return TranslationError('连接翻译接口失败或超时：接口或代理拒绝连接，请检查服务是否运行。')
+    if isinstance(reason, ConnectionResetError):
+        return TranslationError('翻译连接被重置，请检查网络或代理后重试。')
+    return TranslationError('连接翻译接口失败或超时，请检查网络、代理和服务状态。')
+
 def request(url, key, body):
     headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream'}
     if key: headers['Authorization']='Bearer '+key
@@ -153,8 +172,8 @@ def request(url, key, body):
     except urllib.error.HTTPError as e:
         # Provider error bodies can echo API keys or the user's text; never print them.
         raise TranslationError('接口返回 HTTP '+str(e.code)+'，请检查地址、密钥和模型名。') from None
-    except (urllib.error.URLError, TimeoutError, OSError):
-        raise TranslationError('连接翻译接口失败或超时。') from None
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        raise network_error(e) from None
 
 def json_response(response):
     with response:
@@ -299,7 +318,10 @@ def translate(cfg,text,direction,emit=None):
     trailing=text[len(text.rstrip()):] if text.strip() else ''
     def partial(data):
         emit(dict(data,text=leading+data['text']))
-    result=translate_content(cfg,text.strip(),direction,partial if emit else None)
+    try:
+        result=translate_content(cfg,text.strip(),direction,partial if emit else None)
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        raise network_error(e) from None
     result['text']=leading+result['text']+trailing
     return result
 
@@ -318,8 +340,13 @@ def main():
         elif action=='save': output(save_config(data.get('patch')))
         elif action in ('translate','stream'):
             cfg=load_config()
-            # The UI can enable translation per call only after saving settings.
-            if not cfg['enabled']: raise TranslationError('请先保存设置并启用翻译。')
+            # Another session can turn translation off after the mod's preflight.
+            # Disabled translation passes through, without a network request.
+            if not cfg['enabled']:
+                text=data.get('text')
+                if not isinstance(text,str) or len(text)>MAX_TEXT: raise TranslationError('无效的翻译文本。')
+                output(dict(type='done',text=text,skipped=True,disabled=True))
+                return 0
             result=translate(cfg,data.get('text'),data.get('direction'),output if action=='stream' else None)
             output(dict(type='done',**result))
         else: raise TranslationError('未知操作。')
