@@ -40,7 +40,8 @@ async function recover($: EngineInterface, text: string) {
   failedPrompts.push(text)
 }
 async function helper($: EngineInterface, data: object): Promise<Record<string, any>> {
-  const result = await $.process.run(['python3', `${$.plugin.root}/scripts/translate.py`], { stdin: JSON.stringify(data), timeoutMs: 95000 })
+  const result = await $.process.run(['python3', `${$.plugin.root}/scripts/translate.py`], { stdin: JSON.stringify(data), timeoutMs: 550000 })
+  if (result.isStdoutTruncated) throw new Error('译文过长，请将内容放入文件或分次发送；原文未发送。')
   let value
   try { value = JSON.parse(result.stdout) } catch { throw new Error('翻译服务未返回有效结果。') }
   if (result.exitCode !== 0 || value.error) throw new Error(value.error || '翻译失败。')

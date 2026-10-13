@@ -44,12 +44,20 @@ class Harness:
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 owner.requests.append(body)
+                if '--slow-input' in sys.argv and len(owner.requests)==1:
+                    time.sleep(27)  # Exceeds the former 25-second socket timeout.
                 self.send_response(200)
                 stream = body.get('stream')
                 self.send_header('Content-Type', 'text/event-stream' if stream else 'application/json')
                 self.end_headers()
-                if not stream:
-                    self.wfile.write(json.dumps({'choices':[{'message':{'content':'Please show a long reply.' if '长文' in body['messages'][-1]['content'] else 'Please explain this feature.'},'finish_reason':'stop'}]}).encode())
+                if 'English' in body['messages'][0]['content']:
+                    translated = 'Please show a long reply.' if '长文' in body['messages'][-1]['content'] else 'Please explain this feature.'
+                    if '--slow-input' in sys.argv:
+                        translated = body['messages'][-1]['content'].replace('请翻译这一段。','Please translate this paragraph.')
+                    if stream:
+                        self.wfile.write(('data: '+json.dumps({'choices':[{'delta':{'content':translated}}]})+'\n\ndata: [DONE]\n\n').encode())
+                    else:
+                        self.wfile.write(json.dumps({'choices':[{'message':{'content':translated},'finish_reason':'stop'}]}).encode())
                     return
                 translated = body['messages'][-1]['content']
                 for english, chinese in [('Overview','概览'),('This is a **live response**.','这是**译文**。'),('The original reply remains visible on the left.','原回复仍在左侧。'),('Bold item','加粗条目'),('Inline','内联代码'),('Item','项目'),('A detailed explanation in English.','这是一段详细说明。')]:
@@ -229,6 +237,24 @@ def shared_config_check(h):
     assert len(h.requests)>=2, 'translation was not re-enabled'
     print('Shared configuration smoke completed.',flush=True)
 
+def slow_input_check(h):
+    source='请翻译这一段。\n'*550
+    expected=source.replace('请翻译这一段。','Please translate this paragraph.')
+    # Bracketed paste, draining redraws so large input cannot fill the PTY buffer.
+    h.send('\x1b[200~')
+    for offset in range(0,len(source),128):
+        h.send(source[offset:offset+128]);h.read(.01)
+    h.send('\x1b[201~');h.read(.3)
+    started=time.monotonic();h.send('\r')
+    received=h.root/'received.json'
+    h.wait(lambda:received.exists(),'delayed long input reaches agent',timeout=65)
+    assert time.monotonic()-started>=27, 'fixture did not exercise the old deadline'
+    assert json.loads(received.read_text())['text']==expected, 'agent received incomplete or changed content'
+    incoming=[body for body in h.requests if 'English' in body['messages'][0]['content']]
+    assert len(incoming)>1 and all(body['stream'] for body in incoming), 'long input did not use multiple SSE requests'
+    h.wait(lambda:'这是译文。' in h.view(),'reply translation still works after delayed input')
+    print('Slow multi-chunk input smoke completed.',flush=True)
+
 def main():
     global ANSWER
     tables = '--tables' in sys.argv
@@ -240,6 +266,8 @@ def main():
     h=Harness(root,220 if wide or tables else 120 if narrow else 160,45 if tables else 40 if wide else 28 if narrow else 40)
     try:
         h.wait(lambda:'等待 Agent 回复' in h.view(),'full-height translation dock')
+        if '--slow-input' in sys.argv:
+            slow_input_check(h);return
         if '--shared-config' in sys.argv:
             shared_config_check(h);return
         if tables:
@@ -263,10 +291,10 @@ def main():
         assert 'constanswer=42' in ''.join(right.split()) and 'print(42)' in right
         assert any(cell.bold and cell.data == '加' for row in h.screen.buffer.values() for cell in row.values()), 'bold Markdown was not styled'
         settings_check(h)
-        outgoing_before = sum(bool(r.get('stream')) for r in h.requests)
+        outgoing_before = sum('English' not in r['messages'][0]['content'] for r in h.requests)
         h.send('请给我长文。\r')
         h.wait(lambda:'项目 079' in h.view() and '翻译中' not in h.view(),'long Markdown follows the last paragraph',timeout=55)
-        assert sum(bool(r.get('stream')) for r in h.requests) - outgoing_before == 1, 'finished reply was translated paragraph by paragraph'
+        assert sum('English' not in r['messages'][0]['content'] for r in h.requests) - outgoing_before == 1, 'finished reply was translated paragraph by paragraph'
         received=json.loads((root/'received.json').read_text())
         for _ in range(50):
             h.send('\x1b[<64;140;15M'); h.read(.03)

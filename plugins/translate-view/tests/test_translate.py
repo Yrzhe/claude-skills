@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -49,7 +50,7 @@ class Tests(unittest.TestCase):
             self.assertEqual(json.loads(result.stdout),dict(type='done',text='保留原文',skipped=True,disabled=True))
 
     def test_network_errors_identify_failure_without_exposing_private_details(self):
-        for error,expected in [(TimeoutError('PRIVATE_HOST'),'25 秒'),(socket.gaierror('PRIVATE_HOST'),'DNS'),(ssl.SSLCertVerificationError('PRIVATE_HOST'),'证书'),(ssl.SSLError('PRIVATE_HOST'),'TLS'),(ConnectionRefusedError('PRIVATE_HOST'),'拒绝连接'),(ConnectionResetError('PRIVATE_HOST'),'重置')]:
+        for error,expected in [(TimeoutError('PRIVATE_HOST'),'90 秒'),(socket.gaierror('PRIVATE_HOST'),'DNS'),(ssl.SSLCertVerificationError('PRIVATE_HOST'),'证书'),(ssl.SSLError('PRIVATE_HOST'),'TLS'),(ConnectionRefusedError('PRIVATE_HOST'),'拒绝连接'),(ConnectionResetError('PRIVATE_HOST'),'重置')]:
             with self.subTest(kind=type(error).__name__):
                 with patch.object(m.urllib.request.OpenerDirector,'open',side_effect=m.urllib.error.URLError(error)):
                     with self.assertRaises(m.TranslationError) as raised:
@@ -57,7 +58,7 @@ class Tests(unittest.TestCase):
                 self.assertIn(expected,str(raised.exception))
                 self.assertNotIn('PRIVATE',str(raised.exception))
         with patch.object(m,'translate_content',side_effect=TimeoutError('PRIVATE_HOST')):
-            with self.assertRaisesRegex(m.TranslationError,'25 秒'):
+            with self.assertRaisesRegex(m.TranslationError,'90 秒'):
                 m.translate(self.config(),'Please translate this message.','outgoing',lambda _:None)
 
     def test_script_ignores_code_and_detects_prose_conservatively(self):
@@ -180,10 +181,12 @@ class Tests(unittest.TestCase):
                 body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 captured.append((self.path,self.headers.get('Authorization'),body))
                 self.send_response(200)
-                self.send_header('Content-Type','text/event-stream' if body['stream'] else 'application/json')
+                stream='JSON' not in body['messages'][-1]['content']
+                self.send_header('Content-Type','text/event-stream' if stream else 'application/json')
                 self.end_headers()
-                if body['stream']:
-                    for part in ['这是','译文。']:
+                if stream:
+                    parts=['Translated','.'] if 'English' in body['messages'][0]['content'] else ['这是','译文。']
+                    for part in parts:
                         self.wfile.write(('data: '+json.dumps({'choices':[{'index':0,'delta':{'content':part}}]})+'\n\n').encode());self.wfile.flush()
                     self.wfile.write(b'data: [DONE]\n\n')
                 else: self.wfile.write(json.dumps({'choices':[{'message':{'content':'Translated.'}}]}).encode())
@@ -195,8 +198,94 @@ class Tests(unittest.TestCase):
             got=m.translate(cfg,'Please explain the code.\n\n','outgoing',partials.append)
             self.assertEqual(got['text'],'这是译文。\n\n');self.assertEqual(len(partials),2)
             got=m.translate(cfg,'请解释代码。','incoming');self.assertEqual(got['text'],'Translated.')
+            got=m.translate(cfg,'请返回 JSON。','incoming');self.assertEqual(got['text'],'Translated.')
+            self.assertTrue(all(item[2]['stream'] for item in captured))
             self.assertEqual(captured[0][0],'/v1/chat/completions');self.assertEqual(captured[0][1],'Bearer test-key')
         finally: server.shutdown();server.server_close();thread.join()
+
+    def test_long_input_chunk_boundaries_preserve_every_character_and_protected_span(self):
+        code='```python\n'+('print("中文")\n'*10000)+'```\n'
+        source=('请翻译这一段。\n\n'*300)+code+('中文 '*2000)+'[Image #1] [链接](https://example.com/path) `keep_this()`'+('文'*8000)
+        chunks=list(m.input_chunks(source))
+        self.assertEqual(''.join(chunks),source)
+        boundaries=set();offset=0
+        for chunk in chunks:
+            self.assertTrue(chunk)
+            offset+=len(chunk);boundaries.add(offset)
+            if len(chunk)>m.INPUT_CHUNK:self.assertEqual(chunk,code)
+        for match in m.PROTECTED.finditer(source):
+            self.assertFalse(any(match.start()<cut<match.end() for cut in boundaries))
+        with patch.object(m,'request',side_effect=AssertionError('code needs no translation')):
+            self.assertEqual(m.translate(self.config(),code,'incoming')['text'],code)
+
+    def test_over_100k_input_translates_in_order_without_losing_spacing_or_literals(self):
+        source=('  请翻译 `x()`。\n\n'*8000)+'结束。\n'
+        calls=[]
+        def request(url,key,body):
+            calls.append(body)
+            content=body['messages'][-1]['content'].replace('请翻译','Please translate').replace('结束','End')
+            return FakeResponse({'choices':[{'message':{'content':content},'finish_reason':'stop'}]})
+        self.assertGreater(len(source),100000)
+        with patch.object(m,'request',request):got=m.translate(self.config(),source,'incoming')
+        self.assertEqual(got['text'],source.replace('请翻译','Please translate').replace('结束','End'))
+        self.assertGreater(len(calls),1)
+        self.assertTrue(all(body['stream'] for body in calls))
+
+    def test_later_chunk_failure_never_emits_a_partial_incoming_prompt(self):
+        calls=[]
+        def request(url,key,body):
+            calls.append(body)
+            if len(calls)==2:raise TimeoutError('PRIVATE_HOST')
+            return FakeResponse({'choices':[{'message':{'content':'First translated paragraph.'},'finish_reason':'stop'}]})
+        source=('请翻译这一段。\n\n'*1000)
+        with patch.object(m,'request',request):
+            with self.assertRaisesRegex(m.TranslationError,'90 秒'):
+                m.translate(self.config(),source,'incoming')
+        self.assertEqual(len(calls),2)
+
+    def test_input_and_output_limits_fail_explicitly(self):
+        with self.assertRaisesRegex(m.TranslationError,'500000'):
+            m.translate(self.config(),'文'*(m.MAX_TEXT+1),'incoming')
+        with patch.object(m,'MAX_OUTPUT',4),patch.object(m,'request',return_value=FakeResponse({'choices':[{'message':{'content':'Too long'}}]})):
+            with self.assertRaisesRegex(m.TranslationError,'译文过长'):
+                m.translate(self.config(),'请翻译','incoming')
+
+    def test_translated_chunks_without_source_whitespace_do_not_glue_words(self):
+        source='文'*(m.INPUT_CHUNK+2)
+        replies=[FakeResponse({'choices':[{'message':{'content':part}}]}) for part in ('First sentence.','Next sentence.')]
+        with patch.object(m,'request',side_effect=replies):
+            self.assertEqual(m.translate(self.config(),source,'incoming')['text'],'First sentence.\nNext sentence.')
+        with patch.object(m,'request',side_effect=AssertionError('already target language')):
+            self.assertEqual(m.translate(self.config(incomingLanguage='zh'),source,'incoming')['text'],source)
+
+    @unittest.skipUnless(os.environ.get('TRANSLATE_SLOW_TEST')=='1','opt-in real 27-second response delay')
+    def test_cli_waits_past_old_25s_deadline_and_emits_only_complete_long_prompt(self):
+        captured=[]
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self,*args):pass
+            def do_POST(self):
+                body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                captured.append(body)
+                if len(captured)==1:time.sleep(27)
+                self.send_response(200);self.send_header('Content-Type','text/event-stream');self.end_headers()
+                translated=body['messages'][-1]['content'].replace('请翻译','Please translate')
+                for part in (translated[:len(translated)//2],translated[len(translated)//2:]):
+                    self.wfile.write(('data: '+json.dumps({'choices':[{'delta':{'content':part}}]})+'\n\n').encode());self.wfile.flush()
+                self.wfile.write(b'data: [DONE]\n\n')
+        server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        m.save_config({'enabled':True,'baseUrl':f'http://127.0.0.1:{server.server_port}/v1','model':'fixture'})
+        source='请翻译这段文字。\n\n'*11000
+        try:
+            started=time.monotonic()
+            result=subprocess.run([sys.executable,m.__file__],input=json.dumps(dict(action='translate',direction='incoming',text=source)),capture_output=True,text=True,timeout=60)
+            self.assertGreaterEqual(time.monotonic()-started,27)
+            self.assertEqual(result.returncode,0,result.stdout)
+            self.assertEqual(len(result.stdout.splitlines()),1)
+            self.assertEqual(json.loads(result.stdout)['text'],source.replace('请翻译','Please translate'))
+            self.assertGreater(len(captured),1)
+            self.assertTrue(all(body['stream'] for body in captured))
+        finally:server.shutdown();server.server_close();thread.join()
     def test_redirect_does_not_forward_key(self):
         class Handler(BaseHTTPRequestHandler):
             def log_message(self,*args): pass

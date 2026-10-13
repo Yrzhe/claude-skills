@@ -14,7 +14,7 @@ const PANE = {
   viewport: { columns: 160, rows: 40, isFullscreen: true },
   props: { title: 'Translation', isFocused: true, bodyColumns: 52, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
 } as const
-function setup(on: On, config = CONFIG, inspect?: (request: any) => any, composer = { text: '', fills: [] as string[] }) {
+function setup(on: On, config = CONFIG, inspect?: (request: any) => any, composer = { text: '', fills: [] as string[] }, processRun?: (event: any) => any) {
   const clock = mock.clock(on)
   on('session.start', () => ({ cwd: '/work' }))
   on('command.register', () => ({ value: { command: 'translate' } }))
@@ -26,6 +26,7 @@ function setup(on: On, config = CONFIG, inspect?: (request: any) => any, compose
   on('turn.start', ($, e) => ({ turnId: e.turnId }))
   on('turn.complete', ($, e) => ({ text: e.answer }))
   on('process.run', ($, e) => {
+    if (processRun) return processRun(e)
     const request = JSON.parse(e.init?.stdin ?? '{}')
     const override = inspect?.(request)
     const result = override ?? (request.action === 'load' ? config : request.action === 'save' ? { ...config, ...request.patch } : { text: 'Please fix it.', skipped: false })
@@ -121,6 +122,37 @@ test('incoming translation errors block sending instead of dropping or altering 
   const result = await $.prompt.submit({ text: '请修复', origin: { kind: 'composer' }, wait: false })
   expect(result.drop).toContain('timeout')
   expect(sent).toBe(false)
+})
+test('long incoming translations use the extended deadline and forward the complete result', async ($, on) => {
+  const source = '请翻译这段长文。\n'.repeat(12000)
+  const translated = 'Please translate this paragraph.\n'.repeat(12000)
+  setup(on, CONFIG, undefined, undefined, e => {
+    const request = JSON.parse(e.init?.stdin ?? '{}')
+    if (request.action === 'translate') {
+      expect(request.text).toBe(source)
+      expect(e.init?.timeoutMs).toBeGreaterThan(540000)
+      expect(e.init?.timeoutMs).toBeLessThanOrEqual(600000)
+    }
+    return { value: { exitCode: 0, stdout: JSON.stringify(request.action === 'load' ? CONFIG : { text: translated }), stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  await $.session.start(start)
+  expect((await $.prompt.submit({ text: source, origin: { kind: 'composer' }, wait: false })).text).toBe(translated)
+})
+test('native stdout truncation blocks submission and restores the full original', async ($, on) => {
+  const composer = { text: '', fills: [] as string[] }
+  setup(on, CONFIG, undefined, composer, e => {
+    const request = JSON.parse(e.init?.stdin ?? '{}')
+    return { value: { exitCode: 0, stdout: JSON.stringify(request.action === 'load' ? CONFIG : { text: 'Incomplete' }), stderr: '', isStdoutTruncated: request.action === 'translate', isStderrTruncated: false } }
+  })
+  let sent = false
+  on('prompt.submit', ($, e) => { sent = true; return { text: e.text } })
+  await $.session.start(start)
+  const original = '请保留完整原文。'.repeat(2000)
+  const result = await $.prompt.submit({ text: original, origin: { kind: 'composer' }, wait: false })
+  expect(result.drop).toContain('译文过长')
+  expect(sent).toBe(false)
+  expect(composer.fills).toContain(original)
 })
 test('settings save both language directions, detector, model and custom prompts; keys are not prefilled', async ($, on) => {
   let saved: any
