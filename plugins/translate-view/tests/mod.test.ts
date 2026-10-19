@@ -37,6 +37,55 @@ function setup(on: On, config = CONFIG, inspect?: (request: any) => any, compose
 const start = { cwd: '/work', surface: 'terminal', isInteractive: true } as const
 const done = (answer: string, turnId = 't') => ({ answer, turnId, reason: 'answer', isAborted: false, durationMs: 100 }) as const
 
+test('inline panes fit their content while docked panes follow available height', async ($, on) => {
+  setup(on)
+  await $.session.start(start)
+  const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, placement: 'inline', bodyColumns: 120, scroll: { offset: 0, bodyRows: 24 } } })
+  expect((await ui.find({ key: 'translation-pane' }))?.props.minHeight).toBeUndefined()
+  expect((await ui.find({ key: 'sticky-header' }))?.props.height).toBe(3)
+  expect((await ui.find({ key: 'language-controls' }))?.props.flexDirection).toBe('row')
+  await ui.redraw({ ...PANE.props, bodyColumns: 22, scroll: { offset: 0, bodyRows: 40 } })
+  expect((await ui.find({ key: 'translation-pane' }))?.props.minHeight).toBe(40)
+  expect((await ui.find({ key: 'sticky-header' }))?.props.height).toBe(4)
+  expect((await ui.find({ key: 'agent-language' }))?.props.label).toBe('接收')
+  expect((await ui.find({ key: 'language-controls' }))?.props.flexDirection).toBe('column')
+  await ui.redraw({ ...PANE.props, bodyColumns: 100, scroll: { offset: 0, bodyRows: 16 } })
+  expect((await ui.find({ key: 'translation-pane' }))?.props.minHeight).toBe(16)
+  expect((await ui.find({ key: 'language-controls' }))?.props.flexDirection).toBe('row')
+})
+
+test('short settings panes retain body room with compact section navigation', async ($, on) => {
+  setup(on)
+  await $.session.start(start)
+  const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, placement: 'inline', bodyColumns: 22, scroll: { offset: 0, bodyRows: 8 } } })
+  await ui.press({ key: 'settings-button' })
+  expect((await ui.find({ key: 'settings-header' }))?.props.height).toBe(4)
+  expect((await ui.find({ key: 'settings' }))?.props.minHeight).toBeUndefined()
+  await ui.select({ key: 'settings-section', value: 'llm' })
+  expect(await ui.find({ key: 'input-model' })).toBeDefined()
+  await ui.redraw({ ...PANE.props, scroll: { offset: 0, bodyRows: 30 } })
+  expect(await ui.find({ key: 'tab-llm' })).toBeDefined()
+  expect(await ui.find({ key: 'settings-section' })).toBeUndefined()
+})
+
+test('streaming updates the pane without globally invalidating transcript messages', async ($, on) => {
+  const clock = setup(on)
+  let globalRedraws = 0
+  on('ui.invalidate', () => { globalRedraws++; return { value: undefined } })
+  on('process.spawn', async function* () {
+    for (let i = 1; i <= 200; i++) yield { stream: 'stdout', text: JSON.stringify({ type: 'partial', text: '译'.repeat(i) }) + '\n' } as const
+    yield { stream: 'stdout', text: JSON.stringify({ type: 'done', text: '完整译文' }) + '\n' } as const
+    return { value: { code: 0, signal: null } }
+  })
+  await $.session.start(start)
+  const ui = await $.ui.mount(PANE)
+  await $.turn.start({ text: 'hello', turnId: 't' })
+  await $.turn.complete(done('Please translate this reply.'))
+  await clock.advance(500)
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('完整译文')
+  expect(globalRedraws).toBe(0)
+})
+
 test('another session can disable and re-enable translation without stale prompt interception', async ($, on) => {
   let enabled = true, translations = 0
   setup(on, CONFIG, req => {

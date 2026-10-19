@@ -10,6 +10,7 @@ import json
 import os
 import pty
 import select
+import signal
 import struct
 import subprocess
 import tempfile
@@ -100,8 +101,13 @@ class Harness:
         env = dict(os.environ, TERM='xterm-256color', CLAUDE_CODE_NO_FLICKER='1', TRANSLATE_VIEW_CONFIG=str(config),
                    ANTHROPIC_BASE_URL='http://127.0.0.1:1', ANTHROPIC_API_KEY='fixture-only', ANTHROPIC_AUTH_TOKEN='', DISABLE_TELEMETRY='1')
         env.pop('NO_COLOR', None)
+        env.pop('CLAUDE_CODE_CHILD_SESSION', None)
+        env.pop('CLAUDECODE', None)
+        for key in list(env):
+            if key.startswith(('CLAUDE_CODE_SESSION_', 'CLAUDE_CODE_BRIDGE_', 'CLAUDE_CODE_MESSAGING_')) or key in ('CLAUDE_CODE_ENTRYPOINT', 'CLAUDE_PID', 'CLAUDE_PLUGIN_DATA', 'CLAUDE_CODE_EXECPATH'):
+                env.pop(key, None)
         env['FORCE_COLOR'] = '1'
-        command = [os.environ.get('CLAUDE_BIN', 'claude'),'--setting-sources','','--settings','{"enabledPlugins":{},"remoteControlAtStartup":false}',
+        command = [os.environ.get('CLAUDE_BIN', 'claude'),'--debug-file',str(root/'debug.log'),'--setting-sources','','--settings','{"enabledPlugins":{},"remoteControlAtStartup":false,"tui":"fullscreen"}',
                    '--plugin-dir',str(fixture),'--plugin-dir',str(PLUGIN),'--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--tools','']
         self.process = subprocess.Popen(command,stdin=slave,stdout=slave,stderr=slave,cwd=PLUGIN,env=env)
         os.close(slave)
@@ -155,6 +161,12 @@ class Harness:
         self.send(f'\x1b[<32;{target};8M'); time.sleep(.15)
         self.send(f'\x1b[<0;{target};8m')
         self.wait(lambda:any(self.screen.buffer[0][col].data=='│' for col in range(max(1,target-3),min(self.columns,target+3))), f'pane resized to about {columns} columns')
+    def resize_window(self, columns, rows):
+        self.columns, self.rows = columns, rows
+        self.screen.resize(lines=rows, columns=columns)
+        fcntl.ioctl(self.master, termios.TIOCSWINSZ, struct.pack('HHHH', rows, columns, 0, 0))
+        os.kill(self.process.pid, signal.SIGWINCH)
+
     def close(self):
         try:
             self.send('\x1b');self.read(.2);self.send('/exit\r')
@@ -255,6 +267,24 @@ def slow_input_check(h):
     h.wait(lambda:'这是译文。' in h.view(),'reply translation still works after delayed input')
     print('Slow multi-chunk input smoke completed.',flush=True)
 
+def resize_check(h):
+    for columns,rows in [(100,24),(64,18),(160,46),(95,20)]:
+        h.resize_window(columns,rows)
+        h.wait(lambda:'等待 Agent 回复' in h.view() and '❯' in h.view(),f'window resized to {columns}x{rows}')
+        # Wait for the next complete layout frame before measuring the border.
+        end=time.monotonic()+1
+        while time.monotonic()<end:h.read()
+        if columns<110:
+            lines=h.view().splitlines()
+            top=next(i for i,line in enumerate(lines) if line.startswith('╭'))
+            bottom=next(i for i,line in enumerate(lines) if i>top and line.startswith('╰'))
+            assert bottom-top<=8, f'inline pane still reserves empty rows: {bottom-top}'
+            assert any('❯' in line for line in lines[bottom+1:]), 'pane displaced composer'
+        else:
+            assert any(h.screen.buffer[0][c].data=='│' for c in range(h.columns)), 'wide window did not dock pane'
+    assert not h.requests, 'resizing unexpectedly called the translation provider'
+    print('Window resize and compact inline pane smoke completed.',flush=True)
+
 def main():
     global ANSWER
     tables = '--tables' in sys.argv
@@ -265,7 +295,9 @@ def main():
     wide = '--settings-wide' in sys.argv
     h=Harness(root,220 if wide or tables else 120 if narrow else 160,45 if tables else 40 if wide else 28 if narrow else 40)
     try:
-        h.wait(lambda:'等待 Agent 回复' in h.view(),'full-height translation dock')
+        h.wait(lambda:'等待 Agent 回复' in h.view(),'full-height translation dock',timeout=90)
+        if '--resize' in sys.argv:
+            resize_check(h);return
         if '--slow-input' in sys.argv:
             slow_input_check(h);return
         if '--shared-config' in sys.argv:
