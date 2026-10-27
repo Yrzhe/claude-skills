@@ -122,6 +122,186 @@ class Tests(unittest.TestCase):
     def test_corrupted_protection_is_rejected(self):
         with patch.object(m,'request',return_value=FakeResponse({'choices':[{'message':{'content':'Code changed'}}]})):
             with self.assertRaises(m.TranslationError): m.translate(self.config(),'请修改 `hello()`','incoming')
+
+    def test_placeholder_instructions_are_absent_without_protected_literals(self):
+        """Do not suggest internal tokens to a translator of ordinary prose."""
+        seen=[]
+        def request(url,key,body):
+            """Record the provider request and return an ordinary prose translation."""
+            seen.append(body)
+            return FakeResponse.translation('Please review again.')
+        with patch.object(m,'request',request):
+            got=m.translate(self.config(),'请重新检查。','incoming')
+        self.assertEqual(got['text'],'Please review again.')
+        self.assertNotIn('TVKEEP',seen[0]['messages'][0]['content'])
+
+    def test_placeholder_instructions_list_only_the_actual_tokens(self):
+        """A preservation instruction must name tokens present in the request."""
+        def request(url,key,body):
+            """Require actual tokens in the preservation instruction and echo protected text."""
+            system,source=(message['content'] for message in body['messages'])
+            tokens=m.re.findall(r'TVKEEP[0-9a-f]{12}X\d+Z',source)
+            self.assertEqual(len(tokens),2)
+            for token in tokens:self.assertIn(token,system)
+            self.assertNotIn('<number>',system)
+            return FakeResponse.translation(source.replace('请修改','Please fix'))
+        with patch.object(m,'request',request):
+            got=m.translate(self.config(),'请修改 `hello()` 和 `world()`','incoming')
+        self.assertEqual(got['text'],'Please fix `hello()` 和 `world()`')
+
+    def test_unknown_or_incomplete_current_placeholders_are_rejected(self):
+        """Reject extra markers even when all expected literals survived intact."""
+        source='好像这几次的codereview反复出现regression，你帮我重新看一下'
+        translated='It seems that regressions have been repeatedly appearing in these recent code reviews. Could you please take another look for me?'
+        fixed_uuid=m.uuid.UUID('27e7a2d3-aad8-4000-8000-000000000000')
+        prefix='TVKEEP27e7a2d3aad8X'
+        for sse in (False,True):
+            for literal in ('',' `hello()`'):
+                for suffix in ('1Z','1',''):
+                    with self.subTest(sse=sse,literal=literal,suffix=suffix):
+                        output=translated+(' '+prefix+'0Z' if literal else '')+' '+prefix+suffix
+                        with patch.object(m.uuid,'uuid4',return_value=fixed_uuid),patch.object(m,'request',return_value=FakeResponse.translation(output,sse)):
+                            with self.assertRaises(m.TranslationError):
+                                m.translate(self.config(),source+literal,'incoming')
+
+    def test_unknown_current_placeholder_is_hidden_in_reply_partials(self):
+        """Stream previews must not expose an unknown marker while awaiting validation."""
+        prefix='TVKEEP27e7a2d3aad8X'
+        items={prefix+'0Z':'`hello()`'}
+        for suffix in ('1Z','1',''):
+            with self.subTest(suffix=suffix):
+                self.assertEqual(m.visible_partial('Reply '+prefix+'0Z and '+prefix+suffix,items,prefix),'Reply `hello()` and ')
+
+    def test_original_placeholder_like_text_survives_translation(self):
+        """The user's own marker-shaped content must remain ordinary content."""
+        fixed_uuid=m.uuid.UUID('27e7a2d3-aad8-4000-8000-000000000000')
+        source='请保留 TVKEEP27e7a2d3aad8X1Z 和 TVKEEPnot-a-token 以及 `hello()`。'
+        for sse in (False,True):
+            with self.subTest(sse=sse):
+                def request(url,key,body):
+                    """Echo translated prose while preserving marker-shaped source text."""
+                    return FakeResponse.translation(body['messages'][1]['content'].replace('请保留','Please keep'),sse)
+                with patch.object(m.uuid,'uuid4',return_value=fixed_uuid),patch.object(m,'request',request):
+                    got=m.translate(self.config(),source,'incoming')
+                self.assertEqual(got['text'],'Please keep TVKEEP27e7a2d3aad8X1Z 和 TVKEEPnot-a-token 以及 `hello()`。')
+
+    def test_protection_namespace_does_not_collide_with_original_text(self):
+        """Restoring a generated token must not rewrite an identical user literal."""
+        fixed_uuid=m.uuid.UUID('27e7a2d3-aad8-4000-8000-000000000000')
+        source='请保留 TVKEEP27e7a2d3aad8X0Z 和 `hello()`。'
+        def request(url,key,body):
+            """Echo the masked input to exercise restoration of a colliding namespace."""
+            return FakeResponse.translation(body['messages'][1]['content'].replace('请保留','Please keep'))
+        with patch.object(m.uuid,'uuid4',return_value=fixed_uuid),patch.object(m,'request',request):
+            got=m.translate(self.config(),source,'incoming')
+        self.assertEqual(got['text'],'Please keep TVKEEP27e7a2d3aad8X0Z 和 `hello()`。')
+
+    def run_cli_translation(self,source,respond,sse=False,action='translate',direction='incoming',fixed_uuid=False):
+        """Run the helper with isolated HTTP/config and propagate fixture errors to the test."""
+        calls=[]
+        failures=[]
+        class Handler(BaseHTTPRequestHandler):
+            """Serve recorded provider requests without involving a real model."""
+            def log_message(self,*args):
+                """Suppress fixture HTTP access logs."""
+                pass
+            def do_POST(self):
+                """Serve fixture responses and record worker failures for the calling test."""
+                try:
+                    body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                    calls.append(body)
+                    response=FakeResponse.translation(respond(body,len(calls)),sse)
+                    self.send_response(200)
+                    self.send_header('Content-Type',response.headers['Content-Type'])
+                    self.end_headers()
+                    self.wfile.write(response.getvalue())
+                except Exception as error:
+                    failures.append(error)
+                    self.close_connection=True
+        server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+        thread=threading.Thread(target=server.serve_forever,daemon=True)
+        thread.start()
+        try:
+            m.save_config({'enabled':True,'baseUrl':f'http://127.0.0.1:{server.server_port}/v1','model':'fixture'})
+            command=[sys.executable,m.__file__]
+            if fixed_uuid:
+                # Fix only randomness; execute the unchanged CLI entry point and HTTP parser.
+                launch='import runpy,sys,uuid; uuid.uuid4=lambda:uuid.UUID("27e7a2d3-aad8-4000-8000-000000000000"); runpy.run_path(sys.argv[1],run_name="__main__")'
+                command=[sys.executable,'-c',launch,m.__file__]
+            result=subprocess.run(command,input=json.dumps(dict(action=action,direction=direction,text=source)),capture_output=True,text=True,timeout=5)
+        finally:
+            server.shutdown();server.server_close();thread.join()
+        if failures:raise failures[0]
+        return result,calls
+
+    def assert_cli_translation_rejected(self,result):
+        """Require placeholder validation failure without a sendable result or internal token."""
+        events=[json.loads(line) for line in result.stdout.splitlines()]
+        self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+        self.assertTrue(events,result.stdout+result.stderr)
+        self.assertEqual(events[-1]['type'],'error')
+        self.assertIn('占位符',events[-1].get('error',''))
+        self.assertFalse(any(event['type']=='done' for event in events))
+        self.assertNotIn('TVKEEP',result.stdout)
+
+    def test_cli_rejects_extra_placeholders_without_emitting_a_completed_translation(self):
+        """Reject extra protected-content markers for incoming and outgoing CLI operations."""
+        def respond(body,count):
+            """Echo all expected tokens and append an unexpected token in the same namespace."""
+            source=body['messages'][1]['content']
+            token=m.re.search(r'TVKEEP[0-9a-f]{12}X0Z',source)[0]
+            return source+' '+token[:-2]+'1Z'
+        for sse in (False,True):
+            for action,direction,source in [('translate','incoming','请修改 `hello()`。'),('stream','outgoing','Please fix `hello()`.')]:
+                with self.subTest(sse=sse,action=action):
+                    result,_=self.run_cli_translation(source,respond,sse,action,direction)
+                    self.assert_cli_translation_rejected(result)
+
+    def test_streamed_unknown_placeholders_are_hidden_until_final_failure(self):
+        """Parse character-sized SSE events without exposing unknown markers in any preview."""
+        fixed_uuid=m.uuid.UUID('27e7a2d3-aad8-4000-8000-000000000000')
+        prefix='TVKEEP27e7a2d3aad8X'
+        for direction,source in [('incoming','请修改 `hello()`。'),('outgoing','Please fix `hello()`.')]:
+            for suffix in ('1Z','1',''):
+                with self.subTest(direction=direction,suffix=suffix):
+                    events=[]
+                    output='Valid '+prefix+'0Z before '+prefix+suffix+' trailing prose'
+                    response=FakeResponse.translation(output,True,chunks=list(output))
+                    with patch.object(m.uuid,'uuid4',return_value=fixed_uuid),patch.object(m,'request',return_value=response):
+                        with self.assertRaises(m.TranslationError):
+                            m.translate(self.config(),source,direction,events.append)
+                    self.assertGreater(len(events),10)
+                    self.assertTrue(all(event['type']=='partial' for event in events))
+                    self.assertTrue(all('TVKEEP' not in event['text'] for event in events))
+                    self.assertEqual(events[-1]['text'],'Valid `hello()` before ')
+
+    def test_cli_rejects_unprotected_placeholder_suffix_without_done(self):
+        """Reject the original prose-only failure through the real JSON and SSE CLI paths."""
+        source='好像这几次的codereview反复出现regression，你帮我重新看一下'
+        def respond(body,count):
+            """Return the reported suffix for an input without protected literals."""
+            return 'Please review again. TVKEEP27e7a2d3aad8X1Z'
+        for sse in (False,True):
+            with self.subTest(sse=sse):
+                result,calls=self.run_cli_translation(source,respond,sse,fixed_uuid=True)
+                self.assert_cli_translation_rejected(result)
+                self.assertEqual(len(calls),1)
+                self.assertNotIn('TVKEEP',calls[0]['messages'][0]['content'])
+
+    def test_cli_later_chunk_placeholder_failure_never_emits_a_completed_prompt(self):
+        """Reject the whole input when a later chunk adds a token after an earlier success."""
+        source='请翻译这段文字并保留 `hello()`。\n'*500
+        def respond(body,count):
+            """Preserve the first chunk and add an unknown token only to the second."""
+            masked=body['messages'][1]['content']
+            token=m.re.search(r'TVKEEP[0-9a-f]{12}X\d+Z',masked)[0]
+            return masked+(' '+token.split('X')[0]+'X999999Z' if count==2 else '')
+        for sse in (False,True):
+            with self.subTest(sse=sse):
+                result,calls=self.run_cli_translation(source,respond,sse)
+                self.assert_cli_translation_rejected(result)
+                self.assertEqual(len(calls),2)
+
     def test_jev_payload_and_confidence(self):
         seen=[]
         def request(url,key,body):
@@ -333,5 +513,14 @@ class FakeResponse(io.BytesIO):
     def __init__(self,data=None,raw=None,sse=False):
         super().__init__(raw if raw is not None else json.dumps(data).encode())
         self.headers={'Content-Type':'text/event-stream' if sse else 'application/json'}
+
+    @classmethod
+    def translation(cls,text,sse=False,chunks=None):
+        """Build JSON or SSE parser input, optionally using explicit streamed fragments."""
+        if not sse:return cls({'choices':[{'message':{'content':text},'finish_reason':'stop'}]})
+        parts=(text[:len(text)//2],text[len(text)//2:]) if chunks is None else chunks
+        raw=''.join('data: '+json.dumps({'choices':[{'index':0,'delta':{'content':part}}]})+'\n\n' for part in parts)
+        return cls(raw=(raw+'data: [DONE]\n\n').encode(),sse=True)
+
 
 if __name__=='__main__': unittest.main()
