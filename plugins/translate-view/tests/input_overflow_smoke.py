@@ -1,5 +1,5 @@
 """Long left-input inspector PTY smoke; stdlib only, isolated config and mock services."""
-import fcntl,json,os,pty,re,select,shlex,struct,subprocess,tempfile,termios,threading,time
+import fcntl,json,os,pty,re,select,shlex,signal,struct,subprocess,sys,tempfile,termios,threading,time
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 
@@ -58,6 +58,11 @@ master,slave=pty.openpty();fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHH
 command=[*shlex.split(os.environ.get('CLAUDE_BIN','claude')),'--debug-file',str(root/'debug.log'),'--setting-sources','','--settings','{"enabledPlugins":{},"remoteControlAtStartup":false,"tui":"fullscreen"}','--plugin-dir',str(fixture),'--plugin-dir',str(plugin),'--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--tools','']
 process=subprocess.Popen(command,stdin=slave,stdout=slave,stderr=slave,cwd=plugin,env=env);os.close(slave)
 raw=bytearray();log=(root/'terminal.bin').open('wb')
+trust_answered=False
+screen=None
+if '--short-window' in sys.argv:
+    import pyte
+    screen=pyte.Screen(160,40);terminal_stream=pyte.ByteStream(screen)
 def send(text):
     """Write UTF-8 input or terminal control sequences to the Claude PTY."""
     os.write(master,text.encode())
@@ -65,6 +70,7 @@ def read(seconds=.05):
     """Capture available PTY output and answer terminal capability queries."""
     if select.select([master],[],[],seconds)[0]:
         chunk=os.read(master,65536);raw.extend(chunk);log.write(chunk);log.flush()
+        if screen is not None:terminal_stream.feed(chunk)
         if b'\x1b[6n' in chunk:send('\x1b[1;1R')
         if b'\x1b[c' in chunk:send('\x1b[?1;2c')
 def clean(start=0):
@@ -73,9 +79,16 @@ def clean(start=0):
     return re.sub(r'\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))','',text)
 def wait(check,label,timeout=35):
     """Read until a condition passes, preserving diagnostic output on timeout."""
+    global trust_answered
     deadline=time.monotonic()+timeout
     while time.monotonic()<deadline:
         read()
+        if not trust_answered and 'Yes,Itrustthisfolder' in ''.join(clean().split()):
+            # A custom account launcher may override our temporary config directory.
+            # Accept only this test checkout, after the prompt finishes mounting.
+            time.sleep(1)
+            if '❯No,exit' in ''.join(clean().split()):send('\x1b[B');time.sleep(.5)
+            send('\r');trust_answered=True
         if check():print('PASS:',label,flush=True);return
         if process.poll() is not None:raise AssertionError('Claude exited: '+str(process.returncode))
     (root/'screen-raw-text.txt').write_text(clean())
@@ -90,7 +103,7 @@ def press(x,y,key):
     send(f'\x1b[<0;{x};{y}M');time.sleep(.08);send(f'\x1b[<0;{x};{y}m')
     wait(lambda:file.exists() and key in file.read_text(),key,timeout=8)
 try:
-    wait(lambda:'等待Agent回复' in ''.join(clean().split()),'initial translation pane')
+    wait(lambda:'等待Agent回复' in ''.join(clean().split()),'initial translation pane',timeout=90)
     payload='\x1b[200~'+'文'*60000+'\x1b[201~'
     def paste():
         """Write the bracketed-paste payload in chunks while output is drained."""
@@ -122,6 +135,42 @@ try:
     assert json.loads(config.read_text())['inputRight']=='off'
     print('PASS: persistent right-side display remains off',flush=True)
     print('Received length:',json.loads((root/'received.json').read_text())['length'],flush=True)
+
+    if screen is not None:
+        def visible():
+            """Read the current terminal frame, preserving wide-character cells."""
+            return [''.join(screen.buffer[y][x].data for x in range(screen.columns)) for y in range(screen.lines)]
+        def control_row():
+            """Find the compact inspector toolbar rather than transcript command text."""
+            return next((y for y,line in enumerate(visible()) if '返回' in line and re.search(r'\d+/\d+',line)),None)
+        def click_compact(label,key):
+            """Click a compact toolbar action at its actual terminal coordinates."""
+            # A resize can move the toolbar after the first frame arrives.
+            until=time.monotonic()+.5
+            while time.monotonic()<until:read(.05)
+            row=control_row()
+            assert row is not None, 'compact toolbar is not visible'
+            line=visible()[row]
+            press(line.index(label)+1,row+1,key)
+        mark=len(raw);send('/translate input '+message['id']+'\r')
+        wait(lambda:'1/4页' in ''.join(clean(mark).split()),'reopen full input for short-window checks')
+        for height in (12,10):
+            screen.resize(lines=height,columns=64)
+            fcntl.ioctl(master,termios.TIOCSWINSZ,struct.pack('HHHH',height,64,0,0))
+            os.kill(process.pid,signal.SIGWINCH)
+            wait(lambda:control_row() is not None and json.loads((root/'pane.json').read_text())['bodyColumns']==60
+                 and json.loads((root/'pane.json').read_text())['scroll']['bodyRows'] <= (2 if height==12 else 1),
+                 f'compact controls visible at 64x{height}')
+            assert '>' in visible()[control_row()], 'next-page control is clipped'
+            (root/f'compact-64x{height}.txt').write_text('\n'.join(visible()))
+            click_compact('>','input-full-next')
+            wait(lambda:control_row() is not None and '2/4' in visible()[control_row()], 'compact next page')
+            click_compact('<','input-full-prev')
+            wait(lambda:control_row() is not None and '1/4' in visible()[control_row()], 'compact previous page')
+        click_compact('返回','input-full-close')
+        wait(lambda:control_row() is None,'compact return closes full input')
+        print('PASS: short-window navigation at 64x12 and 64x10',flush=True)
+
 finally:
     process.terminate()
     try:process.wait(timeout=5)

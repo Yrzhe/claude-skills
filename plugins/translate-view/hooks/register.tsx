@@ -488,7 +488,11 @@ export const register: Register = on => {
       const pages = markdownPages(parts)
       inspection.page = Math.min(inspection.page, pages.length - 1)
       const narrow = e.props.bodyColumns < 42
-      const headerRows = narrow ? 4 + Number(inspection.page > 0) + Number(inspection.page < pages.length - 1) : 3
+      const normalHeaderRows = narrow ? 4 + Number(inspection.page > 0) + Number(inspection.page < pages.length - 1) : 3
+      // Prioritize navigation when the host gives an inline pane only a few
+      // rows; a fixed title/ID header would otherwise hide every action.
+      const compact = e.props.scroll.bodyRows < normalHeaderRows + 2
+      const headerRows = compact ? 1 : normalHeaderRows
       return <Box key="input-full-view" flexDirection="column" width={e.props.bodyColumns} minHeight={e.props.placement === 'dock' ? e.props.scroll.bodyRows : undefined}>
         <Box flexDirection="column" paddingTop={headerRows}>
           {pages[inspection.page]!.map((part, i) => part.plain
@@ -496,13 +500,13 @@ export const register: Register = on => {
             : <Markdown key={`input-full-${i}`} text={part.text} />)}
         </Box>
         <Box key="input-full-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={headerRows} flexDirection="column" backgroundColor={headerColors.background}>
-          <Text color={headerColors.text} bold>输入全文</Text>
-          <Text color={headerColors.secondary} wrap="truncate">{inspection.id}</Text>
-          <Box key="input-full-controls" flexDirection={narrow ? 'column' : 'row'} columnGap={1}>
-            <Text color={headerColors.text}>{`${inspection.page + 1}/${pages.length} 页`}</Text>
-            {inspection.page > 0 && <Button key="input-full-prev" plain label="上一页" onPress={() => { inspection.page--; settingsStart = true; redraw($) }} />}
-            {inspection.page < pages.length - 1 && <Button key="input-full-next" plain label="下一页" onPress={() => { inspection.page++; settingsStart = true; redraw($) }} />}
-            <Button key="input-full-close" plain label="返回翻译" onPress={() => { inputInspection = undefined; page = ''; redraw($) }} />
+          {!compact && <Text color={headerColors.text} bold>输入全文</Text>}
+          {!compact && <Text color={headerColors.secondary} wrap="truncate">{inspection.id}</Text>}
+          <Box key="input-full-controls" flexDirection={narrow && !compact ? 'column' : 'row'} columnGap={1}>
+            <Text color={headerColors.text}>{`${inspection.page + 1}/${pages.length}${compact ? '' : ' 页'}`}</Text>
+            {inspection.page > 0 && <Button key="input-full-prev" plain label={compact ? '<' : '上一页'} onPress={() => { inspection.page--; settingsStart = true; redraw($) }} />}
+            {inspection.page < pages.length - 1 && <Button key="input-full-next" plain label={compact ? '>' : '下一页'} onPress={() => { inspection.page++; settingsStart = true; redraw($) }} />}
+            <Button key="input-full-close" plain label={compact ? '返回' : '返回翻译'} onPress={() => { inputInspection = undefined; page = ''; redraw($) }} />
           </Box>
         </Box>
       </Box>

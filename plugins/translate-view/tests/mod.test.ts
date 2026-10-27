@@ -1100,3 +1100,31 @@ test('a 22-column full-input inspector keeps navigation on separate header rows'
   await ui.press({ key: 'input-full-close' })
   expect(await ui.find({ key: 'input-full-header' })).toBeUndefined()
 })
+
+for (const [columns, rows] of [[60, 2], [60, 1], [22, 2]] as const) {
+  test(`full-input navigation remains usable in a ${columns}x${rows} body`, async ($, on) => {
+    setup(on, { ...CONFIG, inputTranslation: 'left', inputLeft: 'both', inputRight: 'off' })
+    on('state.get', ($, e, next) => e.key === 'originals'
+      ? { value: { value: { short: 'O'.repeat(60000) }, version: 1 } } : next(e))
+    await $.session.start(start)
+    await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'short', surface: 'terminal', props: { text: 'T'.repeat(60000), origin: { kind: 'composer' }, isExpanded: true } })
+    await $.command.run({ ...translateCommand, args: 'input short' })
+    const props = { ...PANE.props, bodyColumns: columns, scroll: { offset: 0, bodyRows: rows } }
+    const ui = await $.ui.mount({ ...PANE, props })
+    expect(Number((await ui.find({ key: 'input-full-header' }))?.props.height)).toBeLessThanOrEqual(rows)
+    expect((await ui.find({ key: 'input-full-controls' }))?.props.flexDirection).toBe('row')
+    expect(await ui.find({ key: 'input-full-prev' })).toBeUndefined()
+    await ui.press({ key: 'input-full-next' })
+    expect(await ui.find({ key: 'input-full-prev' })).toBeDefined()
+    expect(await ui.find({ key: 'input-full-next' })).toBeDefined()
+    expect(Number((await ui.find({ key: 'input-full-header' }))?.props.height)).toBeLessThanOrEqual(rows)
+    await ui.press({ key: 'input-full-prev' })
+    expect(await ui.find({ key: 'input-full-prev' })).toBeUndefined()
+    // Growing the window restores the normal title/ID and navigation layout.
+    await ui.redraw({ ...props, scroll: { offset: 0, bodyRows: 30 } })
+    expect(Number((await ui.find({ key: 'input-full-header' }))?.props.height)).toBe(columns < 42 ? 5 : 3)
+    await ui.redraw(props)
+    await ui.press({ key: 'input-full-close' })
+    expect(await ui.find({ key: 'input-full-header' })).toBeUndefined()
+  })
+}
