@@ -6,6 +6,8 @@ export type Config = {
   jevConfigSource?: string; jevUrlEnv?: string; jevModelEnv?: string;
   llmConfigSource?: string; detectionModel?: string; effectiveModel?: string;
   enabled: boolean; incomingLanguage: string; outgoingLanguage: string; detection: string;
+  inputTranslation: 'off' | 'left' | 'right' | 'both';
+  inputLeft: 'off' | 'original' | 'translation' | 'both'; inputRight: 'off' | 'original' | 'translation' | 'both';
   baseUrl: string; postUrl: string; model: string; baseUrlEnv: string; apiKeyEnv: string; modelEnv: string;
   jevUrl: string; jevKeyEnv: string; jevModel: string; incomingPrompt: string; outgoingPrompt: string;
   hasApiKey: boolean; hasJevKey: boolean; ready: boolean;
@@ -115,4 +117,20 @@ export function settingsGroups<T extends { label: string }>(items: T[], columns:
   }
   if (group.length) groups.push(group)
   return groups
+}
+
+/**
+ * Group rendered Markdown parts into pages of at most 40000 text characters.
+ * Parts must already be bounded by markdownParts; two pages leave room for
+ * input/reply controls under the host's 100000-character tree limit.
+ */
+export function markdownPages(parts: ReturnType<typeof markdownParts>): ReturnType<typeof markdownParts>[] {
+  const pages: ReturnType<typeof markdownParts>[] = [[]]
+  let size = 0
+  for (const part of parts) {
+    if (size + part.text.length > 40_000) { pages.push([]); size = 0 }
+    pages[pages.length - 1]!.push(part)
+    size += part.text.length
+  }
+  return pages
 }

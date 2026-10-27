@@ -36,6 +36,7 @@ End of comparison.'''
 
 class Harness:
     def __init__(self, root, columns=160, rows=40):
+        """Start an isolated Claude PTY with temporary settings and a mock translation server."""
         self.root = root
         self.columns, self.rows = columns, rows
         self.requests = []
@@ -43,6 +44,7 @@ class Harness:
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *args): pass
             def do_POST(self):
+                """Serve deterministic JSON or SSE translations and record requests for assertions."""
                 body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 owner.requests.append(body)
                 if '--slow-input' in sys.argv and len(owner.requests)==1:
@@ -53,6 +55,8 @@ class Harness:
                 self.end_headers()
                 if 'English' in body['messages'][0]['content']:
                     translated = 'Please show a long reply.' if '长文' in body['messages'][-1]['content'] else 'Please explain this feature.'
+                    if '--input-pages' in sys.argv:
+                        translated = '# Input page\n\n' + 'A' * 90_000 + '\n\nINPUT_END'
                     if '--slow-input' in sys.argv:
                         translated = body['messages'][-1]['content'].replace('请翻译这一段。','Please translate this paragraph.')
                     if stream:
@@ -78,6 +82,8 @@ class Harness:
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         config = root/'config.json'
         config.write_text(json.dumps({'enabled':True,'baseUrl':f'http://127.0.0.1:{self.server.server_port}/v1','model':'fixture','apiKey':'fixture-secret-A123','jevKey':'fixture-secret-J456','apiKeyEnv':'','baseUrlEnv':'','modelEnv':''}))
+        if '--input-pages' in sys.argv:
+            saved=json.loads(config.read_text());saved['inputTranslation']='right';config.write_text(json.dumps(saved))
         fixture = root/'fixture'; (fixture/'.claude-plugin').mkdir(parents=True); (fixture/'hooks').mkdir()
         (fixture/'.claude-plugin/plugin.json').write_text('{"name":"translate-fixture","version":"0.0.1"}')
         (fixture/'hooks/hooks.json').write_text('{"modules":["./register.ts"]}')
@@ -100,13 +106,23 @@ class Harness:
         fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHHH',rows,columns,0,0))
         env = dict(os.environ, TERM='xterm-256color', CLAUDE_CODE_NO_FLICKER='1', TRANSLATE_VIEW_CONFIG=str(config),
                    ANTHROPIC_BASE_URL='http://127.0.0.1:1', ANTHROPIC_API_KEY='fixture-only', ANTHROPIC_AUTH_TOKEN='', DISABLE_TELEMETRY='1')
+        # Keep trust/onboarding state and generated session data out of the user's home.
+        claude_home=root/'claude-home';claude_home.mkdir()
+        theme='dark'
+        if '--theme-colors' in sys.argv:
+            theme='light' if '--light-theme' in sys.argv else 'dark'
+        (claude_home/'.claude.json').write_text(json.dumps({'hasCompletedOnboarding':True,'theme':theme,
+            'projects':{str(PLUGIN):{'hasTrustDialogAccepted':True}},
+            'customApiKeyResponses':{'approved':['fixture-only'],'rejected':[]}}))
+        env['CLAUDE_CONFIG_DIR']=str(claude_home)
         env.pop('NO_COLOR', None)
         env.pop('CLAUDE_CODE_CHILD_SESSION', None)
         env.pop('CLAUDECODE', None)
         for key in list(env):
             if key.startswith(('CLAUDE_CODE_SESSION_', 'CLAUDE_CODE_BRIDGE_', 'CLAUDE_CODE_MESSAGING_')) or key in ('CLAUDE_CODE_ENTRYPOINT', 'CLAUDE_PID', 'CLAUDE_PLUGIN_DATA', 'CLAUDE_CODE_EXECPATH'):
                 env.pop(key, None)
-        env['FORCE_COLOR'] = '1'
+        env['FORCE_COLOR'] = '3' if '--theme-colors' in sys.argv else '1'
+        if '--theme-colors' in sys.argv: env['COLORTERM']='truecolor'
         command = [os.environ.get('CLAUDE_BIN', 'claude'),'--debug-file',str(root/'debug.log'),'--setting-sources','','--settings','{"enabledPlugins":{},"remoteControlAtStartup":false,"tui":"fullscreen"}',
                    '--plugin-dir',str(fixture),'--plugin-dir',str(PLUGIN),'--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--tools','']
         self.process = subprocess.Popen(command,stdin=slave,stdout=slave,stderr=slave,cwd=PLUGIN,env=env)
@@ -180,17 +196,18 @@ class Harness:
         self.server.shutdown();self.server.server_close()
 
 def settings_check(h):
+    """Exercise settings navigation, cancellation, and display-option saves at the active width."""
     h.click('设置')
     h.wait(lambda:'模型接口' in h.view() and '语言检测:' in h.view(),'settings opens language detection overview')
     if '--settings-wide' in sys.argv:
-        assert any(all(name in row for name in ['语言检测','模型接口','环境变量','Jev 接口','翻译 Prompt']) for row in h.view().splitlines()[:4]), 'wide tabs are not on one row'
+        assert any(all(name in row for name in ['语言检测','模型接口','环境变量','Jev 接口','翻译 Prompt','输入显示']) for row in h.view().splitlines()[:4]), 'wide tabs are not on one row'
     h.click('语言检测:')
     h.send('\x1b[B\r')
     h.wait(lambda:'检测模型:' in h.view(),'LLM detection exposes an independent model field')
     for section, fields in [('模型接口',['接口 Base URL:', '翻译模型名:', '新的 API Key:', '完整 POST URL（可选）:']), ('环境变量',['地址变量名:', '密钥变量名:', '模型变量名:']), ('Jev 接口',['Jev POST URL:', 'Jev 模型名:', '新的 Jev API Key:']), ('翻译 Prompt',['发送前:', '回复:'])]:
         h.click(section)
         title = {'模型接口':'翻译模型', '环境变量':'环境变量绑定', 'Jev 接口':'Jev ·', '翻译 Prompt':'分别设置两个方向'}[section]
-        h.wait(lambda:title in h.view(), 'settings section rendered: '+section)
+        h.wait(lambda:title.replace(' ','') in ''.join(h.pane()).replace(' ',''), 'settings section rendered: '+section)
         if '--settings-wide' in sys.argv and section in ('模型接口','Jev 接口'):
             suffix='****A123' if section=='模型接口' else '****J456'
             h.wait(lambda:suffix in h.view() and '本机配置' in h.view(), 'masked key source visible: '+section)
@@ -205,6 +222,67 @@ def settings_check(h):
     h.click('设置')
     h.wait(lambda:'语言检测:' in h.view(),'reopening settings resets to language overview')
     h.click('取消')
+    h.wait(lambda:'翻译设置' not in h.view(),'reopened settings cancel finishes before the next input')
+    if '--settings-only' in sys.argv or '--settings-wide' in sys.argv:
+        h.click('设置');h.click('输入显示')
+        h.wait(lambda:'显示位置:' in h.view(),'input display settings visible')
+        h.click('显示位置:');h.send('\x1b[B'*3+'\r')
+        h.wait(lambda:'左侧内容:' in h.view(),'both-side position exposes left content')
+        h.click('左侧内容:');h.send('\x1b[B\r')
+        h.wait(lambda:'右侧内容:' in h.view(),'right content selector visible')
+        h.click('右侧内容:');h.send('\x1b[A\r')
+        h.click('保存')
+        h.wait(lambda:'翻译设置' not in h.view(),'input display settings saved')
+        saved=json.loads((h.root/'config.json').read_text())
+        assert saved['inputTranslation']=='both' and saved['inputLeft']=='both' and saved['inputRight']=='translation', saved
+
+def input_display_check(h):
+    """Check 22 display scenarios while verifying the Agent receives the complete translation."""
+    config=h.root/'config.json'
+    modes=('off','original','translation','both')
+    cases=[(position,left,'both') for position,left in [('off','translation'),('left','translation'),('left','both'),('right','translation'),('both','translation'),('both','both')]]
+    cases += [('both',left,right) for left in modes for right in modes]
+    for index,(position,left,right) in enumerate(cases):
+        saved=json.loads(config.read_text())
+        saved.update(inputTranslation=position,inputLeft=left,inputRight=right)
+        config.write_text(json.dumps(saved))
+        source=f'请解释第{index+1}个功能。'
+        before=len(h.requests)
+        h.send(source+'\r')
+        h.wait(lambda:len(h.requests)>=before+2 and '这是译文。' in h.view() and '翻译中' not in h.view(), f'input display {position}/{left}/{right} reply completed')
+        divider=next(col for col in range(h.columns) if h.screen.buffer[0][col].data=='│')
+        transcript='\n'.join(''.join(h.screen.buffer[row][col].data for col in range(divider)) for row in range(h.rows))
+        pane='\n'.join(h.pane())
+        active_left=position in ('left','both')
+        show_left=active_left and left in ('translation','both')
+        show_right=position in ('right','both') and right!='off'
+        assert ('Please explain this feature.' in transcript)==show_left, transcript
+        assert (source in transcript)==(not active_left or left in ('original','both')), transcript
+        assert ('最近输入' in pane)==show_right, pane
+        assert ('Please explain this feature.' in pane)==(show_right and right in ('translation','both')), pane
+        if show_left and left=='both': assert 'Original:' in transcript and 'Sent:' in transcript, transcript
+        assert (source in pane)==(show_right and right in ('original','both')), pane
+        if show_right: assert '最近输入 · 发送译文' not in pane, pane
+        received=json.loads((h.root/'received.json').read_text())
+        assert received['text']=='Please explain this feature.', received
+        (h.root/f'input-{position}-{left}-{right}.txt').write_text(h.view())
+    print('Input display smoke completed.',flush=True)
+
+def input_pages_check(h):
+    """Verify a 90025-character sent prompt remains accessible through input pagination."""
+    h.send('请解释分页。\r')
+    h.wait(lambda:'这是译文。' in h.view() and '翻译中' not in h.view(), 'long input retains reply translation')
+    received=json.loads((h.root/'received.json').read_text())
+    assert received['text']=='# Input page\n\n'+'A'*90_000+'\n\nINPUT_END'
+    h.send(f'\x1b[<64;{h.columns-5};10M'*250)
+    h.wait(lambda:'1/3 页' in h.view() and '最近输入' in h.view(), 'first input page controls visible')
+    h.click('下一页')
+    h.wait(lambda:'2/3 页' in h.view(), 'second input page selected')
+    h.click('下一页')
+    h.wait(lambda:'3/3 页' in h.view(), 'last input page selected')
+    h.click('回到底部')
+    h.wait(lambda:'INPUT_END' in h.view() and '这是译文。' in h.view(), 'last input page and reply remain accessible')
+    print('Input paging smoke completed.',flush=True)
     h.wait(lambda:'Translation' in h.view() and '翻译设置' not in h.view(),'return to reply')
 
 def table_check(h):
@@ -285,7 +363,49 @@ def resize_check(h):
     assert not h.requests, 'resizing unexpectedly called the translation provider'
     print('Window resize and compact inline pane smoke completed.',flush=True)
 
+def theme_colors_check(h):
+    """Check header and body colors plus settings interactions under the selected host theme."""
+    light='--light-theme' in sys.argv
+    expected_bg='009999' if light else '3a3029'
+    expected_primary='000000' if light else 'f0e6d8'
+    expected_secondary='666666' if light else 'b7a695'
+    def pane_cell(label):
+        """Return the terminal cell at a matching pane label, raising if the label is absent."""
+        divider=next(col for col in range(h.columns) if h.screen.buffer[0][col].data=='│')
+        for row in range(h.rows):
+            for col in range(divider+1,h.columns):
+                text=''.join(h.screen.buffer[row][at].data for at in range(col,min(h.columns,col+len(label)*2)))
+                if text.startswith(label): return h.screen.buffer[row][col]
+        raise AssertionError('No pane title '+label)
+    actual=pane_cell('Translation')
+    print('Reply header colors:',actual.bg,actual.fg,flush=True)
+    assert (actual.bg,actual.fg)==(expected_bg,expected_primary), ('reply header palette mismatch',actual)
+    actual=pane_cell('译文')
+    assert (actual.bg,actual.fg)==(expected_bg,expected_secondary), ('reply secondary text palette mismatch',actual)
+    body=pane_cell('等待 Agent 回复')
+    print('Body colors:',body.bg,body.fg,flush=True)
+    assert body.bg == ('f5f5f5' if light else '262626'), ('body background changed', body)
+    h.click('设置')
+    h.wait(lambda:'翻译设置' in h.view(),'settings header rendered')
+    actual=pane_cell('翻译设置')
+    print('Settings header colors:',actual.bg,actual.fg,flush=True)
+    assert (actual.bg,actual.fg)==(expected_bg,expected_primary), ('settings header palette mismatch',actual)
+    actual=pane_cell('当前检测：')
+    assert (actual.bg,actual.fg)==(expected_bg,expected_secondary), ('settings secondary text palette mismatch',actual)
+    resting=pane_cell('模型接口')
+    assert (resting.bg,resting.fg)==(expected_bg,expected_primary), ('tab text palette mismatch',resting)
+    h.click('模型接口')
+    h.wait(lambda:'翻译模型' in h.view(),'palette tab remains clickable')
+    assert '● 模型接口' in h.view(), 'selected tab indicator was lost'
+    h.click('输入显示')
+    h.wait(lambda:'输入显示内容' in h.view(),'input display text rendered')
+    label=pane_cell('输入显示内容')
+    assert label.fg == ('000000' if light else 'ffffff'), ('body title does not follow theme', label)
+    assert not h.requests, 'theme check unexpectedly called the translation provider'
+    print('Pane theme color smoke completed.',flush=True)
+
 def main():
+    """Run the requested PTY smoke scenario and always close the harness afterward."""
     global ANSWER
     tables = '--tables' in sys.argv
     if tables: ANSWER = TABLE_ANSWER
@@ -293,18 +413,27 @@ def main():
     print('Artifacts:',root,flush=True)
     narrow = '--settings-only' in sys.argv
     wide = '--settings-wide' in sys.argv
-    h=Harness(root,220 if wide or tables else 120 if narrow else 160,45 if tables else 40 if wide else 28 if narrow else 40)
+    h=Harness(root,240 if wide else 220 if tables else 120 if narrow else 160,45 if tables else 40 if wide else 28 if narrow else 40)
     try:
+        if narrow:
+            h.wait(lambda:'❯' in h.view(), 'native prompt available before opening a narrow pane')
+            h.send('/translate\r')
         h.wait(lambda:'等待 Agent 回复' in h.view(),'full-height translation dock',timeout=90)
+        if '--theme-colors' in sys.argv:
+            theme_colors_check(h);return
         if '--resize' in sys.argv:
             resize_check(h);return
         if '--slow-input' in sys.argv:
             slow_input_check(h);return
         if '--shared-config' in sys.argv:
             shared_config_check(h);return
+        if '--input-display' in sys.argv:
+            input_display_check(h);return
+        if '--input-pages' in sys.argv:
+            input_pages_check(h);return
         if tables:
             table_check(h);return
-        if wide: h.resize_pane()
+        if wide: h.resize_pane(100)
         elif narrow: h.resize_pane(22)
         if narrow or wide:
             settings_check(h)

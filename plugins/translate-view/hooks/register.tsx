@@ -1,9 +1,10 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, HookStream, ProcessSpawnChunk, ProcessSpawnResult, Register } from 'claude-code'
-import { isControlPrompt, languageOptions, nextSegment, markdownParts, settingsGroups } from './core'
+import { isControlPrompt, languageOptions, nextSegment, markdownParts, markdownPages, settingsGroups } from './core'
 import type { Config } from './core'
 
 const PANE = 'translate-view'
+const DARK_HEADER_COLORS = { background: '#3A3029', text: '#F0E6D8', secondary: '#B7A695' } as const
 let cfg: Config | undefined
 let draft: Record<string, unknown> = {}
 let page = ''
@@ -19,8 +20,20 @@ let settingsStart = false
 let currentStream: HookStream<ProcessSpawnChunk, ProcessSpawnResult> | undefined
 const displayOriginals = atom({ plugin: 'translate-view', key: 'originals' } as const, {} as Record<string, string>)
 const paneRevision = atom({ plugin: 'translate-view', key: 'paneRevision' } as const, 0)
+const inputDisplay = atom({ plugin: 'translate-view', key: 'inputDisplay' } as const,
+  { inputTranslation: 'off', inputLeft: 'translation' } as Pick<Config, 'inputTranslation' | 'inputLeft'>)
+type InputNote = { original: string; text: string }
+let inputNote: InputNote | undefined
+const overflowInputs = new Map<string, InputNote>()
+let inputInspection: { id: string; note: InputNote; page: number } | undefined
+let inputEpoch = 0
+let inputPage = 0
+let replyPage = 0
+let replyPageCount = 1
 let cancelRedraw: ReturnType<EngineInterface['clock']['after']> | undefined
 let markdownCache: { source: string; columns: number; parts: ReturnType<typeof markdownParts> } | undefined
+let inputMarkdownCache: typeof markdownCache
+let originalMarkdownCache: typeof markdownCache
 let originals = new Map<string, { original: string }[]>()
 let failedPrompts: string[] = []
 let job: { source: string; cursor: number; done: boolean; pieces: string[]; pending: string; error: string; skipped: boolean } | undefined
@@ -39,17 +52,36 @@ function redraw($: EngineInterface, deferred = false) {
     await update($, paneRevision, revision => revision + 1)
   })
 }
-function renderedMarkdown(source: string, columns: number) {
-  if (!markdownCache || markdownCache.source !== source || markdownCache.columns !== columns)
-    markdownCache = { source, columns, parts: markdownParts(source, columns) }
-  return markdownCache.parts
+/** Cache parsed Markdown independently for the reply, input original, and input translation. */
+function renderedMarkdown(source: string, columns: number, section: 'reply' | 'input' | 'original' = 'reply') {
+  let cache = section === 'original' ? originalMarkdownCache : section === 'input' ? inputMarkdownCache : markdownCache
+  if (!cache || cache.source !== source || cache.columns !== columns)
+    cache = { source, columns, parts: markdownParts(source, columns) }
+  if (section === 'original') originalMarkdownCache = cache
+  else if (section === 'input') inputMarkdownCache = cache
+  else markdownCache = cache
+  return cache.parts
 }
+/** Clear recent input and invalidate pending submissions captured before this reset. */
+function clearInput() {
+  inputEpoch++
+  inputNote = undefined
+  overflowInputs.clear()
+  inputInspection = undefined
+  if (page === 'input') page = ''
+  inputPage = 0
+  inputMarkdownCache = undefined
+  originalMarkdownCache = undefined
+}
+/** Cancel the current reply translation and reset its paging and follow state. */
 function reset(source = '', done = false) {
   generation++
   const stream = currentStream
   currentStream = undefined
   if (stream) { void stream.result.catch(() => {}); void stream.return({ code: null, signal: 'SIGTERM' }).catch(() => {}) }
   job = { source, cursor: 0, done, pieces: [], pending: '', error: '', skipped: true }
+  replyPage = 0
+  replyPageCount = 1
   follow = true; needsFollow = true
 }
 async function recover($: EngineInterface, text: string) {
@@ -68,26 +100,41 @@ async function helper($: EngineInterface, data: object): Promise<Record<string, 
   if (result.exitCode !== 0 || value.error) throw new Error(value.error || '翻译失败。')
   return value
 }
+/** Apply settings and publish effective display options, suspending custom display while disabled. */
+async function configure($: EngineInterface, value: Config) {
+  if (cfg?.inputRight !== value.inputRight) inputPage = 0
+  cfg = value
+  if (!cfg.enabled) clearInput()
+  const position = value.enabled ? value.inputTranslation : 'off'
+  await update($, inputDisplay, previous =>
+    previous.inputTranslation === position && previous.inputLeft === value.inputLeft
+      ? previous : { inputTranslation: position, inputLeft: value.inputLeft })
+}
+/** Load shared private settings through the helper and apply them to this session. */
 async function load($: EngineInterface) {
-  cfg = await helper($, { action: 'load' }) as Config
+  await configure($, await helper($, { action: 'load' }) as Config)
 }
 async function open($: EngineInterface, settings = false) {
   await load($)
+  inputInspection = undefined
+  if (page === 'input') page = ''
   if (settings || !cfg?.enabled) { page = 'settings'; draft = { ...cfg }; tab = 'language'; settingsStart = true }
   // Use the host's proportional layout, including the person's saved size.
   await $.ui.open({ id: PANE, title: 'Translation' })
   needsFollow = true
   redraw($)
 }
+/** Persist a settings patch and restart reply rendering, retaining the draft on failure. */
 async function save($: EngineInterface, patch: Record<string, unknown>, close = true) {
   try {
-    cfg = await helper($, { action: 'save', patch }) as Config
+    await configure($, await helper($, { action: 'save', patch }) as Config)
     draft = { ...cfg }; notice = '已保存'; if (close) page = ''
     const source = job?.source ?? ''; const done = job?.done ?? true
     reset(source, done)
   } catch (e) { notice = e instanceof Error ? e.message : '保存失败。' }
   redraw($)
 }
+/** Translate the next reply segment, ignoring stale results and handling remote disablement. */
 async function pump($: EngineInterface) {
   if (busy || !cfg?.enabled || !job || job.error) return
   const segment = nextSegment(job.source, job.cursor, job.done)
@@ -118,7 +165,8 @@ async function pump($: EngineInterface) {
     const result = await stream.result
     if (result.code !== 0 || !final) throw new Error('翻译流未完成，请重试。')
     if ((final as { disabled?: boolean }).disabled) {
-      if (cfg) cfg.enabled = false
+      if (cfg) await configure($, { ...cfg, enabled: false })
+      else clearInput()
       reset(); notice = '翻译已在其他会话关闭'; return
     }
     target.pieces.push(final.text); target.pending = ''; target.cursor += segment.length
@@ -130,20 +178,21 @@ async function pump($: EngineInterface) {
   }
 }
 
+/** Register prompt translation, original-message pairing, pane rendering, and session cleanup hooks. */
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     interactive = e.isInteractive && e.surface === 'terminal'
-    await $.command.register({ name: 'translate', description: 'Open translation pane or settings', argumentHint: '[settings|on|off]', immediate: true })
+    await $.command.register({ name: 'translate', description: 'Open translation pane or settings', argumentHint: '[settings|on|off|input <message-id>]', immediate: true })
     try { await load($) } catch (e) { notice = e instanceof Error ? e.message : '配置读取失败。' }
     if (interactive && cfg) await open($)
     $.clock.every(250, async () => {
       // Waiting for the entire stream here stalled scrolling until it finished.
       void pump($)
-      if (interactive && page === 'settings' && settingsStart) {
+      if (interactive && (page === 'settings' || page === 'input') && settingsStart) {
         const result = await $.ui.scroll({ in: PANE, to: 'start' }).catch(() => ({ deny: 'pane unavailable' }))
         if (!result.deny) { settingsStart = false; redraw($) }
       }
-      if (interactive && page !== 'settings' && needsFollow && follow) {
+      if (interactive && page === '' && needsFollow && follow) {
         const result = await $.ui.scroll({ in: PANE, to: 'end' }).catch(() => ({ deny: 'pane unavailable' }))
         if (!result.deny) needsFollow = false
       }
@@ -151,24 +200,39 @@ export const register: Register = on => {
     return next(e)
   })
   on('command.run', { command: 'translate' }, async ($, e) => {
+    const args = e.args.trim()
+    if (args === 'input' || args.startsWith('input ')) {
+      await load($)
+      const id = args.slice(5).trim()
+      const note = overflowInputs.get(id)
+      if (!note || !cfg?.enabled) return { text: '该条输入全文缓存不可用；请重新显示该消息后再试。用法：/translate input <消息ID>' }
+      inputInspection = { id, note, page: 0 }
+      page = 'input'
+      settingsStart = true
+      follow = false; needsFollow = false
+      await $.ui.open({ id: PANE, title: 'Translation' })
+      redraw($)
+      return { text: '已打开该条输入全文，可分页查看原文与最终发送文字。' }
+    }
     if (e.args.trim() === 'off' || e.args.trim() === 'on') await save($, { enabled: e.args.trim() === 'on' })
     await open($, e.args.trim() === 'settings')
     return { text: cfg?.enabled ? `翻译已开启 · Agent 接收 ${cfg.incomingLanguage} · 我的阅读 ${cfg.outgoingLanguage}` : '翻译已关闭；可在设置中开启。' }
   })
-  on('session.end', ($, e, next) => { reset(); originals.clear(); cancelRedraw?.cancel(); cancelRedraw = undefined; markdownCache = undefined; return next(e) })
-  on('classic.SessionStart', { source: 'clear' }, async ($, e, next) => { reset(); originals.clear(); failedPrompts = []; await update($, displayOriginals, () => ({})); redraw($); return next(e) })
+  on('session.end', ($, e, next) => { reset(); clearInput(); originals.clear(); cancelRedraw?.cancel(); cancelRedraw = undefined; markdownCache = undefined; return next(e) })
+  on('classic.SessionStart', { source: 'clear' }, async ($, e, next) => { reset(); clearInput(); originals.clear(); failedPrompts = []; await update($, displayOriginals, () => ({})); redraw($); return next(e) })
   on('prompt.submit', async ($, e, next) => {
     if (!['composer', 'bridge', 'sdk'].includes(e.origin.kind) || !e.text.trim() || isControlPrompt(e.text)) return next(e)
     let pending: { original: string } | undefined
     let pendingKey = ''
     let entered = false
+    const epoch = inputEpoch
     try {
       // Every session shares the private config. Read it before deciding whether
       // to intercept: another window may have enabled or disabled translation.
       await load($)
       if (!cfg?.enabled) { reset(); notice = ''; redraw($); return next(e) }
       const translated = await helper($, { action: 'translate', direction: 'incoming', text: e.text })
-      if (translated.disabled) { cfg.enabled = false; reset(); redraw($) }
+      if (translated.disabled) { await configure($, { ...cfg, enabled: false }); reset(); redraw($) }
       if (typeof translated.text !== 'string' || !translated.text.trim()) throw new Error('未收到有效译文。')
       if (translated.text !== e.text) {
         pending = { original: e.text }; pendingKey = translated.text
@@ -178,6 +242,7 @@ export const register: Register = on => {
       // Attachments/context/wait/origin are passed through, never sent to the translator.
       const result = await next({ ...e, text: translated.text })
       entered = !result.drop
+      if (entered && typeof result.text === 'string' && epoch === inputEpoch && cfg.enabled) { inputNote = { original: e.text, text: result.text }; inputPage = 0; redraw($) }
       if (result.drop) await recover($, e.text)
       return result
     } catch (error) {
@@ -210,8 +275,32 @@ export const register: Register = on => {
     return next(e)
   })
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
+    if (!['composer', 'bridge', 'sdk'].includes(e.props.origin.kind)) return next(e)
+    const epoch = inputEpoch
+    const display = await read($, inputDisplay)
+    if (epoch !== inputEpoch) return next(e)
+    const left = display.inputTranslation === 'left' || display.inputTranslation === 'both'
+    if (left && display.inputLeft === 'off') return next({ ...e, props: { ...e.props, text: '' } })
     const original = (await read($, displayOriginals))[e.requestId]
-    return next(original !== undefined ? { ...e, props: { ...e.props, text: original } } : e)
+    if (epoch !== inputEpoch) return next(e)
+    if (original === undefined) return next(e)
+    let text = left && display.inputLeft === 'translation' ? e.props.text
+      : left && display.inputLeft === 'both' && original !== e.props.text ? `Original:\n${original}\n\nSent:\n${e.props.text}` : original
+    if (text.length > 100_000 && cfg?.enabled) {
+      // Retain complete content separately; never present a host-truncated row
+      // as the complete translation, including in left-only display mode.
+      overflowInputs.delete(e.requestId)
+      overflowInputs.set(e.requestId, { original, text: e.props.text })
+      let size = [...overflowInputs.values()].reduce((sum, note) => sum + note.original.length + note.text.length, 0)
+      while (overflowInputs.size > 100 || size > 1_000_000 && overflowInputs.size > 1) {
+        const id = overflowInputs.keys().next().value!
+        const note = overflowInputs.get(id)!
+        size -= note.original.length + note.text.length
+        overflowInputs.delete(id)
+      }
+      text = `以下为截断预览。输入 /translate input ${e.requestId} 分页查看本条完整原文与发送文字。\n\n` + text.slice(0, 90_000)
+    }
+    return next({ ...e, props: { ...e.props, text } })
   })
   on('turn.start', ($, e, next) => { activeTurn = e.turnId; reset(); notice = ''; redraw($); return next(e) })
   on('turn.step', async function* ($, e, next) {
@@ -246,22 +335,34 @@ export const register: Register = on => {
   })
   on('ui.scroll', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE) return next(e)
-    if (page !== 'settings' && e.origin.kind === 'person') {
-      follow = e.offset >= Math.max(0, e.contentRows - e.bodyRows)
+    if (page === '' && e.origin.kind === 'person') {
+      follow = replyPage === replyPageCount - 1 && e.offset >= Math.max(0, e.contentRows - e.bodyRows)
       needsFollow = follow
     }
     const result = await next(e)
     redraw($)
     return result
   })
+  on('config.set', { key: 'theme' }, async ($, e, next) => {
+    const result = await next(e)
+    if (!('deny' in result)) redraw($)
+    return result
+  })
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE || e.surface !== 'terminal') return next(e)
     await read($, paneRevision)
+    // Read the host setting rather than the terminal background: /theme can
+    // select a light palette in a terminal whose own background is still dark.
+    const theme = (await $.config.list()).find(row => row.key === 'theme')?.value
+    const headerColors = typeof theme === 'string' && /^dark(?:-|$)/.test(theme)
+      ? DARK_HEADER_COLORS
+      : { background: 'background', text: 'text', secondary: 'inactive' }
     const { Box, Text, Button, Input, Select, Markdown } = $.ui.resolve(e)
-    if (!cfg) return <Text>{notice || '正在读取设置…'}</Text>
+    if (!cfg) return <Text color="text">{notice || '正在读取设置…'}</Text>
     const settings = () => { draft = { ...cfg }; page = 'settings'; tab = 'language'; settingsStart = true; notice = ''; redraw($) }
     const set = (key: string, value: unknown) => { draft[key] = value }
-    const field = (key: string, label: string, placeholder = '') => <Box flexDirection="column"><Text dimColor>{label + ':'}</Text><Input key={`input-${key}`} label="" value={String(draft[key] ?? '')} placeholder={placeholder} onInput={value => set(key, value)} onSubmit={value => set(key, value)} /></Box>
+    const contentOptions = [{ value: 'off', label: '关闭' }, { value: 'original', label: '仅原文' }, { value: 'translation', label: '仅译文' }, { value: 'both', label: '原文＋译文' }]
+    const field = (key: string, label: string, placeholder = '') => <Box flexDirection="column"><Text color="text" dimColor>{label + ':'}</Text><Input key={`input-${key}`} label="" value={String(draft[key] ?? '')} placeholder={placeholder} onInput={value => set(key, value)} onSubmit={value => set(key, value)} /></Box>
     const envNames: Record<string, string> = { baseUrlEnv: 'OPENAI_BASE_URL', apiKeyEnv: 'OPENAI_API_KEY', modelEnv: 'OPENAI_MODEL', jevUrlEnv: 'TYPESAFE_POST_URL', jevKeyEnv: 'TYPESAFE_API_KEY', jevModelEnv: 'TYPESAFE_MODEL' }
     const sourceName = (value?: string) => value === 'manual' ? '本机填写' : value === 'env' ? '环境变量' : '未配置'
     const keySummary = (key: 'apiKey' | 'jevKey', env: 'apiKeyEnv' | 'jevKeyEnv') => {
@@ -269,44 +370,45 @@ export const register: Register = on => {
       const info = cfg!.keyInfo?.[key]
       const location = source === 'manual' ? `本机配置 · ${key} 字段` : source === 'env' ? `环境变量 · ${cfg![env]}` : '未配置密钥'
       return <Box key={`key-summary-${key}`} flexDirection="column">
-        <Text>{'当前生效密钥：' + (info?.active || '无') + ' · ' + location}</Text>
-        {source === 'manual' && <Text dimColor>{cfg!.configPath || '~/.config/claude-translate/config.json'}</Text>}
-        {source === 'manual' && <Text dimColor>{`已保存的本机密钥优先；${cfg![env] || '环境变量'} 当前未用于此密钥。`}</Text>}
-        {source !== 'manual' && info?.saved && <Text dimColor>{'本机另存：' + info.saved + '（当前未使用）'}</Text>}
-        <Text dimColor>显示已保存配置的生效结果；修改后点「保存」更新。仅显示密钥末四位，短密钥完全隐藏。</Text>
+        <Text color="text">{'当前生效密钥：' + (info?.active || '无') + ' · ' + location}</Text>
+        {source === 'manual' && <Text color="text" dimColor>{cfg!.configPath || '~/.config/claude-translate/config.json'}</Text>}
+        {source === 'manual' && <Text color="text" dimColor>{`已保存的本机密钥优先；${cfg![env] || '环境变量'} 当前未用于此密钥。`}</Text>}
+        {source !== 'manual' && info?.saved && <Text color="text" dimColor>{'本机另存：' + info.saved + '（当前未使用）'}</Text>}
+        <Text color="text" dimColor>显示已保存配置的生效结果；修改后点「保存」更新。仅显示密钥末四位，短密钥完全隐藏。</Text>
       </Box>
     }
     const sourcePicker = (key: string) => <Select key={key} label="配置来源" value={String(draft[key] || 'manual')} options={[{ value: 'manual', label: '本机填写优先' }, { value: 'env', label: '读取环境变量' }]} onSelect={value => { set(key, value); settingsStart = true; redraw($) }} />
     const environmentFields = (provider: 'llm' | 'jev') => <Box flexDirection="column">
       {(provider === 'llm' ? [['baseUrlEnv', '地址变量名'], ['apiKeyEnv', '密钥变量名'], ['modelEnv', '模型变量名']] : [['jevUrlEnv', 'Jev 地址变量名'], ['jevKeyEnv', 'Jev 密钥变量名'], ['jevModelEnv', 'Jev 模型变量名']]).map(([key, label]) => <Box key={`binding-${key}`} flexDirection="column">
         {field(key!, label!, envNames[key!] + '（推荐名称）')}
-        <Text dimColor>{!draft[key!] ? '尚未绑定；上方灰字仅是示例。' : draft[key!] !== cfg?.[key as keyof Config] ? '保存后检查此变量。' : `${String(draft[key!])}：${cfg?.envStatus?.[key!] ? '已读取（不显示变量值）' : '当前进程未设置'}`}</Text>
+        <Text color="text" dimColor>{!draft[key!] ? '尚未绑定；上方灰字仅是示例。' : draft[key!] !== cfg?.[key as keyof Config] ? '保存后检查此变量。' : `${String(draft[key!])}：${cfg?.envStatus?.[key!] ? '已读取（不显示变量值）' : '当前进程未设置'}`}</Text>
       </Box>)}
     </Box>
     const sections = [
       { value: 'language', label: '语言检测' }, { value: 'llm', label: '模型接口' },
       { value: 'env', label: '环境变量' }, { value: 'jev', label: 'Jev 接口' }, { value: 'prompt', label: '翻译 Prompt' },
+      { value: 'display', label: '输入显示' },
     ]
     const narrowSettings = e.props.bodyColumns < 42
     const groups = settingsGroups(sections, e.props.bodyColumns)
     const compactNavigation = e.props.scroll.bodyRows < 12 && groups.length > 1
     const settingsRows = (narrowSettings ? 2 : 1) + (compactNavigation ? 1 : groups.length) + 1
-    const settingsHeader = <Box key="settings-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={settingsRows} flexDirection="column" backgroundColor="background">
+    const settingsHeader = <Box key="settings-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={settingsRows} flexDirection="column" backgroundColor={headerColors.background}>
       <Box flexDirection={narrowSettings ? 'column' : 'row'} justifyContent="space-between" width={Math.max(1, e.props.bodyColumns - 4)}>
-        <Text bold>翻译设置</Text>
+        <Text bold color={headerColors.text}>翻译设置</Text>
         <Box flexDirection="row" columnGap={1}>
-          <Button key="cancel-settings" label="取消" onPress={() => { draft = {}; page = ''; notice = ''; needsFollow = true; redraw($) }} />
-          <Button key="save-settings" label="保存" onPress={() => save($, draft)} />
+          <Button key="cancel-settings" label="取消" onPress={() => { draft = {}; page = ''; notice = ''; needsFollow = true; redraw($) }}><Text color={headerColors.text}>取消</Text></Button>
+          <Button key="save-settings" label="保存" onPress={() => save($, draft)}><Text color={headerColors.text}>保存</Text></Button>
         </Box>
       </Box>
       {compactNavigation ? <Select key="settings-section" label="分类" value={tab} options={sections} onSelect={value => { tab = value; settingsStart = true; notice = ''; redraw($) }} /> : groups.map((group, index) => <Box key={`settings-nav-${index}`} flexDirection="row" columnGap={1} height={1}>
-        {group.map(section => <Button key={`tab-${section.value}`} label={(tab === section.value ? '● ' : '  ') + section.label} onPress={() => { tab = section.value; settingsStart = true; notice = ''; redraw($) }} />)}
+        {group.map(section => <Button key={`tab-${section.value}`} label={(tab === section.value ? '● ' : '  ') + section.label} onPress={() => { tab = section.value; settingsStart = true; notice = ''; redraw($) }}><Text color={headerColors.text}>{(tab === section.value ? '● ' : '  ') + section.label}</Text></Button>)}
       </Box>)}
-      <Text dimColor wrap="truncate">{'当前检测：' + ({ script: '本地脚本', llm: 'LLM', jev: 'Jev' }[cfg.detection] || cfg.detection) + ' · 模型：' + (cfg.effectiveModel || cfg.model || '未配置')}</Text>
+      <Text color={headerColors.secondary} wrap="truncate">{'当前检测：' + ({ script: '本地脚本', llm: 'LLM', jev: 'Jev' }[cfg.detection] || cfg.detection) + ' · 模型：' + (cfg.effectiveModel || cfg.model || '未配置')}</Text>
     </Box>
     if (page === 'settings') return <Box key="settings" flexDirection="column" width={e.props.bodyColumns} minHeight={e.props.placement === 'dock' ? e.props.scroll.bodyRows : undefined}>
       <Box key="settings-body" flexDirection="column" paddingTop={settingsRows}>
-      {notice && <Text>{notice}</Text>}
+      {notice && <Text color="text">{notice}</Text>}
       {tab === 'language' && <Box flexDirection="column">
         <Select key="enabled" label="自动翻译" value={draft.enabled ? 'on' : 'off'} options={[{ value: 'on', label: '开启' }, { value: 'off', label: '关闭' }]} onSelect={value => { set('enabled', value === 'on'); redraw($) }} />
         <Select key="incomingLanguage" label="Agent 接收" value={String(draft.incomingLanguage)} options={languageOptions(String(draft.incomingLanguage))} onSelect={value => { set('incomingLanguage', value); redraw($) }} />
@@ -315,14 +417,23 @@ export const register: Register = on => {
         {field('outgoingLanguage', '自定义阅读代码', 'en / zh / ja')}
         <Select key="detection" label="语言检测" value={String(draft.detection)} options={[{ value: 'script', label: '本地脚本' }, { value: 'llm', label: 'LLM（如 Gemini）' }, { value: 'jev', label: 'Jev' }]} onSelect={value => { set('detection', value); redraw($) }} />
         {draft.detection === 'llm' && field('detectionModel', '检测模型', '留空复用翻译模型；也可填写 Gemini 型号')}
-        <Text dimColor>脚本在本机判断，无检测接口等待。LLM 检测使用「模型接口」的地址和密钥，检测模型可以单独填写；Jev 有独立接口。</Text>
-        <Text dimColor>发送前译文不会另占一行；右侧译文保留左侧原回复。</Text>
+        <Text color="text" dimColor>脚本在本机判断，无检测接口等待。LLM 检测使用「模型接口」的地址和密钥，检测模型可以单独填写；Jev 有独立接口。</Text>
+        <Text color="text" dimColor>输入译文的显示位置在「输入显示」中设置；回复译文保留左侧原回复。</Text>
+      </Box>}
+      {tab === 'display' && <Box flexDirection="column">
+        <Text color="text" bold>输入显示内容</Text>
+        <Select key="inputTranslation" label="显示位置" value={String(draft.inputTranslation)} options={[{ value: 'off', label: '关闭（保持原文）' }, { value: 'left', label: '左侧' }, { value: 'right', label: '右侧' }, { value: 'both', label: '左右同时' }]} onSelect={value => { set('inputTranslation', value); redraw($) }} />
+        {(draft.inputTranslation === 'left' || draft.inputTranslation === 'both') && <Select key="inputLeft" label="左侧内容" value={String(draft.inputLeft)} options={contentOptions} onSelect={value => { set('inputLeft', value); redraw($) }} />}
+        {(draft.inputTranslation === 'right' || draft.inputTranslation === 'both') && <Select key="inputRight" label="右侧内容" value={String(draft.inputRight)} options={contentOptions} onSelect={value => { set('inputRight', value); redraw($) }} />}
+        <Text color="text" dimColor>左右内容可分别选择关闭、仅原文、仅译文或原文＋译文。左侧关闭只隐藏消息文字；右侧关闭只隐藏最近输入，回复译文仍显示。</Text>
+        <Text color="text" dimColor>显示位置未启用左侧时保持原文，未启用右侧时不新增输入区块。内容设置只改变显示，不关闭翻译；窄窗口的右侧区块可能位于输入框上方。</Text>
+        <Text color="text" dimColor>译文完整生成后直接发送，不等待确认。显示设置默认由本机所有会话共享；原文缓存与输入区块不保证跨会话恢复。</Text>
       </Box>}
       {tab === 'llm' && <Box flexDirection="column">
-        <Text bold>翻译模型 · Chat Completions</Text>
-        <Text dimColor>这些值保存在本机，不在插件代码中；新安装不预填你的接口和模型。</Text>
+        <Text color="text" bold>翻译模型 · Chat Completions</Text>
+        <Text color="text" dimColor>这些值保存在本机，不在插件代码中；新安装不预填你的接口和模型。</Text>
         {sourcePicker('llmConfigSource')}
-        <Text>{'当前生效：' + (cfg.effectiveModel || '未配置') + ' · ' + sourceName(cfg.sources?.model)}</Text>
+        <Text color="text">{'当前生效：' + (cfg.effectiveModel || '未配置') + ' · ' + sourceName(cfg.sources?.model)}</Text>
         {keySummary('apiKey', 'apiKeyEnv')}
         {draft.llmConfigSource === 'env' ? environmentFields('llm') : <Box flexDirection="column">
           {field('baseUrl', '接口 Base URL', 'https://provider.example/v1')}
@@ -330,83 +441,145 @@ export const register: Register = on => {
           {field('apiKey', '新的 API Key', cfg.hasApiKey ? '留空不更换本机已保存的密钥' : '填入密钥')}
           <Button key="clear-api-key" plain label="清除已保存密钥" onPress={() => { set('clearApiKey', true); set('apiKey', ''); notice = '保存后清除密钥'; redraw($) }} />
           {field('postUrl', '完整 POST URL（可选）', '填写时替代 Base URL')}
-          <Text dimColor>本机没有保存密钥时才读取绑定变量。输入框留空不会清除已存密钥。新输入的密钥会显示；保存后仅显示末四位。</Text>
+          <Text color="text" dimColor>本机没有保存密钥时才读取绑定变量。输入框留空不会清除已存密钥。新输入的密钥会显示；保存后仅显示末四位。</Text>
         </Box>}
       </Box>}
       {tab === 'env' && <Box flexDirection="column">
-        <Text bold>环境变量绑定</Text>
-        <Text dimColor>这里填写变量的名字，不是 URL 或密钥本身。变量由启动 Claude 的终端提供。</Text>
-        <Text bold>{'翻译接口 · ' + (draft.llmConfigSource === 'env' ? '读取环境变量' : '本机填写优先')}</Text>
+        <Text color="text" bold>环境变量绑定</Text>
+        <Text color="text" dimColor>这里填写变量的名字，不是 URL 或密钥本身。变量由启动 Claude 的终端提供。</Text>
+        <Text color="text" bold>{'翻译接口 · ' + (draft.llmConfigSource === 'env' ? '读取环境变量' : '本机填写优先')}</Text>
         {environmentFields('llm')}
-        <Text bold>{'Jev 检测 · ' + (draft.jevConfigSource === 'env' ? '读取环境变量' : '本机填写优先')}</Text>
+        <Text color="text" bold>{'Jev 检测 · ' + (draft.jevConfigSource === 'env' ? '读取环境变量' : '本机填写优先')}</Text>
         {environmentFields('jev')}
         <Button key="suggest-env-names" label="填入推荐变量名" onPress={() => { for (const [key, name] of Object.entries(envNames)) if (!draft[key]) set(key, name); redraw($) }} />
-        <Text dimColor>绑定名字不会自动创建变量，也不会切换配置来源。请在模型接口或 Jev 页选择「读取环境变量」。</Text>
-        <Text dimColor>例：export OPENAI_MODEL="服务商模型名"。修改终端环境后，需重启 Claude。</Text>
+        <Text color="text" dimColor>绑定名字不会自动创建变量，也不会切换配置来源。请在模型接口或 Jev 页选择「读取环境变量」。</Text>
+        <Text color="text" dimColor>例：export OPENAI_MODEL="服务商模型名"。修改终端环境后，需重启 Claude。</Text>
       </Box>}
       {tab === 'jev' && <Box flexDirection="column">
-        <Text bold>Jev · 只判断语言，不生成译文</Text>
-        <Text>{draft.detection === 'jev' ? '当前启用 Jev 检测。' : '当前未启用；在「语言检测」中选 Jev 后才会调用。'}</Text>
+        <Text color="text" bold>Jev · 只判断语言，不生成译文</Text>
+        <Text color="text">{draft.detection === 'jev' ? '当前启用 Jev 检测。' : '当前未启用；在「语言检测」中选 Jev 后才会调用。'}</Text>
         {sourcePicker('jevConfigSource')}
-        <Text dimColor>{'当前模型来源：' + sourceName(cfg.sources?.jevModel)}</Text>
+        <Text color="text" dimColor>{'当前模型来源：' + sourceName(cfg.sources?.jevModel)}</Text>
         {keySummary('jevKey', 'jevKeyEnv')}
         {draft.jevConfigSource === 'env' ? environmentFields('jev') : <Box flexDirection="column">
           {field('jevUrl', 'Jev POST URL', 'https://api.typesafe.ai/v1/systemone')}
           {field('jevModel', 'Jev 模型名', 'jev-latest（官方示例）')}
           {field('jevKey', '新的 Jev API Key', cfg.hasJevKey ? '留空不更换本机已保存的密钥' : '填入密钥')}
           <Button key="clear-jev-key" plain label="清除已保存 Jev 密钥" onPress={() => { set('clearJevKey', true); set('jevKey', ''); notice = '保存后清除密钥'; redraw($) }} />
-          <Text dimColor>默认地址和 jev-latest 是官方公开示例；你的网关配置只保存在本机。环境变量请在「环境变量」页绑定。</Text>
+          <Text color="text" dimColor>默认地址和 jev-latest 是官方公开示例；你的网关配置只保存在本机。环境变量请在「环境变量」页绑定。</Text>
         </Box>}
       </Box>}
       {tab === 'prompt' && <Box flexDirection="column">
-        <Text dimColor>分别设置两个方向的系统提示词。变量：{'{target_language}'}、{'{source_language}'}。</Text>
+        <Text color="text" dimColor>分别设置两个方向的系统提示词。变量：{'{target_language}'}、{'{source_language}'}。</Text>
         {field('incomingPrompt', '发送前')}
         {field('outgoingPrompt', '回复')}
-        <Text dimColor>代码与链接占位符必须保留；不要在 Prompt 中填写密钥。</Text>
+        <Text color="text" dimColor>代码与链接占位符必须保留；不要在 Prompt 中填写密钥。</Text>
       </Box>}
       </Box>
       {settingsHeader}
     </Box>
     const translating = !!job && (job.cursor < job.source.length || !job.done) && cfg.enabled
+    if (page === 'input' && inputInspection) {
+      const inspection = inputInspection
+      const parts = [
+        { text: '原文', plain: true }, ...renderedMarkdown(inspection.note.original, e.props.bodyColumns, 'original'),
+        { text: '最终发送文字', plain: true }, ...renderedMarkdown(inspection.note.text, e.props.bodyColumns, 'input'),
+      ]
+      const pages = markdownPages(parts)
+      inspection.page = Math.min(inspection.page, pages.length - 1)
+      const narrow = e.props.bodyColumns < 42
+      const normalHeaderRows = narrow ? 4 + Number(inspection.page > 0) + Number(inspection.page < pages.length - 1) : 3
+      // Prioritize navigation when the host gives an inline pane only a few
+      // rows; a fixed title/ID header would otherwise hide every action.
+      const compact = e.props.scroll.bodyRows < normalHeaderRows + 2
+      const headerRows = compact ? 1 : normalHeaderRows
+      return <Box key="input-full-view" flexDirection="column" width={e.props.bodyColumns} minHeight={e.props.placement === 'dock' ? e.props.scroll.bodyRows : undefined}>
+        <Box flexDirection="column" paddingTop={headerRows}>
+          {pages[inspection.page]!.map((part, i) => part.plain
+            ? <Text color="text" key={`input-full-${i}`}>{part.text}</Text>
+            : <Markdown key={`input-full-${i}`} text={part.text} />)}
+        </Box>
+        <Box key="input-full-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={headerRows} flexDirection="column" backgroundColor={headerColors.background}>
+          {!compact && <Text color={headerColors.text} bold>输入全文</Text>}
+          {!compact && <Text color={headerColors.secondary} wrap="truncate">{inspection.id}</Text>}
+          <Box key="input-full-controls" flexDirection={narrow && !compact ? 'column' : 'row'} columnGap={1}>
+            <Text color={headerColors.text}>{`${inspection.page + 1}/${pages.length}${compact ? '' : ' 页'}`}</Text>
+            {inspection.page > 0 && <Button key="input-full-prev" plain label={compact ? '<' : '上一页'} onPress={() => { inspection.page--; settingsStart = true; redraw($) }} />}
+            {inspection.page < pages.length - 1 && <Button key="input-full-next" plain label={compact ? '>' : '下一页'} onPress={() => { inspection.page++; settingsStart = true; redraw($) }} />}
+            <Button key="input-full-close" plain label={compact ? '返回' : '返回翻译'} onPress={() => { inputInspection = undefined; page = ''; redraw($) }} />
+          </Box>
+        </Box>
+      </Box>
+    }
     const text = job ? job.pieces.join('') + job.pending : ''
     const content = text || (cfg.enabled ? '等待 Agent 回复…' : '翻译已关闭，点击设置配置并开启。')
     const narrowPane = e.props.bodyColumns < 32
     const widePane = e.props.bodyColumns >= 82
     const recoveryRow = narrowPane && failedPrompts.length > 0
     const headerRows = (widePane ? 3 : 4) + (recoveryRow ? 1 : 0)
+    const showInput = cfg.enabled && inputNote && cfg.inputRight !== 'off' && (cfg.inputTranslation === 'right' || cfg.inputTranslation === 'both')
+    const sentHeading = { text: '发送译文', plain: true }
+    // Original and translation share one page budget; render them separately so
+    // an unclosed Markdown fence in the original cannot swallow the heading.
+    const sameInput = inputNote && inputNote.original === inputNote.text
+    const inputPages = showInput ? markdownPages([
+      ...(cfg.inputRight !== 'translation' ? renderedMarkdown(inputNote!.original, e.props.bodyColumns, 'original') : []),
+      ...(cfg.inputRight !== 'original' && !(sameInput && cfg.inputRight === 'both') ? [sentHeading, ...renderedMarkdown(inputNote!.text, e.props.bodyColumns, 'input')] : []),
+    ]) : [[]]
+    const replyParts = renderedMarkdown(content, e.props.bodyColumns)
+    const replyPages = showInput ? markdownPages(replyParts) : [replyParts]
+    replyPageCount = replyPages.length
+    inputPage = Math.min(inputPage, inputPages.length - 1)
+    replyPage = showInput && follow ? replyPages.length - 1 : Math.min(replyPage, replyPages.length - 1)
+    const paging = (kind: 'input' | 'reply', index: number, count: number) => count > 1 && <Box flexDirection="row" columnGap={1}>
+      {index > 0 && <Button key={`${kind}-prev`} plain label="上一页" onPress={() => { if (kind === 'input') inputPage--; else replyPage--; follow = false; redraw($) }} />}
+      <Text color="text">{`${index + 1}/${count} 页`}</Text>
+      {index < count - 1 && <Button key={`${kind}-next`} plain label="下一页" onPress={() => { if (kind === 'input') inputPage++; else replyPage++; follow = false; redraw($) }} />}
+    </Box>
     // Let Claude measure and scroll its own Markdown. A header placed at the
     // native offset stays pinned without guessing the rendered line heights.
     return <Box key="translation-pane" flexDirection="column" width={e.props.bodyColumns} minHeight={e.props.placement === 'dock' ? e.props.scroll.bodyRows : undefined}>
       <Box key="translation-body" flexDirection="column" paddingTop={headerRows}>
-        {renderedMarkdown(content, e.props.bodyColumns).map((part, i) => part.plain
-          ? <Text key={`markdown-${i}`}>{part.text}</Text>
+        {showInput && <Box key="input-translation" flexDirection="column" marginBottom={1}>
+          <Text color="text" bold>最近输入</Text>
+          {paging('input', inputPage, inputPages.length)}
+          {inputPages[inputPage]!.map((part, i) => part === sentHeading
+            ? <Text color="text" key="input-sent-heading" bold>{part.text}</Text>
+            : part.plain
+            ? <Text color="text" key={`input-markdown-${i}`}>{part.text}</Text>
+            : <Markdown key={`input-markdown-${i}`} text={part.text} />)}
+          <Text color="text" dimColor>回复译文</Text>
+        </Box>}
+        {showInput && paging('reply', replyPage, replyPages.length)}
+        {replyPages[replyPage]!.map((part, i) => part.plain
+          ? <Text color="text" key={`markdown-${i}`}>{part.text}</Text>
           : <Markdown key={`markdown-${i}`} text={part.text} />)}
-        <Text dimColor>{job?.error || notice || '滚轮翻阅'}</Text>
+        <Text color="text" dimColor>{job?.error || notice || '滚轮翻阅'}</Text>
       </Box>
-      <Box key="sticky-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={headerRows} flexDirection="column" backgroundColor="background">
+      <Box key="sticky-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={headerRows} flexDirection="column" backgroundColor={headerColors.background}>
         <Box key="header" flexDirection="row" justifyContent="space-between" height={1} width={Math.max(1, e.props.bodyColumns - 4)}>
-          <Text bold>{e.props.bodyColumns < 22 ? '翻译' : 'Translation'}</Text><Button key="settings-button" plain label="设置" onPress={settings} />
+          <Text bold color={headerColors.text}>{e.props.bodyColumns < 22 ? '翻译' : 'Translation'}</Text><Button key="settings-button" plain label="设置" onPress={settings}><Text color={headerColors.text}>设置</Text></Button>
         </Box>
         <Box key="language-controls" flexDirection={widePane ? 'row' : 'column'} columnGap={2}>
           <Select key="agent-language" label={narrowPane ? '接收' : 'Agent 接收'} value={cfg.incomingLanguage} options={languageOptions(cfg.incomingLanguage)} onSelect={value => save($, { incomingLanguage: value })} />
           <Select key="reader-language" label={narrowPane ? '阅读' : '我的阅读'} value={cfg.outgoingLanguage} options={languageOptions(cfg.outgoingLanguage)} onSelect={value => save($, { outgoingLanguage: value })} />
         </Box>
         <Box flexDirection="row" justifyContent="space-between" height={1}>
-          <Text dimColor>{job?.error ? '翻译失败' : !cfg.enabled ? '已关闭' : translating ? '翻译中…' : job?.source && job.skipped ? '已是目标语言' : '译文'}</Text>
+          <Text color={headerColors.secondary}>{job?.error ? '翻译失败' : !cfg.enabled ? '已关闭' : translating ? '翻译中…' : job?.source && job.skipped ? '已是目标语言' : '译文'}</Text>
           {failedPrompts.length > 0 && !recoveryRow && <Button key="recover-input" plain label="恢复输入" onPress={async () => {
             const current = await $.prompt.read()
             const result = await $.prompt.fill({ text: (current.text ? '\n\n' : '') + failedPrompts.join('\n\n'), mode: 'append' })
             if (result.isFilled) failedPrompts = []
             redraw($)
-          }} />}
-          <Button key="retry" plain label={job?.error ? '重试' : narrowPane ? '底部' : '回到底部'} onPress={() => { if (job?.error) reset(job.source, job.done); follow = true; needsFollow = true; redraw($) }} />
+          }}><Text color={headerColors.text}>恢复输入</Text></Button>}
+          <Button key="retry" plain label={job?.error ? '重试' : narrowPane ? '底部' : '回到底部'} onPress={() => { if (job?.error) reset(job.source, job.done); follow = true; needsFollow = true; redraw($) }}><Text color={headerColors.text}>{job?.error ? '重试' : narrowPane ? '底部' : '回到底部'}</Text></Button>
         </Box>
         {recoveryRow && <Button key="recover-input" plain label="恢复输入" onPress={async () => {
           const current = await $.prompt.read()
           const result = await $.prompt.fill({ text: (current.text ? '\n\n' : '') + failedPrompts.join('\n\n'), mode: 'append' })
           if (result.isFilled) failedPrompts = []
           redraw($)
-        }} />}
+        }}><Text color={headerColors.text}>恢复输入</Text></Button>}
       </Box>
     </Box>
   })

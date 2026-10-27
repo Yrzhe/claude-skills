@@ -4,6 +4,7 @@ import { isControlPrompt, nextSegment, wrapLines, markdownParts, settingsGroups 
 import { tableCells } from '../hooks/tables'
 const CONFIG = {
   enabled: true, incomingLanguage: 'en', outgoingLanguage: 'zh', detection: 'script',
+  inputTranslation: 'off', inputLeft: 'translation', inputRight: 'both',
   baseUrl: 'http://localhost:9999/v1', postUrl: '', model: 'test', baseUrlEnv: '', apiKeyEnv: '', modelEnv: '',
   jevUrl: 'https://api.typesafe.ai/v1/systemone', jevKeyEnv: 'TYPESAFE_API_KEY', jevModel: 'jev-latest',
   incomingPrompt: 'Translate to {target_language}', outgoingPrompt: 'Translate to {target_language}',
@@ -14,12 +15,15 @@ const PANE = {
   viewport: { columns: 160, rows: 40, isFullscreen: true },
   props: { title: 'Translation', isFocused: true, bodyColumns: 52, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
 } as const
-function setup(on: On, config = CONFIG, inspect?: (request: any) => any, composer = { text: '', fills: [] as string[] }, processRun?: (event: any) => any) {
+/** Install deterministic host/process mocks, including a controllable clock and theme setting. */
+function setup(on: On, config = CONFIG, inspect?: (request: any) => any, composer = { text: '', fills: [] as string[] }, processRun?: (event: any) => any, theme = () => 'dark') {
   const clock = mock.clock(on)
   on('session.start', () => ({ cwd: '/work' }))
+  on('session.end', () => ({ sessionId: 'test-session' }))
   on('command.register', () => ({ value: { command: 'translate' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('ui.scroll', () => ({}))
+  on('config.list', () => ({ value: [{ key: 'theme', value: theme(), label: 'Theme', kind: 'choice', provider: { plugin: 'engine', tier: 'core' }, isLocked: false }] }))
   on('prompt.read', () => ({ value: { text: composer.text, cursor: composer.text.length } }))
   on('prompt.fill', ($, e) => { composer.fills.push(e.text); return { isFilled: true } })
   on('ui.render', ($, e) => ({ type: 'Text', props: {}, children: [e.component === 'UserMessage' ? e.props.text : 'engine'] }))
@@ -36,6 +40,7 @@ function setup(on: On, config = CONFIG, inspect?: (request: any) => any, compose
 }
 const start = { cwd: '/work', surface: 'terminal', isInteractive: true } as const
 const done = (answer: string, turnId = 't') => ({ answer, turnId, reason: 'answer', isAborted: false, durationMs: 100 }) as const
+const translateCommand = { command: 'translate', origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 160 } } as const
 
 test('inline panes fit their content while docked panes follow available height', async ($, on) => {
   setup(on)
@@ -140,7 +145,7 @@ test('CJK wrapping fits a narrow sidebar and strips terminal control sequences',
   expect(wrapLines('\x1b[31mhello\x1b[0m', 10)).toEqual(['hello'])
 })
 test('submission translates only human text and preserves attachments and context', async ($, on) => {
-  setup(on)
+  setup(on, { ...CONFIG, inputTranslation: 'both', inputLeft: 'both' })
   let received: any
   on('prompt.submit', ($, e) => { received = e; return { text: e.text } })
   await $.session.start(start)
@@ -336,11 +341,279 @@ test('translation streaming failure exposes retry and preserves the main respons
 // by tests/terminal_smoke.py, not a forged bottom hook in the mod test runner.
 test('original prompt rendering is keyed by message identity, not identical translated text', async ($, on) => {
   setup(on)
-  on('state.get', () => ({ value: { value: { first: '请修好', second: '帮我修好' }, version: 1 } }))
+  on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { first: '请修好', second: '帮我修好' }, version: 1 } } : next(e))
   for (const [requestId, original] of [['first', '请修好'], ['second', '帮我修好']]) {
     const ui = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: requestId!, surface: 'terminal', props: { text: 'Please fix it.', origin: { kind: 'composer' }, isExpanded: false } })
     expect(JSON.stringify(await ui.findAll({ type: 'Text' }))).toContain(original!)
   }
+})
+
+for (const position of ['off', 'left', 'right', 'both']) {
+  for (const left of ['off', 'original', 'translation', 'both']) {
+    test(`input display ${position}/${left} renders the selected left content`, async ($, on) => {
+      setup(on, { ...CONFIG, inputTranslation: position, inputLeft: left })
+      on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { first: '请修好' }, version: 1 } } : next(e))
+      await $.session.start(start)
+      const ui = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'first', surface: 'terminal', props: { text: 'Please fix it.', origin: { kind: 'composer' }, isExpanded: false } })
+      const text = JSON.stringify(await ui.findAll({ type: 'Text' }))
+      const activeLeft = position === 'left' || position === 'both'
+      const showTranslation = activeLeft && (left === 'translation' || left === 'both')
+      expect(text.includes('Please fix it.')).toBe(showTranslation)
+      expect(text.includes('请修好')).toBe(!activeLeft || left === 'original' || left === 'both')
+      if (showTranslation && left === 'both') {
+        expect(text).toContain('Original:')
+        expect(text).toContain('Sent:')
+        expect(text).not.toContain('原文：')
+        expect(text).not.toContain('发送译文：')
+      }
+    })
+  }
+}
+
+test('bilingual messages without an original or with identical text render only once', async ($, on) => {
+  setup(on, { ...CONFIG, inputTranslation: 'left', inputLeft: 'both' })
+  on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { same: 'Please fix it.' }, version: 1 } } : next(e))
+  await $.session.start(start)
+  for (const requestId of ['same', 'missing']) {
+    const ui = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId, surface: 'terminal', props: { text: 'Please fix it.', origin: { kind: 'composer' }, isExpanded: false } })
+    const text = (await ui.findAll({ type: 'Text' })).map(node => node.text).join('\n')
+    expect(text.split('Please fix it.')).toHaveLength(2)
+    expect(text).not.toContain('Sent:')
+  }
+})
+
+for (const position of ['off', 'left', 'right', 'both']) {
+  test(`input display ${position} shows a separate right note only when selected`, async ($, on) => {
+    const clock = setup(on, { ...CONFIG, inputTranslation: position })
+    on('prompt.submit', ($, e) => ({ text: e.text }))
+    on('process.spawn', async function* () {
+      yield { stream: 'stdout', text: JSON.stringify({ type: 'done', text: '回复译文', skipped: false }) + '\n' } as const
+      return { value: { code: 0, signal: null } }
+    })
+    await $.session.start(start)
+    await $.prompt.submit({ text: '请修好', origin: { kind: 'composer' }, wait: false })
+    await $.turn.start({ text: 'Please fix it.', turnId: 't' })
+    await $.turn.complete(done('An answer.'))
+    await clock.advance(250)
+    const ui = await $.ui.mount(PANE)
+    const text = JSON.stringify(await ui.findAll({ type: 'Markdown' }))
+    const show = position === 'right' || position === 'both'
+    expect(text.includes('Please fix it.')).toBe(show)
+    expect(text.includes('请修好')).toBe(show)
+    expect(text).toContain('回复译文')
+    if (show) expect(text.indexOf('Please fix it.')).toBeLessThan(text.indexOf('回复译文'))
+    if (show) {
+      expect(text.indexOf('请修好')).toBeLessThan(text.indexOf('Please fix it.'))
+      const headings = (await ui.findAll({ type: 'Text' })).map(node => node.text)
+      expect(headings).toContain('最近输入')
+      expect(headings).toContain('发送译文')
+      expect(headings).not.toContain('最近输入 · 发送译文')
+    }
+    await $.session.end({ reason: 'clear', sessionId: 'test-session', resume: { id: 'test-session' } })
+    await ui.redraw()
+    expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).not.toContain('Please fix it.')
+  })
+}
+
+test('right note keeps the last sent input when translation fails or downstream drops', async ($, on) => {
+  let fail = false, drop = false
+  setup(on, { ...CONFIG, inputTranslation: 'right' }, req => req.action === 'translate'
+    ? fail ? { error: 'translation failed' } : { text: req.text === '第一条' ? 'First input.' : 'Rejected input.' }
+    : undefined)
+  on('prompt.submit', ($, e) => drop ? { drop: 'rejected' } : { text: e.text })
+  await $.session.start(start)
+  await $.prompt.submit({ text: '第一条', origin: { kind: 'composer' }, wait: false })
+  const ui = await $.ui.mount(PANE)
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('First input.')
+  fail = true
+  expect((await $.prompt.submit({ text: '第二条', origin: { kind: 'composer' }, wait: false })).drop).toBeDefined()
+  fail = false; drop = true
+  expect((await $.prompt.submit({ text: '第三条', origin: { kind: 'composer' }, wait: false })).drop).toBeDefined()
+  await ui.redraw()
+  const text = JSON.stringify(await ui.findAll({ type: 'Markdown' }))
+  expect(text).toContain('First input.')
+  expect(text).not.toContain('Rejected input.')
+})
+
+for (const right of ['off', 'original', 'translation', 'both']) {
+  test(`right content ${right} independently controls original and translation`, async ($, on) => {
+    setup(on, { ...CONFIG, inputTranslation: 'both', inputLeft: 'off', inputRight: right })
+    on('prompt.submit', ($, e) => ({ text: e.text }))
+    await $.session.start(start)
+    await $.prompt.submit({ text: '右侧原文', origin: { kind: 'composer' }, wait: false })
+    const ui = await $.ui.mount(PANE)
+    const text = JSON.stringify(await ui.findAll({ type: 'Text' })) + JSON.stringify(await ui.findAll({ type: 'Markdown' }))
+    expect(text.includes('右侧原文')).toBe(right === 'original' || right === 'both')
+    expect(text.includes('Please fix it.')).toBe(right === 'translation' || right === 'both')
+    expect(text.includes('发送译文')).toBe(right === 'translation' || right === 'both')
+    expect(text.includes('最近输入')).toBe(right !== 'off')
+    expect(text).toContain('等待 Agent 回复')
+  })
+}
+
+test('right note is not published while the downstream submit is still pending', async ($, on) => {
+  let arrived!: () => void, release!: (result: { drop: string }) => void
+  const reached = new Promise<void>(resolve => { arrived = resolve })
+  const result = new Promise<{ drop: string }>(resolve => { release = resolve })
+  setup(on, { ...CONFIG, inputTranslation: 'right' })
+  on('prompt.submit', async () => { arrived(); return result })
+  await $.session.start(start)
+  const submission = $.prompt.submit({ text: '请修好', origin: { kind: 'composer' }, wait: false })
+  await reached
+  const ui = await $.ui.mount(PANE)
+  const pendingText = JSON.stringify(await ui.findAll({ type: 'Markdown' }))
+  release({ drop: 'not sent' })
+  await submission
+  expect(pendingText).not.toContain('Please fix it.')
+})
+
+test('saving display settings redraws an existing user message without another submit', async ($, on) => {
+  let config = { ...CONFIG }
+  setup(on, CONFIG, req => {
+    if (req.action === 'load') return config
+    if (req.action === 'save') { config = { ...config, ...req.patch }; return config }
+  })
+  on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { first: '请修好' }, version: 1 } } : next(e))
+  await $.session.start(start)
+  const message = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'first', surface: 'terminal', props: { text: 'Please fix it.', origin: { kind: 'composer' }, isExpanded: false } })
+  expect(JSON.stringify(await message.findAll({ type: 'Text' }))).not.toContain('Please fix it.')
+  const ui = await $.ui.mount(PANE)
+  await ui.press({ key: 'settings-button' })
+  await ui.press({ key: 'tab-display' })
+  await ui.select({ key: 'inputTranslation', value: 'left' })
+  await ui.press({ key: 'save-settings' })
+  expect(JSON.stringify(await message.findAll({ type: 'Text' }))).toContain('Please fix it.')
+})
+
+test('a late accepted submit cannot restore an input note after the session ends', async ($, on) => {
+  let arrived!: () => void, release!: (result: { text: string }) => void
+  const reached = new Promise<void>(resolve => { arrived = resolve })
+  const result = new Promise<{ text: string }>(resolve => { release = resolve })
+  setup(on, { ...CONFIG, inputTranslation: 'right' })
+  on('prompt.submit', async () => { arrived(); return result })
+  await $.session.start(start)
+  const submission = $.prompt.submit({ text: '请修好', origin: { kind: 'composer' }, wait: false })
+  await reached
+  await $.session.end({ reason: 'clear', sessionId: 'test-session', resume: { id: 'test-session' } })
+  release({ text: 'Please fix it.' })
+  await submission
+  const ui = await $.ui.mount(PANE)
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).not.toContain('Please fix it.')
+})
+
+test('reply retry preserves the input note and a later accepted input replaces it', async ($, on) => {
+  let count = 0
+  const clock = setup(on, { ...CONFIG, inputTranslation: 'right' }, req => req.action === 'translate'
+    ? { text: req.text === '第一条' ? 'First input.' : 'Second input.' } : undefined)
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  on('process.spawn', async function* () {
+    count++
+    yield { stream: 'stdout', text: JSON.stringify(count === 1 ? { type: 'error', error: 'retry me' } : { type: 'done', text: '回复成功' }) + '\n' } as const
+    return { value: { code: 0, signal: null } }
+  })
+  await $.session.start(start)
+  await $.prompt.submit({ text: '第一条', origin: { kind: 'composer' }, wait: false })
+  await $.turn.start({ text: 'First input.', turnId: 't' })
+  await $.turn.complete(done('Answer.'))
+  await clock.advance(250)
+  const ui = await $.ui.mount(PANE)
+  await ui.press({ key: 'retry' })
+  await clock.advance(250)
+  let text = JSON.stringify(await ui.findAll({ type: 'Markdown' }))
+  expect(text).toContain('First input.')
+  expect(text).toContain('回复成功')
+  await $.prompt.submit({ text: '第二条', origin: { kind: 'composer' }, wait: false })
+  await ui.redraw()
+  text = JSON.stringify(await ui.findAll({ type: 'Markdown' }))
+  expect(text).toContain('Second input.')
+  expect(text).not.toContain('First input.')
+})
+
+test('display settings save both selectors and cancel does not change the active note', async ($, on) => {
+  let config = { ...CONFIG }, saved: any
+  setup(on, CONFIG, req => {
+    if (req.action === 'load') return config
+    if (req.action === 'save') { saved = req.patch; config = { ...config, ...req.patch }; return config }
+  })
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  await $.session.start(start)
+  await $.prompt.submit({ text: '请修好', origin: { kind: 'composer' }, wait: false })
+  const ui = await $.ui.mount(PANE)
+  await ui.press({ key: 'settings-button' })
+  await ui.press({ key: 'tab-display' })
+  await ui.select({ key: 'inputTranslation', value: 'both' })
+  await ui.select({ key: 'inputLeft', value: 'both' })
+  await ui.select({ key: 'inputRight', value: 'translation' })
+  await ui.press({ key: 'cancel-settings' })
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).not.toContain('Please fix it.')
+  await ui.press({ key: 'settings-button' })
+  await ui.press({ key: 'tab-display' })
+  await ui.select({ key: 'inputTranslation', value: 'both' })
+  await ui.select({ key: 'inputLeft', value: 'both' })
+  await ui.select({ key: 'inputRight', value: 'translation' })
+  await ui.press({ key: 'save-settings' })
+  expect(saved).toMatchObject({ inputTranslation: 'both', inputLeft: 'both', inputRight: 'translation' })
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).toContain('Please fix it.')
+  expect(JSON.stringify(await ui.findAll({ type: 'Markdown' }))).not.toContain('请修好')
+})
+
+test('input and reply over the tree limit remain fully accessible in bounded pages', async ($, on) => {
+  const original = 'Original content. '.repeat(9000)
+  const input = 'Input content. '.repeat(9000)
+  const reply = 'Reply content. '.repeat(9000)
+  const clock = setup(on, { ...CONFIG, inputTranslation: 'right' }, req => req.action === 'translate' ? { text: input } : undefined)
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  on('process.spawn', async function* () {
+    yield { stream: 'stdout', text: JSON.stringify({ type: 'done', text: reply }) + '\n' } as const
+    return { value: { code: 0, signal: null } }
+  })
+  await $.session.start(start)
+  await $.prompt.submit({ text: original, origin: { kind: 'composer' }, wait: false })
+  await $.turn.start({ text: input, turnId: 't' })
+  await $.turn.complete(done('An answer.'))
+  await clock.advance(250)
+  const ui = await $.ui.mount(PANE)
+  const leaves = async () => [...await ui.findAll({ type: 'Text' }), ...await ui.findAll({ type: 'Markdown' })]
+  // Text leaves are normalized without JSX keys by the host test renderer.
+  const pageText = async (marker: string) => (await leaves()).filter(leaf => String(leaf.text).includes(marker)).map(leaf => leaf.text).join('')
+  const budget = async () => expect((await leaves()).reduce((total, leaf) => total + String(leaf.text || '').length, 0)).toBeLessThan(90000)
+  await budget()
+  expect(await ui.find({ key: 'reply-next' })).toBeUndefined()
+  while (await ui.find({ key: 'reply-prev' })) await ui.press({ key: 'reply-prev' })
+  let inputText = await pageText('Input content.')
+  let originalText = await pageText('Original content.')
+  let replyText = await pageText('Reply content.')
+  expect(replyText).toContain('Reply content.')
+  while (await ui.find({ key: 'input-next' })) {
+    await ui.press({ key: 'input-next' }); await budget()
+    inputText += await pageText('Input content.')
+    originalText += await pageText('Original content.')
+  }
+  while (await ui.find({ key: 'reply-next' })) {
+    await ui.press({ key: 'reply-next' }); await budget()
+    replyText += await pageText('Reply content.')
+  }
+  expect(inputText).toBe(input)
+  expect(originalText).toBe(original)
+  expect(replyText).toBe(reply)
+})
+
+test('external disable clears the right input and long input uses bounded Markdown leaves', async ($, on) => {
+  let enabled = true
+  const long = 'Translated input. '.repeat(2000)
+  setup(on, CONFIG, req => req.action === 'load' ? { ...CONFIG, inputTranslation: 'right', enabled }
+    : req.action === 'translate' ? { text: long } : undefined)
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  await $.session.start(start)
+  await $.prompt.submit({ text: '长输入', origin: { kind: 'composer' }, wait: false })
+  const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 22 } })
+  const text = JSON.stringify(await ui.findAll({ type: 'Text' })) + JSON.stringify(await ui.findAll({ type: 'Markdown' }))
+  expect(text).toContain('Translated input.')
+  for (const leaf of await ui.findAll({ type: 'Markdown' })) expect(String(leaf.props.text).length).toBeLessThanOrEqual(9000)
+  enabled = false
+  await $.prompt.submit({ text: '关闭后发送', origin: { kind: 'composer' }, wait: false })
+  await ui.redraw()
+  expect(JSON.stringify(await ui.findAll({ type: 'Text' })) + JSON.stringify(await ui.findAll({ type: 'Markdown' }))).not.toContain('Translated input.')
 })
 
 test('file paths and Markdown images can be translated while commands retain their meaning', () => {
@@ -477,8 +750,8 @@ test('settings expose detector, environment fields and reset to the language ove
   await ui.redraw({ ...PANE.props, bodyColumns: 100 })
   expect((await ui.find({ key: 'settings-header' }))?.props.height).toBe(3)
   await ui.redraw({ ...PANE.props, bodyColumns: 22, scroll: { offset: 0, bodyRows: 23 } })
-  expect((await ui.find({ key: 'settings-header' }))?.props.height).toBe(8)
-  expect((await ui.findAll({ type: 'Button' })).filter(item => String(item.props.key || '').startsWith('tab-')).length).toBe(5)
+  expect((await ui.find({ key: 'settings-header' }))?.props.height).toBe(9)
+  expect((await ui.findAll({ type: 'Button' })).filter(item => String(item.props.key || '').startsWith('tab-')).length).toBe(6)
 })
 
 test('key summary distinguishes active local and environment keys from unused saved keys', async ($, on) => {
@@ -506,9 +779,352 @@ test('key summary distinguishes active local and environment keys from unused sa
   expect(text).toContain('本机另存：****C789（当前未使用）')
 })
 
-test('wide settings fit all five tabs on one row while narrow panes retain all tabs', () => {
-  const sections = ['语言检测','模型接口','环境变量','Jev 接口','翻译 Prompt'].map(label => ({ label }))
-  expect(settingsGroups(sections, 90)).toEqual([sections])
-  expect(settingsGroups(sections, 22)).toHaveLength(5)
+test('wide settings fit all six tabs on one row while narrow panes retain all tabs', () => {
+  const sections = ['语言检测','模型接口','环境变量','Jev 接口','翻译 Prompt','输入显示'].map(label => ({ label }))
+  expect(settingsGroups(sections, 100)).toEqual([sections])
+  expect(settingsGroups(sections, 22)).toHaveLength(6)
   expect(settingsGroups(sections, 52).flat()).toEqual(sections)
 })
+
+
+for (const theme of ['dark', 'dark-daltonized', 'dark-ansi', 'light', 'light-daltonized', 'light-ansi', 'custom:fixture']) {
+  test(`pane palette follows ${theme} without changing body background`, async ($, on) => {
+    setup(on, CONFIG, undefined, undefined, undefined, () => theme)
+    await $.session.start(start)
+    const ui = await $.ui.mount(PANE)
+    const expected = theme.startsWith('dark') ? '#3A3029' : 'background'
+    expect((await ui.find({ key: 'sticky-header' }))?.props.backgroundColor).toBe(expected)
+    expect((await ui.find({ key: 'translation-body' }))?.props.backgroundColor).toBeUndefined()
+    await ui.press({ key: 'settings-button' })
+    expect((await ui.find({ key: 'settings-header' }))?.props.backgroundColor).toBe(expected)
+  })
+}
+
+test('changing theme redraws an open pane after the host accepts the change', async ($, on) => {
+  let theme = 'dark'
+  setup(on, CONFIG, undefined, undefined, undefined, () => theme)
+  on('config.set', ($, e) => { theme = String(e.value); return { value: e.value } })
+  await $.session.start(start)
+  const ui = await $.ui.mount(PANE)
+  expect((await ui.find({ key: 'sticky-header' }))?.props.backgroundColor).toBe('#3A3029')
+  await $.config.set({ key: 'theme', value: 'light', previous: 'dark', provider: { plugin: 'engine', tier: 'core' }, origin: { kind: 'composer' } })
+  expect((await ui.find({ key: 'sticky-header' }))?.props.backgroundColor).toBe('background')
+  await $.config.set({ key: 'theme', value: 'dark', previous: 'light', provider: { plugin: 'engine', tier: 'core' }, origin: { kind: 'composer' } })
+  expect((await ui.find({ key: 'sticky-header' }))?.props.backgroundColor).toBe('#3A3029')
+})
+
+for (const position of ['left', 'both']) {
+  for (const source of ['initial', 'local', 'loaded', 'incoming', 'reply']) {
+    test(`disabled translation restores transcript text after ${source} disable (${position})`, async ($, on) => {
+      let saved = { ...CONFIG, enabled: source !== 'initial', inputTranslation: position, inputLeft: 'off' }
+      const clock = setup(on, saved, request => {
+        if (request.action === 'load') return saved
+        if (request.action === 'save') { saved = { ...saved, ...request.patch }; return saved }
+        if (request.action === 'translate' && source === 'incoming') return { text: request.text, skipped: true, disabled: true }
+      })
+      on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { old: '已有原文' }, version: 1 } } : next(e))
+      on('prompt.submit', ($, e) => ({ text: e.text }))
+      on('process.spawn', async function* () {
+        yield { stream: 'stdout', text: JSON.stringify({ type: 'done', text: 'Reply.', skipped: true, disabled: true }) + '\n' } as const
+        return { value: { code: 0, signal: null } }
+      })
+      await $.session.start(start)
+      const message = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'old', surface: 'terminal', props: { text: 'Earlier translation.', origin: { kind: 'composer' }, isExpanded: false } })
+      const pane = await $.ui.mount(PANE)
+      if (source !== 'initial') expect((await message.findAll({ type: 'Text' })).map(node => node.text).join('')).toBe('')
+      if (source === 'local') {
+        await pane.press({ key: 'settings-button' })
+        await pane.select({ key: 'enabled', value: 'off' })
+        await pane.press({ key: 'save-settings' })
+      } else if (source === 'loaded') {
+        saved.enabled = false
+        await $.prompt.submit({ text: '关闭后发送', origin: { kind: 'composer' }, wait: false })
+      } else if (source === 'incoming') {
+        await $.prompt.submit({ text: '关闭竞态中的输入', origin: { kind: 'composer' }, wait: false })
+      } else if (source === 'reply') {
+        await $.turn.start({ text: 'Prompt.', turnId: 't' })
+        await $.turn.complete(done('Reply.'))
+        await clock.advance(500)
+      }
+      expect((await message.findAll({ type: 'Text' })).map(node => node.text).join('')).toBe('已有原文')
+      const fresh = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'new', surface: 'terminal', props: { text: '新消息保持可见', origin: { kind: 'composer' }, isExpanded: false } })
+      expect((await fresh.findAll({ type: 'Text' })).map(node => node.text).join('')).toBe('新消息保持可见')
+      // Disabling changes effective display, not the user's saved preferences.
+      expect(saved.inputTranslation).toBe(position)
+      expect(saved.inputLeft).toBe('off')
+      if (source === 'local') {
+        await pane.press({ key: 'settings-button' })
+        await pane.select({ key: 'enabled', value: 'on' })
+        await pane.press({ key: 'save-settings' })
+        expect((await message.findAll({ type: 'Text' })).map(node => node.text).join('')).toBe('')
+      }
+    })
+  }
+}
+
+for (const right of ['original', 'translation', 'both']) {
+  test(`identical right input renders once in ${right} mode`, async ($, on) => {
+    const text = 'Already in the Agent language.'
+    setup(on, { ...CONFIG, inputTranslation: 'right', inputRight: right }, request => request.action === 'translate' ? { text: request.text, skipped: true } : undefined)
+    on('prompt.submit', ($, e) => ({ text: e.text }))
+    await $.session.start(start)
+    expect((await $.prompt.submit({ text, origin: { kind: 'composer' }, wait: false })).text).toBe(text)
+    const pane = await $.ui.mount(PANE)
+    const shown = (await pane.findAll({ type: 'Text' })).map(node => node.text).join('\n')
+      + (await pane.findAll({ type: 'Markdown' })).map(node => node.props.text).join('\n')
+    expect(shown.split(text)).toHaveLength(2)
+    expect(shown.includes('发送译文')).toBe(right === 'translation')
+    expect(shown).toContain('最近输入')
+    expect(shown).toContain('等待 Agent 回复')
+  })
+}
+
+for (const kind of ['task-notification', 'peer', 'scheduled-trigger', 'unclassified'] as const) {
+  test(`hiding personal input preserves ${kind} messages`, async ($, on) => {
+    setup(on, { ...CONFIG, inputTranslation: 'both', inputLeft: 'off' })
+    on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { notification: 'unrelated cached original' }, version: 1 } } : next(e))
+    await $.session.start(start)
+    const text = kind === 'task-notification' ? 'Background task failed: exit code 1' : 'A message from another source'
+    const ui = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'notification', surface: 'terminal', props: { text, origin: { kind }, isExpanded: false } })
+    expect((await ui.findAll({ type: 'Text' })).map(node => node.text).join('')).toBe(text)
+  })
+}
+
+test('the accepted input note uses downstream text while retaining the original', async ($, on) => {
+  setup(on, { ...CONFIG, inputTranslation: 'right' })
+  on('prompt.submit', () => ({ text: 'Final rewritten prompt from another mod.' }))
+  await $.session.start(start)
+  const result = await $.prompt.submit({ text: '请修复它。', origin: { kind: 'composer' }, wait: false, context: ['keep context'] })
+  expect(result.text).toBe('Final rewritten prompt from another mod.')
+  const ui = await $.ui.mount(PANE)
+  const text = JSON.stringify(await ui.findAll({ type: 'Markdown' }))
+  expect(text).toContain('请修复它。')
+  expect(text).toContain('Final rewritten prompt from another mod.')
+  expect(text).not.toContain('Please fix it.')
+})
+
+test('a downstream rewrite back to the original displays the accepted text once', async ($, on) => {
+  setup(on, { ...CONFIG, inputTranslation: 'right' })
+  on('prompt.submit', () => ({ text: '请保留原文。' }))
+  await $.session.start(start)
+  await $.prompt.submit({ text: '请保留原文。', origin: { kind: 'composer' }, wait: false })
+  const ui = await $.ui.mount(PANE)
+  const text = (await ui.findAll({ type: 'Markdown' })).map(node => node.text).join('')
+  expect(text.split('请保留原文。')).toHaveLength(2)
+  expect(text).not.toContain('Please fix it.')
+})
+
+test('scrolling an earlier reply page keeps it selected and the final page can resume following', async ($, on) => {
+  const clock = setup(on, { ...CONFIG, inputTranslation: 'right' })
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  on('process.spawn', async function* () {
+    yield { stream: 'stdout', text: JSON.stringify({ type: 'done', text: 'Reply content. '.repeat(9000) }) + '\n' } as const
+    return { value: { code: 0, signal: null } }
+  })
+  await $.session.start(start)
+  await $.prompt.submit({ text: '请修复它。', origin: { kind: 'composer' }, wait: false })
+  await $.turn.start({ text: 'Please fix it.', turnId: 't' })
+  await $.turn.complete(done('An answer.'))
+  await clock.advance(250)
+  const ui = await $.ui.mount(PANE)
+  while (await ui.find({ key: 'reply-prev' })) await ui.press({ key: 'reply-prev' })
+  await $.ui.scroll({ component: 'Pane', requestId: 'translate-view', offset: 70, by: 70, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } })
+  await ui.redraw(PANE.props)
+  expect(await ui.find({ key: 'reply-next' })).toBeDefined()
+  expect(await ui.find({ key: 'reply-prev' })).toBeUndefined()
+  while (await ui.find({ key: 'reply-next' })) await ui.press({ key: 'reply-next' })
+  await $.ui.scroll({ component: 'Pane', requestId: 'translate-view', offset: 70, by: 70, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } })
+  await ui.redraw(PANE.props)
+  expect(await ui.find({ key: 'reply-next' })).toBeUndefined()
+  await ui.press({ key: 'reply-prev' })
+  expect(await ui.find({ key: 'reply-next' })).toBeDefined()
+  await ui.press({ key: 'retry' })
+  expect(await ui.find({ key: 'reply-next' })).toBeUndefined()
+})
+
+for (const left of ['both', 'original', 'translation'] as const) {
+  test(`over-limit left ${left} has a complete per-message inspector with right display disabled`, async ($, on) => {
+    const original = 'O'.repeat(left === 'both' ? 60000 : 110000)
+    const sent = 'T'.repeat(left === 'both' ? 60000 : 110000)
+    let saves = 0
+    setup(on, { ...CONFIG, inputTranslation: 'left', inputLeft: left, inputRight: 'off' }, req => { if (req.action === 'save') saves++ })
+    on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { 'long-input': original, newer: 'N'.repeat(60000) }, version: 1 } } : next(e))
+    await $.session.start(start)
+    const row = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'long-input', surface: 'terminal', props: { text: sent, origin: { kind: 'composer' }, isExpanded: true } })
+    const preview = (await row.findAll({ type: 'Text' })).map(node => node.text).join('')
+    expect(preview.length).toBeLessThanOrEqual(100000)
+    expect(preview).toContain('/translate input long-input')
+    expect(preview).toContain('预览')
+    // Another historical row must not replace the requested full content.
+    await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'newer', surface: 'terminal', props: { text: 'M'.repeat(60000), origin: { kind: 'composer' }, isExpanded: true } })
+    await $.command.run({ ...translateCommand, args: 'input long-input' })
+    const ui = await $.ui.mount(PANE)
+    let reconstructed = ''
+    do {
+      const leaves = [...await ui.findAll({ type: 'Text' }), ...await ui.findAll({ type: 'Markdown' })]
+      expect(leaves.reduce((size, leaf) => size + String(leaf.text || '').length, 0)).toBeLessThan(90000)
+      reconstructed += leaves.filter(leaf => /^[OT]+$/.test(String(leaf.text))).map(leaf => leaf.text).join('')
+      if (!await ui.find({ key: 'input-full-next' })) break
+      await ui.press({ key: 'input-full-next' })
+    } while (true)
+    expect(reconstructed).toBe(original + sent)
+    expect(await ui.find({ key: 'input-full-prev' })).toBeDefined()
+    await ui.press({ key: 'input-full-close' })
+    expect(await ui.find({ key: 'input-full-next' })).toBeUndefined()
+    expect(saves).toBe(0)
+  })
+}
+
+test('unknown full-input IDs do not open stale or unrelated content', async ($, on) => {
+  setup(on, { ...CONFIG, inputTranslation: 'left', inputLeft: 'both' })
+  await $.session.start(start)
+  const result = await $.command.run({ ...translateCommand, args: 'input missing' })
+  expect(result.text).toContain('不可用')
+  const ui = await $.ui.mount(PANE)
+  expect(await ui.find({ key: 'input-full-close' })).toBeUndefined()
+})
+
+for (const reset of ['disable', 'clear', 'end'] as const) {
+  test(`full-input inspection and cache are cleared on ${reset}`, async ($, on) => {
+    let config = { ...CONFIG, inputTranslation: 'left', inputLeft: 'both' }
+    setup(on, config, req => req.action === 'load' ? config : req.action === 'save' ? (config = { ...config, ...req.patch }) : undefined)
+    let clearing = false
+    on('state.get', ($, e, next) => e.key === 'originals' && !clearing ? { value: { value: { long: 'O'.repeat(60000) }, version: 1 } } : next(e))
+    on('classic.SessionStart', () => ({}))
+    await $.session.start(start)
+    await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'long', surface: 'terminal', props: { text: 'T'.repeat(60000), origin: { kind: 'composer' }, isExpanded: true } })
+    await $.command.run({ ...translateCommand, args: 'input long' })
+    const ui = await $.ui.mount(PANE)
+    expect(await ui.find({ key: 'input-full-close' })).toBeDefined()
+    if (reset === 'disable') await $.command.run({ ...translateCommand, args: 'off' })
+    else if (reset === 'clear') { clearing = true; await $.classic.SessionStart({ source: 'clear' }) }
+    else await $.session.end({ reason: 'clear', sessionId: 'test-session', resume: { id: 'test-session' } })
+    await ui.redraw()
+    expect(await ui.find({ key: 'input-full-close' })).toBeUndefined()
+    const result = await $.command.run({ ...translateCommand, args: 'input long' })
+    expect(result.text).toContain('不可用')
+  })
+}
+
+for (const reset of ['clear', 'end', 'disable'] as const) {
+  test(`a late original read cannot restore full-input access after ${reset}`, async ($, on) => {
+    let config = { ...CONFIG, inputTranslation: 'left', inputLeft: 'both' }
+    setup(on, config, req => req.action === 'load' ? config : req.action === 'save' ? (config = { ...config, ...req.patch }) : undefined)
+    let arrived!: () => void, release!: () => void, waiting = true
+    const reached = new Promise<void>(resolve => { arrived = resolve })
+    const resume = new Promise<void>(resolve => { release = resolve })
+    on('state.get', async ($, e, next) => {
+      if (e.key !== 'originals' || !waiting) return next(e)
+      waiting = false; arrived(); await resume
+      return { value: { value: { late: 'O'.repeat(60000) }, version: 1 } }
+    })
+    on('classic.SessionStart', () => ({}))
+    await $.session.start(start)
+    const mounting = $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'late', surface: 'terminal', props: { text: 'T'.repeat(60000), origin: { kind: 'composer' }, isExpanded: true } })
+    await reached
+    if (reset === 'clear') await $.classic.SessionStart({ source: 'clear' })
+    else if (reset === 'disable') await $.command.run({ ...translateCommand, args: 'off' })
+    else await $.session.end({ reason: 'clear', sessionId: 'test-session', resume: { id: 'test-session' } })
+    release()
+    await mounting
+    const result = await $.command.run({ ...translateCommand, args: 'input late' })
+    expect(result.text).toContain('不可用')
+  })
+}
+
+test('reply growth preserves an earlier page but follows new pages from the final page bottom', async ($, on) => {
+  const clock = setup(on, { ...CONFIG, inputTranslation: 'right' })
+  let grow!: () => void, finish!: () => void
+  const growing = new Promise<void>(resolve => { grow = resolve })
+  const finishing = new Promise<void>(resolve => { finish = resolve })
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  on('process.spawn', async function* () {
+    yield { stream: 'stdout', text: JSON.stringify({ type: 'partial', text: 'Reply content. '.repeat(6000) }) + '\n' } as const
+    await growing
+    yield { stream: 'stdout', text: JSON.stringify({ type: 'partial', text: 'Reply content. '.repeat(9000) }) + '\n' } as const
+    await finishing
+    yield { stream: 'stdout', text: JSON.stringify({ type: 'done', text: 'Reply content. '.repeat(12000) + 'REPLY_END' }) + '\n' } as const
+    return { value: { code: 0, signal: null } }
+  })
+  try {
+    await $.session.start(start)
+    await $.prompt.submit({ text: '请修复它。', origin: { kind: 'composer' }, wait: false })
+    await $.turn.start({ text: 'Please fix it.', turnId: 't' })
+    await $.turn.complete(done('An answer.'))
+    await clock.advance(250)
+    const ui = await $.ui.mount(PANE)
+    while (await ui.find({ key: 'reply-prev' })) await ui.press({ key: 'reply-prev' })
+    await $.ui.scroll({ component: 'Pane', requestId: 'translate-view', offset: 70, by: 70, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } })
+    grow(); await clock.advance(500); await ui.redraw(PANE.props)
+    expect(await ui.find({ key: 'reply-prev' })).toBeUndefined()
+    expect(await ui.find({ key: 'reply-next' })).toBeDefined()
+    while (await ui.find({ key: 'reply-next' })) await ui.press({ key: 'reply-next' })
+    await $.ui.scroll({ component: 'Pane', requestId: 'translate-view', offset: 70, by: 70, bodyRows: 30, contentRows: 100, origin: { kind: 'person' } })
+    finish(); await clock.advance(500); await ui.redraw(PANE.props)
+    expect(await ui.find({ key: 'reply-next' })).toBeUndefined()
+    expect(JSON.stringify([...await ui.findAll({ type: 'Text' }), ...await ui.findAll({ type: 'Markdown' })])).toContain('REPLY_END')
+  } finally {
+    grow(); finish()
+    await clock.advance(250)
+    await $.session.end({ reason: 'clear', sessionId: 'test-session', resume: { id: 'test-session' } })
+  }
+})
+
+test('overflow cache evicts older full inputs within its documented character budget', async ($, on) => {
+  setup(on, { ...CONFIG, inputTranslation: 'left', inputLeft: 'both' })
+  let current = ''
+  on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { [current]: 'O'.repeat(60000) }, version: 1 } } : next(e))
+  await $.session.start(start)
+  for (let i = 0; i < 9; i++) {
+    current = `overflow-${i}`
+    await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: current, surface: 'terminal', props: { text: 'T'.repeat(60000), origin: { kind: 'composer' }, isExpanded: true } })
+  }
+  expect((await $.command.run({ ...translateCommand, args: 'input overflow-0' })).text).toContain('不可用')
+  expect((await $.command.run({ ...translateCommand, args: 'input overflow-8' })).text).toContain('已打开')
+  const ui = await $.ui.mount(PANE)
+  expect(await ui.find({ key: 'input-full-close' })).toBeDefined()
+})
+
+test('a 22-column full-input inspector keeps navigation on separate header rows', async ($, on) => {
+  setup(on, { ...CONFIG, inputTranslation: 'left', inputLeft: 'both' })
+  on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { narrow: 'O'.repeat(60000) }, version: 1 } } : next(e))
+  await $.session.start(start)
+  await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'narrow', surface: 'terminal', props: { text: 'T'.repeat(60000), origin: { kind: 'composer' }, isExpanded: true } })
+  await $.command.run({ ...translateCommand, args: 'input narrow' })
+  const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 22 } })
+  await ui.press({ key: 'input-full-next' })
+  expect((await ui.find({ key: 'input-full-controls' }))?.props.flexDirection).toBe('column')
+  expect((await ui.find({ key: 'input-full-header' }))?.props.height).toBe(6)
+  expect(await ui.find({ key: 'input-full-prev' })).toBeDefined()
+  expect(await ui.find({ key: 'input-full-next' })).toBeDefined()
+  await ui.press({ key: 'input-full-close' })
+  expect(await ui.find({ key: 'input-full-header' })).toBeUndefined()
+})
+
+for (const [columns, rows] of [[60, 2], [60, 1], [22, 2]] as const) {
+  test(`full-input navigation remains usable in a ${columns}x${rows} body`, async ($, on) => {
+    setup(on, { ...CONFIG, inputTranslation: 'left', inputLeft: 'both', inputRight: 'off' })
+    on('state.get', ($, e, next) => e.key === 'originals'
+      ? { value: { value: { short: 'O'.repeat(60000) }, version: 1 } } : next(e))
+    await $.session.start(start)
+    await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'short', surface: 'terminal', props: { text: 'T'.repeat(60000), origin: { kind: 'composer' }, isExpanded: true } })
+    await $.command.run({ ...translateCommand, args: 'input short' })
+    const props = { ...PANE.props, bodyColumns: columns, scroll: { offset: 0, bodyRows: rows } }
+    const ui = await $.ui.mount({ ...PANE, props })
+    expect(Number((await ui.find({ key: 'input-full-header' }))?.props.height)).toBeLessThanOrEqual(rows)
+    expect((await ui.find({ key: 'input-full-controls' }))?.props.flexDirection).toBe('row')
+    expect(await ui.find({ key: 'input-full-prev' })).toBeUndefined()
+    await ui.press({ key: 'input-full-next' })
+    expect(await ui.find({ key: 'input-full-prev' })).toBeDefined()
+    expect(await ui.find({ key: 'input-full-next' })).toBeDefined()
+    expect(Number((await ui.find({ key: 'input-full-header' }))?.props.height)).toBeLessThanOrEqual(rows)
+    await ui.press({ key: 'input-full-prev' })
+    expect(await ui.find({ key: 'input-full-prev' })).toBeUndefined()
+    // Growing the window restores the normal title/ID and navigation layout.
+    await ui.redraw({ ...props, scroll: { offset: 0, bodyRows: 30 } })
+    expect(Number((await ui.find({ key: 'input-full-header' }))?.props.height)).toBe(columns < 42 ? 5 : 3)
+    await ui.redraw(props)
+    await ui.press({ key: 'input-full-close' })
+    expect(await ui.find({ key: 'input-full-header' })).toBeUndefined()
+  })
+}

@@ -27,6 +27,38 @@ class Tests(unittest.TestCase):
         self.env.stop();self.tmp.cleanup()
     def config(self,**kw):
         return dict(m.DEFAULTS,enabled=True,baseUrl='http://localhost:4321/v1',model='translator',**kw)
+    def test_input_display_defaults_and_old_config(self):
+        """Verify missing display fields use defaults without replacing legacy settings."""
+        self.assertEqual(m.load_config().get('inputTranslation'),'off')
+        self.assertEqual(m.load_config().get('inputLeft'),'translation')
+        self.assertEqual(m.load_config().get('inputRight'),'both')
+        m.config_path().parent.mkdir(parents=True)
+        m.config_path().write_text(json.dumps({'enabled':True,'model':'old'}))
+        cfg=m.load_config()
+        self.assertEqual(cfg.get('inputTranslation'),'off')
+        self.assertEqual(cfg.get('inputLeft'),'translation')
+        self.assertEqual(cfg.get('inputRight'),'both')
+        self.assertTrue(cfg['enabled'])
+    def test_input_display_modes_round_trip(self):
+        """Verify all 64 placement and left/right content combinations persist correctly."""
+        for position in ('off','left','right','both'):
+            for left in ('off','original','translation','both'):
+                for right in ('off','original','translation','both'):
+                    with self.subTest(position=position,left=left,right=right):
+                        pub=m.save_config({'inputTranslation':position,'inputLeft':left,'inputRight':right})
+                        self.assertEqual(pub.get('inputTranslation'),position)
+                        self.assertEqual(pub.get('inputLeft'),left)
+                        self.assertEqual(pub.get('inputRight'),right)
+                        self.assertEqual(m.load_config().get('inputRight'),right)
+    def test_input_display_rejects_invalid_values(self):
+        """Verify invalid display settings are rejected without changing the saved file."""
+        m.save_config({'model':'keep'})
+        before=m.config_path().read_text()
+        for key,values in [('inputTranslation',['unknown','LEFT',True,None]),('inputLeft',['unknown','BOTH',False,None]),('inputRight',['unknown','BOTH',False,None])]:
+            for value in values:
+                with self.subTest(key=key,value=value):
+                    with self.assertRaises(m.TranslationError): m.save_config({key:value})
+                    self.assertEqual(m.config_path().read_text(),before)
     def test_config_private_atomic_and_never_echoes_keys(self):
         pub=m.save_config({'apiKey':'SECRET','jevKey':'JEV_SECRET','model':'custom'})
         self.assertTrue(pub['hasApiKey']);self.assertNotIn('SECRET',json.dumps(pub))
