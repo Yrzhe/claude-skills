@@ -1,5 +1,5 @@
 """Long left-input inspector PTY smoke; stdlib only, isolated config and mock services."""
-import fcntl,json,os,pty,re,select,struct,subprocess,tempfile,termios,threading,time
+import fcntl,json,os,pty,re,select,shlex,struct,subprocess,tempfile,termios,threading,time
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 
@@ -7,8 +7,11 @@ plugin=Path(__file__).resolve().parents[1]
 root=Path(tempfile.mkdtemp(prefix='pr2-author-fixes-pty-'))
 print('Artifacts:',root,flush=True)
 class Handler(BaseHTTPRequestHandler):
-    def log_message(self,*args):pass
+    def log_message(self,*args):
+        """Suppress HTTP access logs for the local translation fixture."""
+        pass
     def do_POST(self):
+        """Return a deterministic translation for the incoming mock chat request."""
         body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
         text=body['messages'][1]['content'].replace('文','T') if 'English' in body['messages'][0]['content'] else '完成。'
         self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers()
@@ -52,19 +55,24 @@ env=dict(os.environ,TERM='xterm-256color',FORCE_COLOR='1',CLAUDE_CODE_NO_FLICKER
 for key in list(env):
     if key in ('NO_COLOR','CLAUDE_CODE_CHILD_SESSION','CLAUDECODE','CLAUDE_CODE_ENTRYPOINT','CLAUDE_PID','CLAUDE_PLUGIN_DATA','CLAUDE_CODE_EXECPATH') or key.startswith(('CLAUDE_CODE_SESSION_','CLAUDE_CODE_BRIDGE_','CLAUDE_CODE_MESSAGING_')):env.pop(key,None)
 master,slave=pty.openpty();fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHHH',40,160,0,0))
-command=['claude','--debug-file',str(root/'debug.log'),'--setting-sources','','--settings','{"enabledPlugins":{},"remoteControlAtStartup":false,"tui":"fullscreen"}','--plugin-dir',str(fixture),'--plugin-dir',str(plugin),'--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--tools','']
+command=[*shlex.split(os.environ.get('CLAUDE_BIN','claude')),'--debug-file',str(root/'debug.log'),'--setting-sources','','--settings','{"enabledPlugins":{},"remoteControlAtStartup":false,"tui":"fullscreen"}','--plugin-dir',str(fixture),'--plugin-dir',str(plugin),'--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--tools','']
 process=subprocess.Popen(command,stdin=slave,stdout=slave,stderr=slave,cwd=plugin,env=env);os.close(slave)
 raw=bytearray();log=(root/'terminal.bin').open('wb')
-def send(text):os.write(master,text.encode())
+def send(text):
+    """Write UTF-8 input or terminal control sequences to the Claude PTY."""
+    os.write(master,text.encode())
 def read(seconds=.05):
+    """Capture available PTY output and answer terminal capability queries."""
     if select.select([master],[],[],seconds)[0]:
         chunk=os.read(master,65536);raw.extend(chunk);log.write(chunk);log.flush()
         if b'\x1b[6n' in chunk:send('\x1b[1;1R')
         if b'\x1b[c' in chunk:send('\x1b[?1;2c')
 def clean(start=0):
+    """Decode captured output and strip ANSI sequences for text assertions."""
     text=bytes(raw[start:]).decode('utf-8','replace')
     return re.sub(r'\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))','',text)
 def wait(check,label,timeout=35):
+    """Read until a condition passes, preserving diagnostic output on timeout."""
     deadline=time.monotonic()+timeout
     while time.monotonic()<deadline:
         read()
@@ -73,6 +81,7 @@ def wait(check,label,timeout=35):
     (root/'screen-raw-text.txt').write_text(clean())
     raise AssertionError(label+' timed out')
 def press(x,y,key):
+    """Click a settled pointer target and verify its completed ui.press event."""
     # Wait for the native frame and its pointer targets to settle after a redraw.
     until=time.monotonic()+.5
     while time.monotonic()<until:read(.05)
@@ -84,6 +93,7 @@ try:
     wait(lambda:'等待Agent回复' in ''.join(clean().split()),'initial translation pane')
     payload='\x1b[200~'+'文'*60000+'\x1b[201~'
     def paste():
+        """Write the bracketed-paste payload in chunks while output is drained."""
         encoded=payload.encode()
         for at in range(0,len(encoded),4096):os.write(master,encoded[at:at+4096])
     writer=threading.Thread(target=paste);writer.start()
