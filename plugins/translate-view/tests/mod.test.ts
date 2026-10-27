@@ -15,6 +15,7 @@ const PANE = {
   viewport: { columns: 160, rows: 40, isFullscreen: true },
   props: { title: 'Translation', isFocused: true, bodyColumns: 52, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} },
 } as const
+/** Install deterministic host/process mocks, including a controllable clock and theme setting. */
 function setup(on: On, config = CONFIG, inspect?: (request: any) => any, composer = { text: '', fills: [] as string[] }, processRun?: (event: any) => any, theme = () => 'dark') {
   const clock = mock.clock(on)
   on('session.start', () => ({ cwd: '/work' }))

@@ -119,8 +119,11 @@ export function settingsGroups<T extends { label: string }>(items: T[], columns:
   return groups
 }
 
-// Budget the rendered text, including table expansion, rather than the source.
-// Two 40k pages leave room for pane controls under the host's 100k tree limit.
+/**
+ * Group rendered Markdown parts into pages of at most 40000 text characters.
+ * Parts must already be bounded by markdownParts; two pages leave room for
+ * input/reply controls under the host's 100000-character tree limit.
+ */
 export function markdownPages(parts: ReturnType<typeof markdownParts>): ReturnType<typeof markdownParts>[] {
   const pages: ReturnType<typeof markdownParts>[] = [[]]
   let size = 0

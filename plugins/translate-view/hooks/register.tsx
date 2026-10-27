@@ -48,6 +48,7 @@ function redraw($: EngineInterface, deferred = false) {
     await update($, paneRevision, revision => revision + 1)
   })
 }
+/** Cache parsed Markdown independently for the reply, input original, and input translation. */
 function renderedMarkdown(source: string, columns: number, section: 'reply' | 'input' | 'original' = 'reply') {
   let cache = section === 'original' ? originalMarkdownCache : section === 'input' ? inputMarkdownCache : markdownCache
   if (!cache || cache.source !== source || cache.columns !== columns)
@@ -57,6 +58,7 @@ function renderedMarkdown(source: string, columns: number, section: 'reply' | 'i
   else markdownCache = cache
   return cache.parts
 }
+/** Clear recent input and invalidate pending submissions captured before this reset. */
 function clearInput() {
   inputEpoch++
   inputNote = undefined
@@ -64,6 +66,7 @@ function clearInput() {
   inputMarkdownCache = undefined
   originalMarkdownCache = undefined
 }
+/** Cancel the current reply translation and reset its paging and follow state. */
 function reset(source = '', done = false) {
   generation++
   const stream = currentStream
@@ -89,6 +92,7 @@ async function helper($: EngineInterface, data: object): Promise<Record<string, 
   if (result.exitCode !== 0 || value.error) throw new Error(value.error || '翻译失败。')
   return value
 }
+/** Apply loaded settings, clear disabled input, and publish reactive transcript display options. */
 async function configure($: EngineInterface, value: Config) {
   if (cfg?.inputRight !== value.inputRight) inputPage = 0
   cfg = value
@@ -97,6 +101,7 @@ async function configure($: EngineInterface, value: Config) {
     previous.inputTranslation === value.inputTranslation && previous.inputLeft === value.inputLeft
       ? previous : { inputTranslation: value.inputTranslation, inputLeft: value.inputLeft })
 }
+/** Load shared private settings through the helper and apply them to this session. */
 async function load($: EngineInterface) {
   await configure($, await helper($, { action: 'load' }) as Config)
 }
@@ -108,6 +113,7 @@ async function open($: EngineInterface, settings = false) {
   needsFollow = true
   redraw($)
 }
+/** Persist a settings patch and restart reply rendering, retaining the draft on failure. */
 async function save($: EngineInterface, patch: Record<string, unknown>, close = true) {
   try {
     await configure($, await helper($, { action: 'save', patch }) as Config)
@@ -117,6 +123,7 @@ async function save($: EngineInterface, patch: Record<string, unknown>, close = 
   } catch (e) { notice = e instanceof Error ? e.message : '保存失败。' }
   redraw($)
 }
+/** Translate the next reply segment, ignoring stale results and handling remote disablement. */
 async function pump($: EngineInterface) {
   if (busy || !cfg?.enabled || !job || job.error) return
   const segment = nextSegment(job.source, job.cursor, job.done)
@@ -160,6 +167,7 @@ async function pump($: EngineInterface) {
   }
 }
 
+/** Register prompt translation, original-message pairing, pane rendering, and session cleanup hooks. */
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     interactive = e.isInteractive && e.surface === 'terminal'

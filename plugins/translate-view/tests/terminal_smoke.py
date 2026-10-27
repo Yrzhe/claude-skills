@@ -36,6 +36,7 @@ End of comparison.'''
 
 class Harness:
     def __init__(self, root, columns=160, rows=40):
+        """Start an isolated Claude PTY with temporary settings and a mock translation server."""
         self.root = root
         self.columns, self.rows = columns, rows
         self.requests = []
@@ -43,6 +44,7 @@ class Harness:
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *args): pass
             def do_POST(self):
+                """Serve deterministic JSON or SSE translations and record requests for assertions."""
                 body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 owner.requests.append(body)
                 if '--slow-input' in sys.argv and len(owner.requests)==1:
@@ -194,6 +196,7 @@ class Harness:
         self.server.shutdown();self.server.server_close()
 
 def settings_check(h):
+    """Exercise settings navigation, cancellation, and display-option saves at the active width."""
     h.click('设置')
     h.wait(lambda:'模型接口' in h.view() and '语言检测:' in h.view(),'settings opens language detection overview')
     if '--settings-wide' in sys.argv:
@@ -234,6 +237,7 @@ def settings_check(h):
         assert saved['inputTranslation']=='both' and saved['inputLeft']=='both' and saved['inputRight']=='translation', saved
 
 def input_display_check(h):
+    """Check 22 display scenarios while verifying the Agent receives the complete translation."""
     config=h.root/'config.json'
     modes=('off','original','translation','both')
     cases=[(position,left,'both') for position,left in [('off','translation'),('left','translation'),('left','both'),('right','translation'),('both','translation'),('both','both')]]
@@ -265,6 +269,7 @@ def input_display_check(h):
     print('Input display smoke completed.',flush=True)
 
 def input_pages_check(h):
+    """Verify a 90025-character sent prompt remains accessible through input pagination."""
     h.send('请解释分页。\r')
     h.wait(lambda:'这是译文。' in h.view() and '翻译中' not in h.view(), 'long input retains reply translation')
     received=json.loads((h.root/'received.json').read_text())
@@ -359,11 +364,13 @@ def resize_check(h):
     print('Window resize and compact inline pane smoke completed.',flush=True)
 
 def theme_colors_check(h):
+    """Check header and body colors plus settings interactions under the selected host theme."""
     light='--light-theme' in sys.argv
     expected_bg='009999' if light else '3a3029'
     expected_primary='000000' if light else 'f0e6d8'
     expected_secondary='666666' if light else 'b7a695'
     def pane_cell(label):
+        """Return the terminal cell at a matching pane label, raising if the label is absent."""
         divider=next(col for col in range(h.columns) if h.screen.buffer[0][col].data=='│')
         for row in range(h.rows):
             for col in range(divider+1,h.columns):
@@ -398,6 +405,7 @@ def theme_colors_check(h):
     print('Pane theme color smoke completed.',flush=True)
 
 def main():
+    """Run the requested PTY smoke scenario and always close the harness afterward."""
     global ANSWER
     tables = '--tables' in sys.argv
     if tables: ANSWER = TABLE_ANSWER

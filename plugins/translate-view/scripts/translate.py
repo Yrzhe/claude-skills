@@ -65,6 +65,7 @@ def load_config():
     return cfg
 
 def validate_config(cfg):
+    """Validate merged configuration values, raising TranslationError for invalid fields."""
     for k,v in cfg.items():
         if k == 'enabled':
             if type(v) is not bool: raise TranslationError('enabled 必须是布尔值。')

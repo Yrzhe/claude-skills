@@ -28,6 +28,7 @@ class Tests(unittest.TestCase):
     def config(self,**kw):
         return dict(m.DEFAULTS,enabled=True,baseUrl='http://localhost:4321/v1',model='translator',**kw)
     def test_input_display_defaults_and_old_config(self):
+        """Verify missing display fields use defaults without replacing legacy settings."""
         self.assertEqual(m.load_config().get('inputTranslation'),'off')
         self.assertEqual(m.load_config().get('inputLeft'),'translation')
         self.assertEqual(m.load_config().get('inputRight'),'both')
@@ -39,6 +40,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(cfg.get('inputRight'),'both')
         self.assertTrue(cfg['enabled'])
     def test_input_display_modes_round_trip(self):
+        """Verify all 64 placement and left/right content combinations persist correctly."""
         for position in ('off','left','right','both'):
             for left in ('off','original','translation','both'):
                 for right in ('off','original','translation','both'):
@@ -49,6 +51,7 @@ class Tests(unittest.TestCase):
                         self.assertEqual(pub.get('inputRight'),right)
                         self.assertEqual(m.load_config().get('inputRight'),right)
     def test_input_display_rejects_invalid_values(self):
+        """Verify invalid display settings are rejected without changing the saved file."""
         m.save_config({'model':'keep'})
         before=m.config_path().read_text()
         for key,values in [('inputTranslation',['unknown','LEFT',True,None]),('inputLeft',['unknown','BOTH',False,None]),('inputRight',['unknown','BOTH',False,None])]:
