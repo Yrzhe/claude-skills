@@ -22,10 +22,14 @@ const displayOriginals = atom({ plugin: 'translate-view', key: 'originals' } as 
 const paneRevision = atom({ plugin: 'translate-view', key: 'paneRevision' } as const, 0)
 const inputDisplay = atom({ plugin: 'translate-view', key: 'inputDisplay' } as const,
   { inputTranslation: 'off', inputLeft: 'translation' } as Pick<Config, 'inputTranslation' | 'inputLeft'>)
-let inputNote: { original: string; text: string } | undefined
+type InputNote = { original: string; text: string }
+let inputNote: InputNote | undefined
+const overflowInputs = new Map<string, InputNote>()
+let inputInspection: { id: string; note: InputNote; page: number } | undefined
 let inputEpoch = 0
 let inputPage = 0
 let replyPage = 0
+let replyPageCount = 1
 let cancelRedraw: ReturnType<EngineInterface['clock']['after']> | undefined
 let markdownCache: { source: string; columns: number; parts: ReturnType<typeof markdownParts> } | undefined
 let inputMarkdownCache: typeof markdownCache
@@ -62,6 +66,9 @@ function renderedMarkdown(source: string, columns: number, section: 'reply' | 'i
 function clearInput() {
   inputEpoch++
   inputNote = undefined
+  overflowInputs.clear()
+  inputInspection = undefined
+  if (page === 'input') page = ''
   inputPage = 0
   inputMarkdownCache = undefined
   originalMarkdownCache = undefined
@@ -74,6 +81,7 @@ function reset(source = '', done = false) {
   if (stream) { void stream.result.catch(() => {}); void stream.return({ code: null, signal: 'SIGTERM' }).catch(() => {}) }
   job = { source, cursor: 0, done, pieces: [], pending: '', error: '', skipped: true }
   replyPage = 0
+  replyPageCount = 1
   follow = true; needsFollow = true
 }
 async function recover($: EngineInterface, text: string) {
@@ -108,6 +116,8 @@ async function load($: EngineInterface) {
 }
 async function open($: EngineInterface, settings = false) {
   await load($)
+  inputInspection = undefined
+  if (page === 'input') page = ''
   if (settings || !cfg?.enabled) { page = 'settings'; draft = { ...cfg }; tab = 'language'; settingsStart = true }
   // Use the host's proportional layout, including the person's saved size.
   await $.ui.open({ id: PANE, title: 'Translation' })
@@ -172,17 +182,17 @@ async function pump($: EngineInterface) {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     interactive = e.isInteractive && e.surface === 'terminal'
-    await $.command.register({ name: 'translate', description: 'Open translation pane or settings', argumentHint: '[settings|on|off]', immediate: true })
+    await $.command.register({ name: 'translate', description: 'Open translation pane or settings', argumentHint: '[settings|on|off|input <message-id>]', immediate: true })
     try { await load($) } catch (e) { notice = e instanceof Error ? e.message : '配置读取失败。' }
     if (interactive && cfg) await open($)
     $.clock.every(250, async () => {
       // Waiting for the entire stream here stalled scrolling until it finished.
       void pump($)
-      if (interactive && page === 'settings' && settingsStart) {
+      if (interactive && (page === 'settings' || page === 'input') && settingsStart) {
         const result = await $.ui.scroll({ in: PANE, to: 'start' }).catch(() => ({ deny: 'pane unavailable' }))
         if (!result.deny) { settingsStart = false; redraw($) }
       }
-      if (interactive && page !== 'settings' && needsFollow && follow) {
+      if (interactive && page === '' && needsFollow && follow) {
         const result = await $.ui.scroll({ in: PANE, to: 'end' }).catch(() => ({ deny: 'pane unavailable' }))
         if (!result.deny) needsFollow = false
       }
@@ -190,6 +200,20 @@ export const register: Register = on => {
     return next(e)
   })
   on('command.run', { command: 'translate' }, async ($, e) => {
+    const args = e.args.trim()
+    if (args === 'input' || args.startsWith('input ')) {
+      await load($)
+      const id = args.slice(5).trim()
+      const note = overflowInputs.get(id)
+      if (!note || !cfg?.enabled) return { text: '该条输入全文缓存不可用；请重新显示该消息后再试。用法：/translate input <消息ID>' }
+      inputInspection = { id, note, page: 0 }
+      page = 'input'
+      settingsStart = true
+      follow = false; needsFollow = false
+      await $.ui.open({ id: PANE, title: 'Translation' })
+      redraw($)
+      return { text: '已打开该条输入全文，可分页查看原文与最终发送文字。' }
+    }
     if (e.args.trim() === 'off' || e.args.trim() === 'on') await save($, { enabled: e.args.trim() === 'on' })
     await open($, e.args.trim() === 'settings')
     return { text: cfg?.enabled ? `翻译已开启 · Agent 接收 ${cfg.incomingLanguage} · 我的阅读 ${cfg.outgoingLanguage}` : '翻译已关闭；可在设置中开启。' }
@@ -218,7 +242,7 @@ export const register: Register = on => {
       // Attachments/context/wait/origin are passed through, never sent to the translator.
       const result = await next({ ...e, text: translated.text })
       entered = !result.drop
-      if (entered && epoch === inputEpoch && cfg.enabled) { inputNote = { original: e.text, text: translated.text }; inputPage = 0; redraw($) }
+      if (entered && typeof result.text === 'string' && epoch === inputEpoch && cfg.enabled) { inputNote = { original: e.text, text: result.text }; inputPage = 0; redraw($) }
       if (result.drop) await recover($, e.text)
       return result
     } catch (error) {
@@ -251,13 +275,31 @@ export const register: Register = on => {
     return next(e)
   })
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
+    if (!['composer', 'bridge', 'sdk'].includes(e.props.origin.kind)) return next(e)
+    const epoch = inputEpoch
     const display = await read($, inputDisplay)
+    if (epoch !== inputEpoch) return next(e)
     const left = display.inputTranslation === 'left' || display.inputTranslation === 'both'
     if (left && display.inputLeft === 'off') return next({ ...e, props: { ...e.props, text: '' } })
     const original = (await read($, displayOriginals))[e.requestId]
-    if (original === undefined || original === e.props.text) return next(e)
-    if (left && display.inputLeft === 'translation') return next(e)
-    const text = left && display.inputLeft === 'both' ? `Original:\n${original}\n\nSent:\n${e.props.text}` : original
+    if (epoch !== inputEpoch) return next(e)
+    if (original === undefined) return next(e)
+    let text = left && display.inputLeft === 'translation' ? e.props.text
+      : left && display.inputLeft === 'both' && original !== e.props.text ? `Original:\n${original}\n\nSent:\n${e.props.text}` : original
+    if (text.length > 100_000 && cfg?.enabled) {
+      // Retain complete content separately; never present a host-truncated row
+      // as the complete translation, including in left-only display mode.
+      overflowInputs.delete(e.requestId)
+      overflowInputs.set(e.requestId, { original, text: e.props.text })
+      let size = [...overflowInputs.values()].reduce((sum, note) => sum + note.original.length + note.text.length, 0)
+      while (overflowInputs.size > 100 || size > 1_000_000 && overflowInputs.size > 1) {
+        const id = overflowInputs.keys().next().value!
+        const note = overflowInputs.get(id)!
+        size -= note.original.length + note.text.length
+        overflowInputs.delete(id)
+      }
+      text = `以下为截断预览。输入 /translate input ${e.requestId} 分页查看本条完整原文与发送文字。\n\n` + text.slice(0, 90_000)
+    }
     return next({ ...e, props: { ...e.props, text } })
   })
   on('turn.start', ($, e, next) => { activeTurn = e.turnId; reset(); notice = ''; redraw($); return next(e) })
@@ -293,8 +335,8 @@ export const register: Register = on => {
   })
   on('ui.scroll', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE) return next(e)
-    if (page !== 'settings' && e.origin.kind === 'person') {
-      follow = e.offset >= Math.max(0, e.contentRows - e.bodyRows)
+    if (page === '' && e.origin.kind === 'person') {
+      follow = replyPage === replyPageCount - 1 && e.offset >= Math.max(0, e.contentRows - e.bodyRows)
       needsFollow = follow
     }
     const result = await next(e)
@@ -437,6 +479,34 @@ export const register: Register = on => {
       {settingsHeader}
     </Box>
     const translating = !!job && (job.cursor < job.source.length || !job.done) && cfg.enabled
+    if (page === 'input' && inputInspection) {
+      const inspection = inputInspection
+      const parts = [
+        { text: '原文', plain: true }, ...renderedMarkdown(inspection.note.original, e.props.bodyColumns, 'original'),
+        { text: '最终发送文字', plain: true }, ...renderedMarkdown(inspection.note.text, e.props.bodyColumns, 'input'),
+      ]
+      const pages = markdownPages(parts)
+      inspection.page = Math.min(inspection.page, pages.length - 1)
+      const narrow = e.props.bodyColumns < 42
+      const headerRows = narrow ? 4 + Number(inspection.page > 0) + Number(inspection.page < pages.length - 1) : 3
+      return <Box key="input-full-view" flexDirection="column" width={e.props.bodyColumns} minHeight={e.props.placement === 'dock' ? e.props.scroll.bodyRows : undefined}>
+        <Box flexDirection="column" paddingTop={headerRows}>
+          {pages[inspection.page]!.map((part, i) => part.plain
+            ? <Text color="text" key={`input-full-${i}`}>{part.text}</Text>
+            : <Markdown key={`input-full-${i}`} text={part.text} />)}
+        </Box>
+        <Box key="input-full-header" position="absolute" top={e.props.scroll.offset} left={0} width={e.props.bodyColumns} height={headerRows} flexDirection="column" backgroundColor={headerColors.background}>
+          <Text color={headerColors.text} bold>输入全文</Text>
+          <Text color={headerColors.secondary} wrap="truncate">{inspection.id}</Text>
+          <Box key="input-full-controls" flexDirection={narrow ? 'column' : 'row'} columnGap={1}>
+            <Text color={headerColors.text}>{`${inspection.page + 1}/${pages.length} 页`}</Text>
+            {inspection.page > 0 && <Button key="input-full-prev" plain label="上一页" onPress={() => { inspection.page--; settingsStart = true; redraw($) }} />}
+            {inspection.page < pages.length - 1 && <Button key="input-full-next" plain label="下一页" onPress={() => { inspection.page++; settingsStart = true; redraw($) }} />}
+            <Button key="input-full-close" plain label="返回翻译" onPress={() => { inputInspection = undefined; page = ''; redraw($) }} />
+          </Box>
+        </Box>
+      </Box>
+    }
     const text = job ? job.pieces.join('') + job.pending : ''
     const content = text || (cfg.enabled ? '等待 Agent 回复…' : '翻译已关闭，点击设置配置并开启。')
     const narrowPane = e.props.bodyColumns < 32
@@ -454,6 +524,7 @@ export const register: Register = on => {
     ]) : [[]]
     const replyParts = renderedMarkdown(content, e.props.bodyColumns)
     const replyPages = showInput ? markdownPages(replyParts) : [replyParts]
+    replyPageCount = replyPages.length
     inputPage = Math.min(inputPage, inputPages.length - 1)
     replyPage = showInput && follow ? replyPages.length - 1 : Math.min(replyPage, replyPages.length - 1)
     const paging = (kind: 'input' | 'reply', index: number, count: number) => count > 1 && <Box flexDirection="row" columnGap={1}>
