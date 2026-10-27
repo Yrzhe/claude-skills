@@ -92,14 +92,15 @@ async function helper($: EngineInterface, data: object): Promise<Record<string, 
   if (result.exitCode !== 0 || value.error) throw new Error(value.error || '翻译失败。')
   return value
 }
-/** Apply loaded settings, clear disabled input, and publish reactive transcript display options. */
+/** Apply settings and publish effective display options, suspending custom display while disabled. */
 async function configure($: EngineInterface, value: Config) {
   if (cfg?.inputRight !== value.inputRight) inputPage = 0
   cfg = value
   if (!cfg.enabled) clearInput()
+  const position = value.enabled ? value.inputTranslation : 'off'
   await update($, inputDisplay, previous =>
-    previous.inputTranslation === value.inputTranslation && previous.inputLeft === value.inputLeft
-      ? previous : { inputTranslation: value.inputTranslation, inputLeft: value.inputLeft })
+    previous.inputTranslation === position && previous.inputLeft === value.inputLeft
+      ? previous : { inputTranslation: position, inputLeft: value.inputLeft })
 }
 /** Load shared private settings through the helper and apply them to this session. */
 async function load($: EngineInterface) {
@@ -154,8 +155,8 @@ async function pump($: EngineInterface) {
     const result = await stream.result
     if (result.code !== 0 || !final) throw new Error('翻译流未完成，请重试。')
     if ((final as { disabled?: boolean }).disabled) {
-      if (cfg) cfg.enabled = false
-      clearInput()
+      if (cfg) await configure($, { ...cfg, enabled: false })
+      else clearInput()
       reset(); notice = '翻译已在其他会话关闭'; return
     }
     target.pieces.push(final.text); target.pending = ''; target.cursor += segment.length
@@ -207,7 +208,7 @@ export const register: Register = on => {
       await load($)
       if (!cfg?.enabled) { reset(); notice = ''; redraw($); return next(e) }
       const translated = await helper($, { action: 'translate', direction: 'incoming', text: e.text })
-      if (translated.disabled) { cfg.enabled = false; clearInput(); reset(); redraw($) }
+      if (translated.disabled) { await configure($, { ...cfg, enabled: false }); reset(); redraw($) }
       if (typeof translated.text !== 'string' || !translated.text.trim()) throw new Error('未收到有效译文。')
       if (translated.text !== e.text) {
         pending = { original: e.text }; pendingKey = translated.text
@@ -446,9 +447,10 @@ export const register: Register = on => {
     const sentHeading = { text: '发送译文', plain: true }
     // Original and translation share one page budget; render them separately so
     // an unclosed Markdown fence in the original cannot swallow the heading.
+    const sameInput = inputNote && inputNote.original === inputNote.text
     const inputPages = showInput ? markdownPages([
       ...(cfg.inputRight !== 'translation' ? renderedMarkdown(inputNote!.original, e.props.bodyColumns, 'original') : []),
-      ...(cfg.inputRight !== 'original' ? [sentHeading, ...renderedMarkdown(inputNote!.text, e.props.bodyColumns, 'input')] : []),
+      ...(cfg.inputRight !== 'original' && !(sameInput && cfg.inputRight === 'both') ? [sentHeading, ...renderedMarkdown(inputNote!.text, e.props.bodyColumns, 'input')] : []),
     ]) : [[]]
     const replyParts = renderedMarkdown(content, e.props.bodyColumns)
     const replyPages = showInput ? markdownPages(replyParts) : [replyParts]

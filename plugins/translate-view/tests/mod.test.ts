@@ -811,3 +811,69 @@ test('changing theme redraws an open pane after the host accepts the change', as
   await $.config.set({ key: 'theme', value: 'dark', previous: 'light', provider: { plugin: 'engine', tier: 'core' }, origin: { kind: 'composer' } })
   expect((await ui.find({ key: 'sticky-header' }))?.props.backgroundColor).toBe('#3A3029')
 })
+
+for (const position of ['left', 'both']) {
+  for (const source of ['initial', 'local', 'loaded', 'incoming', 'reply']) {
+    test(`disabled translation restores transcript text after ${source} disable (${position})`, async ($, on) => {
+      let saved = { ...CONFIG, enabled: source !== 'initial', inputTranslation: position, inputLeft: 'off' }
+      const clock = setup(on, saved, request => {
+        if (request.action === 'load') return saved
+        if (request.action === 'save') { saved = { ...saved, ...request.patch }; return saved }
+        if (request.action === 'translate' && source === 'incoming') return { text: request.text, skipped: true, disabled: true }
+      })
+      on('state.get', ($, e, next) => e.key === 'originals' ? { value: { value: { old: '已有原文' }, version: 1 } } : next(e))
+      on('prompt.submit', ($, e) => ({ text: e.text }))
+      on('process.spawn', async function* () {
+        yield { stream: 'stdout', text: JSON.stringify({ type: 'done', text: 'Reply.', skipped: true, disabled: true }) + '\n' } as const
+        return { value: { code: 0, signal: null } }
+      })
+      await $.session.start(start)
+      const message = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'old', surface: 'terminal', props: { text: 'Earlier translation.', origin: { kind: 'composer' }, isExpanded: false } })
+      const pane = await $.ui.mount(PANE)
+      if (source !== 'initial') expect((await message.findAll({ type: 'Text' })).map(node => node.text).join('')).toBe('')
+      if (source === 'local') {
+        await pane.press({ key: 'settings-button' })
+        await pane.select({ key: 'enabled', value: 'off' })
+        await pane.press({ key: 'save-settings' })
+      } else if (source === 'loaded') {
+        saved.enabled = false
+        await $.prompt.submit({ text: '关闭后发送', origin: { kind: 'composer' }, wait: false })
+      } else if (source === 'incoming') {
+        await $.prompt.submit({ text: '关闭竞态中的输入', origin: { kind: 'composer' }, wait: false })
+      } else if (source === 'reply') {
+        await $.turn.start({ text: 'Prompt.', turnId: 't' })
+        await $.turn.complete(done('Reply.'))
+        await clock.advance(500)
+      }
+      expect((await message.findAll({ type: 'Text' })).map(node => node.text).join('')).toBe('已有原文')
+      const fresh = await $.ui.mount({ plugin: 'translate-view', component: 'UserMessage', requestId: 'new', surface: 'terminal', props: { text: '新消息保持可见', origin: { kind: 'composer' }, isExpanded: false } })
+      expect((await fresh.findAll({ type: 'Text' })).map(node => node.text).join('')).toBe('新消息保持可见')
+      // Disabling changes effective display, not the user's saved preferences.
+      expect(saved.inputTranslation).toBe(position)
+      expect(saved.inputLeft).toBe('off')
+      if (source === 'local') {
+        await pane.press({ key: 'settings-button' })
+        await pane.select({ key: 'enabled', value: 'on' })
+        await pane.press({ key: 'save-settings' })
+        expect((await message.findAll({ type: 'Text' })).map(node => node.text).join('')).toBe('')
+      }
+    })
+  }
+}
+
+for (const right of ['original', 'translation', 'both']) {
+  test(`identical right input renders once in ${right} mode`, async ($, on) => {
+    const text = 'Already in the Agent language.'
+    setup(on, { ...CONFIG, inputTranslation: 'right', inputRight: right }, request => request.action === 'translate' ? { text: request.text, skipped: true } : undefined)
+    on('prompt.submit', ($, e) => ({ text: e.text }))
+    await $.session.start(start)
+    expect((await $.prompt.submit({ text, origin: { kind: 'composer' }, wait: false })).text).toBe(text)
+    const pane = await $.ui.mount(PANE)
+    const shown = (await pane.findAll({ type: 'Text' })).map(node => node.text).join('\n')
+      + (await pane.findAll({ type: 'Markdown' })).map(node => node.props.text).join('\n')
+    expect(shown.split(text)).toHaveLength(2)
+    expect(shown.includes('发送译文')).toBe(right === 'translation')
+    expect(shown).toContain('最近输入')
+    expect(shown).toContain('等待 Agent 回复')
+  })
+}
