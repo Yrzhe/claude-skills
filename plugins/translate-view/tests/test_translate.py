@@ -81,6 +81,61 @@ class Tests(unittest.TestCase):
             self.assertEqual(result.returncode,0)
             self.assertEqual(json.loads(result.stdout),dict(type='done',text='保留原文',skipped=True,disabled=True))
 
+    def test_detection_and_translation_identify_http_client(self):
+        """All HTTP paths must work with gateways that reject Python client signatures."""
+        seen=[]
+        failures=[]
+        class Handler(BaseHTTPRequestHandler):
+            """Reject unidentified clients and serve valid Jev, chat JSON and SSE replies."""
+            def log_message(self,*args):
+                """Suppress fixture access logs."""
+                pass
+            def do_POST(self):
+                """Return protocol fixtures and propagate worker failures to the test thread."""
+                try:
+                    body=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                    seen.append((self.path,self.headers.get('Authorization'),body))
+                    if not self.headers.get('User-Agent','').startswith('translate-view'):
+                        self.send_response(403);self.end_headers()
+                        self.wfile.write(b'{"error":"Client signature blocked"}')
+                        return
+                    content_type='application/json'
+                    if self.path=='/systemone':
+                        reply=json.dumps({'answers':{'language':{'choice':'en','confidence':.99}}}).encode()
+                    elif self.path=='/sse':
+                        content_type='text/event-stream'
+                        chunk={'choices':[{'delta':{'content':'你好。'}}]}
+                        reply=('data: '+json.dumps(chunk)+'\n\ndata: [DONE]\n\n').encode()
+                    else:
+                        reply=json.dumps({'choices':[{'message':{'content':'en' if self.path=='/detect' else '你好。'}}]}).encode()
+                    self.send_response(200);self.send_header('Content-Type',content_type);self.end_headers()
+                    self.wfile.write(reply)
+                except Exception as error:
+                    failures.append(error);self.close_connection=True
+        server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:
+            base=f'http://127.0.0.1:{server.server_port}'
+            with self.subTest(operation='jev'):
+                cfg=self.config(detection='jev',jevUrl=base+'/systemone',jevKey='fixture-jev-key')
+                self.assertEqual(m.detect(cfg,'Hello, this is a test.'),'en')
+            with self.subTest(operation='llm'):
+                cfg=self.config(detection='llm',postUrl=base+'/detect',apiKey='fixture-llm-key')
+                self.assertEqual(m.detect(cfg,'Hello, this is a test.'),'en')
+            for mode in ('json','sse'):
+                with self.subTest(operation=mode):
+                    cfg=self.config(postUrl=base+'/'+mode,apiKey='fixture-translation-key')
+                    partials=[]
+                    result=m.translate(cfg,'Hello, this is a test.','outgoing',partials.append)
+                    self.assertEqual(result['text'],'你好。');self.assertFalse(result['skipped'])
+                    if mode=='sse':self.assertTrue(partials)
+        finally:
+            server.shutdown();server.server_close();thread.join()
+        if failures:raise failures[0]
+        self.assertEqual([(path,key) for path,key,_ in seen],[('/systemone','Bearer fixture-jev-key'),('/detect','Bearer fixture-llm-key'),('/json','Bearer fixture-translation-key'),('/sse','Bearer fixture-translation-key')])
+        self.assertIn('questions',seen[0][2])
+        self.assertTrue(all(body['stream'] for _,_,body in seen[2:]))
+
     def test_network_errors_identify_failure_without_exposing_private_details(self):
         for error,expected in [(TimeoutError('PRIVATE_HOST'),'90 秒'),(socket.gaierror('PRIVATE_HOST'),'DNS'),(ssl.SSLCertVerificationError('PRIVATE_HOST'),'证书'),(ssl.SSLError('PRIVATE_HOST'),'TLS'),(ConnectionRefusedError('PRIVATE_HOST'),'拒绝连接'),(ConnectionResetError('PRIVATE_HOST'),'重置')]:
             with self.subTest(kind=type(error).__name__):

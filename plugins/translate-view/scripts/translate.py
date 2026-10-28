@@ -173,7 +173,9 @@ def network_error(error):
     return TranslationError('连接翻译接口失败或超时，请检查网络、代理和服务状态。')
 
 def request(url, key, body):
-    headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream'}
+    """POST JSON with a product identity, bounded wait and no credential redirects."""
+    # Some gateways reject urllib's default Python client signature.
+    headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream','User-Agent':'translate-view'}
     if key: headers['Authorization']='Bearer '+key
     req=urllib.request.Request(validate_url(url),data=json.dumps(body).encode(),headers=headers,method='POST')
     try:
