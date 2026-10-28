@@ -117,6 +117,8 @@ Jev 只判断语言，不生成译文；选择其他检测方式时不会调用�
 
 使用 TypeSafe System One 请求格式，请求包含 `state`、`model`、`questions`，读取 `answers.language.choice` 和 `confidence`。
 
+检测与翻译请求统一声明 `User-Agent: translate-view`，兼容会拒绝默认 Python 客户端标识的网关（例如 OpenCode 托管的 Jev 接口）。此请求头只标识插件，不包含配置或密钥。
+
 ### 看懂配置来源
 
 设置会标出当前生效模型与字段来源：本机填写、环境变量或未配置。模型/地址输入框里的实值来自这台机器的私有配置；公开插件不包含你的私有地址、密钥或已选择的翻译型号。
